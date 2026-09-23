@@ -388,8 +388,9 @@ def biological_condition(ctx: Context) -> Finding | None:
         Band.POOR: Level.CONCERN,
         Band.BAD: Level.ALERT,
     }[band]
-    if ctx.status.evidence_limited and level.rank > Level.WATCH.rank:
-        level = Level.WATCH
+    if ctx.status.evidence_limited and level.rank > Level.CONCERN.rank:
+        # A thin sample can raise a concern. It cannot, on its own, declare a stream dead.
+        level = Level.CONCERN
     because = [ctx.status.meaning]
     if ctx.status.aspt is not None:
         because.append(

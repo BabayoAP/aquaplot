@@ -1,4 +1,22 @@
-"""HTTP surface for the single-page app (PRD §5.0, M0) and the area viewer (docs/AREA-VIEWER.md).
+"""HTTP surface: the stream assessment, the area viewer and the inherited classifier.
+
+Three groups of routes, and the split says what Riffle is.
+
+``/api/assess`` and its neighbours are the product: photos and answers in, a
+banded One Health read-out out, stored so the next visit to the same spot becomes
+a trend. ``/api/assess/{id}/review`` is the human half of the loop and never
+re-runs the model - re-running it would let the model overwrite the correction a
+person just made.
+
+``/api/sites``, ``/api/insights`` and ``/api/alerts`` are the data-to-insight
+surface the dashboard and the map draw from, and ``/api/assess/{id}/fhir``
+exports a single assessment into the standard the health systems on the other
+side of the One Health link already speak.
+
+``/api/classify`` and ``/api/area/*`` are inherited from SpeciesGuard and kept
+working: identifying an organism and browsing what has been recorded nearby are
+both still useful, and the invasive check in a stream assessment runs through the
+same status resolver.
 
 Classification: one endpoint does the work. It accepts an image, a description,
 or both; when both arrive the image wins because the text path is strictly lower
@@ -16,24 +34,31 @@ and cheap for a script to hit; ``RIFFLE_CLASSIFY_LIMIT=0`` disables it.
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from pydantic import BaseModel, Field
+
+from . import bioindex, fhir, habitat
 from .area import AreaError, AreaQuery, AreaService, BBox, Status
+from .assess import ASSESSMENT_VERSION, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
+from .observe import select_observer
 from .pipeline import PIPELINE_VERSION, Pipeline
-from .places import PlaceResolver
+from .places import PlaceResolver, pilot_sites
 from .schema import Classification
 from .status import StatusResolver
+from .store import Store
 
 STATIC_DIR = Path(__file__).parent / "static"
 CLASSIFY_LIMIT = int(os.environ.get("RIFFLE_CLASSIFY_LIMIT", "20"))  # requests per client per window
@@ -69,7 +94,16 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-app = FastAPI(title="SpeciesGuard", version=PIPELINE_VERSION)
+app = FastAPI(
+    title="Riffle",
+    version=ASSESSMENT_VERSION,
+    description=(
+        "Guided citizen stream checks. A photo and a few plain-language answers become a "
+        "BMWP/ASPT biological band, a visual pressure score and a One Health read-out for "
+        "people, animals and the ecosystem - with every finding traceable to the observation "
+        "behind it. Built for the IEEE OneAquaHealth Global Hackathon 2026."
+    ),
+)
 app.state.area = AreaService()
 app.state.pipeline = Pipeline(
     identifier=select_identifier(),
@@ -77,15 +111,26 @@ app.state.pipeline = Pipeline(
     places=PlaceResolver(app.state.area.inat),
 )
 app.state.limiter = RateLimiter()
+app.state.store = Store()
+app.state.assessor = StreamAssessor(
+    observer=select_observer(),
+    status=StatusResolver(app.state.area.inat),
+    places=PlaceResolver(app.state.area.inat),
+)
 
 
-@app.get("/api/health")
-def health() -> dict[str, str | int]:
+@app.get("/api/health", tags=["meta"])
+def health() -> dict[str, Any]:
     return {
         "status": "ok",
+        "assessment_version": ASSESSMENT_VERSION,
         "pipeline_version": PIPELINE_VERSION,
+        "observer": app.state.assessor.observer.name,
         "identifier": app.state.pipeline.identifier.name,
         "status_seed": app.state.area.seed_version,
+        "bioindicator_catalogue": bioindex.CATALOGUE_VERSION,
+        "habitat_form": habitat.FORM_VERSION,
+        "assessments_stored": app.state.store.summary()["assessments"],
         "classify_limit_per_10min": app.state.limiter.limit,
     }
 
@@ -129,6 +174,332 @@ async def classify(
 
     region = resolve_region(None, lat, lon)
     return await _upstream(app.state.pipeline.classify(None, description, region))
+
+
+# ---- Stream assessment -------------------------------------------------------
+
+
+class ReviewBody(BaseModel):
+    """What a person changed after reading what the model proposed."""
+
+    answers: dict[str, str] = Field(default_factory=dict, description="Habitat indicator key to the value the person chose.")
+    confirmed_taxa: list[str] = Field(default_factory=list, description="Names the person confirmed.")
+    rejected_taxa: list[str] = Field(default_factory=list, description="Names the person says are wrong; removed from the index.")
+    added_taxa: list[str] = Field(default_factory=list, description="Animals the person found that the model missed.")
+    site_name: str | None = None
+
+
+class RenameBody(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+def contributor_of(request: Request) -> str | None:
+    """An opaque id the browser generates and keeps. No account, no way back to a person."""
+    value = (request.headers.get("x-riffle-contributor") or "").strip()
+    return value[:64] or None
+
+
+def _readings(raw: str | None, source: str) -> list[habitat.Reading]:
+    """Parse ``{"algae": "bloom", ...}`` into form answers, rejecting unknown keys loudly."""
+    if not raw:
+        return []
+    try:
+        answers = json.loads(raw)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"answers must be a JSON object: {exc}") from exc
+    if not isinstance(answers, dict):
+        raise HTTPException(status_code=422, detail="answers must be a JSON object of indicator to value")
+    unknown = [k for k in answers if k not in habitat.BY_KEY]
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"unknown habitat indicator(s): {', '.join(sorted(unknown))}")
+    return [habitat.Reading(key=k, value=str(v), source=source) for k, v in answers.items()]
+
+
+def _taxa(raw: str | None) -> list[bioindex.TaxonObservation]:
+    if not raw:
+        return []
+    try:
+        names = json.loads(raw)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"taxa must be a JSON array of names: {exc}") from exc
+    if not isinstance(names, list):
+        raise HTTPException(status_code=422, detail="taxa must be a JSON array of names")
+    return [bioindex.TaxonObservation(name=str(n), confidence=1.0, confirmed_by="citizen") for n in names if str(n).strip()]
+
+
+@app.post("/api/assess", tags=["assessment"])
+async def assess(
+    request: Request,
+    photos: list[UploadFile] = File(default_factory=list, description="One or more photos: the reach, and the sample tray."),
+    description: str | None = Form(default=None),
+    lat: float | None = Form(default=None),
+    lon: float | None = Form(default=None),
+    site_name: str | None = Form(default=None),
+    answers: str | None = Form(default=None, description='JSON object of habitat answers, e.g. {"odour": "sewage"}'),
+    taxa: str | None = Form(default=None, description='JSON array of invertebrate names the observer identified'),
+):
+    """Assess one stream visit.
+
+    Everything is optional except having *something*: a photo, a habitat answer or
+    a taxon name. A visit with no photo and no model still produces a band, a
+    pressure score and a One Health read-out, because a citizen who filled the
+    form by hand has done the real work either way.
+    """
+    citizen_answers = _readings(answers, "citizen")
+    citizen_taxa = _taxa(taxa)
+    blobs = [b for b in [await p.read() for p in photos] if b]
+    if not blobs and not citizen_answers and not citizen_taxa and not (description or "").strip():
+        raise HTTPException(status_code=422, detail="send at least a photo, a habitat answer or a species name")
+
+    wait = app.state.limiter.retry_after(client_key(request))
+    if wait > 0:
+        raise HTTPException(
+            status_code=429,
+            detail=f"too many assessments from this address; try again in {max(1, round(wait / 60))} min",
+            headers={"Retry-After": str(int(wait) + 1)},
+        )
+
+    decoded = []
+    gps = None
+    for blob in blobs:
+        try:
+            image = decode_image(blob)
+        except InvalidImage as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        decoded.append(image)
+        gps = gps or image.gps  # the first photo carrying GPS wins; it is the one taken at the water
+
+    result = await _upstream(
+        app.state.assessor.assess(
+            Submission(
+                photos=tuple(decoded),
+                description=(description or "").strip(),
+                region=resolve_region(gps, lat, lon),
+                answers=tuple(citizen_answers),
+                taxa=tuple(citizen_taxa),
+                site_name=(site_name or "").strip() or None,
+            )
+        )
+    )
+    app.state.store.save(result, contributor_of(request))
+    return result.as_dict()
+
+
+@app.get("/api/assess/{assessment_id}", tags=["assessment"])
+def get_assessment(assessment_id: str):
+    stored = app.state.store.get(assessment_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="no assessment with that id")
+    return stored
+
+
+@app.post("/api/assess/{assessment_id}/review", tags=["assessment"])
+async def review_assessment(assessment_id: str, body: ReviewBody, request: Request):
+    """Fold a person's confirmations and corrections into a stored assessment.
+
+    The vision model is deliberately not called again. The photograph has not
+    changed, and a second model pass could quietly overwrite the correction the
+    person just made - which would make the review theatre rather than review.
+    """
+    previous = app.state.store.get(assessment_id)
+    if previous is None:
+        raise HTTPException(status_code=404, detail="no assessment with that id")
+    unknown = [k for k in body.answers if k not in habitat.BY_KEY]
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"unknown habitat indicator(s): {', '.join(sorted(unknown))}")
+    result = await reassess(
+        previous,
+        Review(
+            answers=tuple(habitat.Reading(key=k, value=v, source="citizen") for k, v in body.answers.items()),
+            confirmed_taxa=tuple(body.confirmed_taxa),
+            rejected_taxa=tuple(body.rejected_taxa),
+            added_taxa=tuple(body.added_taxa),
+            site_name=body.site_name,
+        ),
+    )
+    app.state.store.save(result, contributor_of(request))
+    return result.as_dict()
+
+
+@app.get("/api/assess/{assessment_id}/fhir", tags=["assessment", "interoperability"])
+def assessment_as_fhir(assessment_id: str):
+    """The assessment as a FHIR R4 collection Bundle (see docs/FHIR.md for the codes)."""
+    stored = app.state.store.get(assessment_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="no assessment with that id")
+    return fhir.bundle(_rehydrate(stored))
+
+
+# ---- Sites, insights and early warning ---------------------------------------
+
+
+@app.get("/api/sites", tags=["insight"])
+def sites(
+    south: float | None = None,
+    west: float | None = None,
+    north: float | None = None,
+    east: float | None = None,
+    limit: int = Query(default=500, ge=1, le=2000),
+):
+    """Every monitored spot, with its latest band and whether it is improving or declining."""
+    bbox = None
+    if any(v is not None for v in (south, west, north, east)):
+        if None in (south, west, north, east):
+            raise HTTPException(status_code=422, detail="south, west, north and east must all be given")
+        bbox = (south, west, north, east)
+    return {"sites": app.state.store.sites(bbox, limit)}
+
+
+@app.get("/api/sites/{site_key}", tags=["insight"])
+def site_history(site_key: str):
+    history = app.state.store.history(site_key)
+    if not history:
+        raise HTTPException(status_code=404, detail="no assessments at that site")
+    from .store import trend_of
+
+    return {
+        "site_key": site_key,
+        "name": app.state.store.name_of(site_key) or history[0].get("site_name") or history[0].get("place_name"),
+        "assessments": history,
+        "trend": trend_of(history),
+    }
+
+
+@app.post("/api/sites/{site_key}/name", tags=["insight"])
+def name_site(site_key: str, body: RenameBody):
+    """Let the people who use a stretch call it what they call it, not what a gazetteer calls it."""
+    if not app.state.store.history(site_key):
+        raise HTTPException(status_code=404, detail="no assessments at that site")
+    app.state.store.rename(site_key, body.name.strip())
+    return {"site_key": site_key, "name": body.name.strip()}
+
+
+@app.get("/api/insights", tags=["insight"])
+def insights():
+    """The numbers the dashboard leads with."""
+    return app.state.store.summary()
+
+
+@app.get("/api/alerts", tags=["insight"])
+def alerts(days: int = Query(default=30, ge=1, le=365)):
+    """Sites whose most recent assessment reached concern or alert: the early-warning feed."""
+    return {"days": days, "alerts": app.state.store.alerts(days)}
+
+
+@app.get("/api/me/progress", tags=["engagement"])
+def progress(request: Request):
+    """One anonymous contributor's record and badges. Returns an empty record when no id is sent."""
+    contributor = contributor_of(request)
+    if contributor is None:
+        return {"assessments": 0, "sites": 0, "confirmations": 0, "badges": [], "next": None}
+    return app.state.store.progress(contributor)
+
+
+# ---- Reference data the UI is generated from ---------------------------------
+
+
+@app.get("/api/form", tags=["reference"])
+def form():
+    """The habitat field form. The guided workflow's questions are rendered from this."""
+    return habitat.form_schema()
+
+
+@app.get("/api/guide", tags=["reference"])
+def guide():
+    """The bioindicator catalogue: what to look for, and what finding it means."""
+    return {
+        "version": bioindex.CATALOGUE_VERSION,
+        "index": "BMWP / ASPT",
+        "families": [
+            {
+                "family": f.family,
+                "plain_name": f.plain_name,
+                "common_name": f.common_name,
+                "group": f.group,
+                "bmwp": f.bmwp,
+                "sensitivity": f.sensitivity,
+                "ept": f.ept,
+                "look_for": f.look_for,
+                "means": f.means,
+                "vector": f.vector,
+            }
+            for f in sorted(bioindex.CATALOGUE, key=lambda f: (-f.bmwp, f.family))
+        ],
+    }
+
+
+@app.get("/api/pilots", tags=["reference"])
+def pilots():
+    """The five OneAquaHealth research cities, as map and demo entry points."""
+    return pilot_sites()
+
+
+def _rehydrate(stored: dict[str, Any]):
+    """Rebuild an Assessment object from a stored payload, for the FHIR exporter."""
+    from .assess import Assessment, InvasiveHit
+    from .schema import Region as _Region
+
+    eco = bioindex.score(assess_taxa(stored))
+    pressures = habitat.assess(assess_readings(stored))
+    signal = onehealth_from(stored)
+    seeded = {e.summary(): e for e in app.state.assessor.listed}
+    return Assessment(
+        id=stored["id"],
+        created_at=stored["created_at"],
+        site_name=stored.get("site_name"),
+        region=_Region.model_validate(stored["region"]),
+        photos=stored.get("photos", 0),
+        photo_kinds=stored.get("photo_kinds", []),
+        ecology=eco,
+        pressures=pressures,
+        signal=signal,
+        invasives=[
+            InvasiveHit(
+                name=i.get("reported_as", i["name"]),
+                listed=seeded[i["name"]],
+                confidence=i.get("confidence", 1.0),
+                in_jurisdiction=i.get("listed_for_this_place", True),
+                note=i.get("note"),
+            )
+            for i in stored.get("invasives", [])
+            if i["name"] in seeded
+        ],
+        certainty=stored.get("certainty", 0.0),
+        penalties=stored.get("penalties", []),
+        needs_confirmation=stored.get("needs_confirmation", []),
+        observer=stored.get("observer", "none"),
+        model_notes=stored.get("model_notes", []),
+        confirmations=stored.get("confirmations", 0),
+        version=stored.get("version", ASSESSMENT_VERSION),
+    )
+
+
+def assess_taxa(stored: dict[str, Any]):
+    from .assess import taxa_of
+
+    return taxa_of(stored)
+
+
+def assess_readings(stored: dict[str, Any]):
+    from .assess import readings_of
+
+    return readings_of(stored)
+
+
+def onehealth_from(stored: dict[str, Any]):
+    """Re-run the rules over a stored assessment so the exported bundle matches it."""
+    from . import onehealth as oh
+
+    eco = bioindex.score(assess_taxa(stored))
+    pressures = habitat.assess(assess_readings(stored))
+    return oh.evaluate(
+        oh.Context(
+            status=eco,
+            habitat=pressures,
+            invasives=tuple(i["name"] for i in stored.get("invasives", [])),
+            site_name=stored.get("site_name"),
+        )
+    )
 
 
 # ---- Area viewer -----------------------------------------------------------

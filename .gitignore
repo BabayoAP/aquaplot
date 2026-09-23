@@ -5,3 +5,7 @@ __pycache__/
 *.egg-info/
 dist/
 .DS_Store
+
+# local assessment database
+riffle.db
+*.db-journal

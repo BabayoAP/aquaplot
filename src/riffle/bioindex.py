@@ -73,6 +73,7 @@ RICHNESS_CAP: tuple[tuple[int, str], ...] = (
 )
 
 MIN_FAMILIES_FOR_INDEX = 1
+FIRM_SAMPLE_FAMILIES = 3  # below this, the reading is thin in either direction
 
 
 class Band(StrEnum):
@@ -188,6 +189,13 @@ ALIASES: dict[str, str] = {
     "sphaerium": "Sphaeriidae",
     "austropotamobius": "Astacidae",
     "astacus": "Astacidae",
+    "procambarus": "Cambaridae",
+    "pacifastacus": "Cambaridae",
+    "faxonius": "Cambaridae",
+    "orconectes": "Cambaridae",
+    "red swamp crayfish": "Cambaridae",
+    "signal crayfish": "Cambaridae",
+    "marbled crayfish": "Cambaridae",
     "calopteryx": "Calopterygidae",
     "agriidae": "Calopterygidae",
     "coenagriidae": "Coenagrionidae",
@@ -371,17 +379,23 @@ class EcologicalStatus:
     penalties: list[str] = field(default_factory=list)
     vectors: list[str] = field(default_factory=list)
     evidence_limited: bool = False
+    capped: bool = False  # the richness cap lowered the band the index alone would have given
     catalogue_version: str = CATALOGUE_VERSION
 
     @property
     def meaning(self) -> str:
-        if self.evidence_limited:
+        if not self.evidence_limited:
+            return BAND_MEANING[self.band]
+        if self.capped:
             return (
                 f"Provisional: too few animals were found to claim better than '{self.band.value}'. "
-                "This is a limit of the sample, not proof that the stream is degraded - look again, "
+                "That is a limit of the sample, not proof that the stream is degraded - look again, "
                 "turning more stones, to firm it up."
             )
-        return BAND_MEANING[self.band]
+        return (
+            f"Provisional: '{self.band.value}' rests on only {self.families} "
+            f"famil{'y' if self.families == 1 else 'ies'}. {BAND_MEANING[self.band]} A fuller sample would settle it."
+        )
 
     @property
     def caveat(self) -> str:
@@ -408,6 +422,7 @@ class EcologicalStatus:
             "penalties": self.penalties,
             "vectors": self.vectors,
             "evidence_limited": self.evidence_limited,
+            "capped_by_effort": self.capped,
             "catalogue_version": self.catalogue_version,
             "index": "BMWP / ASPT",
             "caveat": self.caveat,
@@ -513,7 +528,11 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
             f"which cannot support a '{band.value}' reading; capped at '{capped.value}'"
         )
     band = capped
-    evidence_limited = capped is not _band_for_aspt(aspt)
+    # Thin in either direction. A cap that bit means the sample was too small to
+    # claim good; a sample of two tolerant families is equally too small to
+    # declare a stream dead. Both are limits of the evidence, not findings.
+    capped_from = _band_for_aspt(aspt)
+    evidence_limited = capped is not capped_from or len(scored) < FIRM_SAMPLE_FAMILIES
 
     coarse = [t for t in scored if t.coarse]
     if coarse:
@@ -550,6 +569,7 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
         penalties=penalties,
         vectors=vectors,
         evidence_limited=evidence_limited,
+        capped=capped is not capped_from,
     )
 
 
