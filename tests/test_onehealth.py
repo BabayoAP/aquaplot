@@ -221,3 +221,59 @@ def test_the_bundle_is_json_serialisable(assessment):
     import json
 
     assert json.loads(json.dumps(fhir.bundle(assessment)))["id"].startswith("riffle-")
+
+
+# ---- documentation is part of the contract ---------------------------------
+
+
+def test_every_rule_is_documented():
+    """A health rule nobody can read is a health rule nobody can correct."""
+    from pathlib import Path
+
+    from riffle.onehealth import RULES
+
+    doc = Path(__file__).resolve().parents[1].joinpath("docs/ONE-HEALTH.md").read_text()
+    fired = [r(ctx) for ctx in [_maximal_context()] for r in RULES]
+    ids = {f.rule for f in fired if f is not None}
+    assert len(ids) >= 10  # the maximal context should trip nearly everything
+    missing = sorted(i for i in ids if f"`{i}`" not in doc)
+    assert not missing, f"undocumented rules: {missing}"
+
+
+def test_every_alert_capable_rule_declares_the_answers_it_rests_on():
+    """Otherwise the confirmation queue cannot tell the user what to confirm."""
+    from riffle.assess import RULE_EVIDENCE
+
+    alerting = {f.rule for f in evaluate(_maximal_context()).findings if f.level is Level.ALERT}
+    assert alerting
+    assert alerting <= set(RULE_EVIDENCE) | {"ecosystem.biological_condition"}
+
+
+def _maximal_context():
+    """Everything wrong at once, all of it citizen-confirmed, so every rule has a chance to fire."""
+    return Context(
+        status=score([TaxonObservation(name=n, confidence=0.9) for n in [*FOUL, "Culicidae", "Lymnaeidae"]]),
+        habitat=assess_habitat(
+            [
+                Reading(key=k, value=v, source="citizen")
+                for k, v in [
+                    ("algae", "bloom"),
+                    ("odour", "sewage"),
+                    ("foam_or_sheen", "oil_sheen"),
+                    ("litter", "sanitary"),
+                    ("water_colour", "grey"),
+                    ("water_clarity", "opaque"),
+                    ("flow", "stagnant"),
+                    ("bank_modification", "fully_channelised"),
+                    ("substrate", "concrete"),
+                    ("riparian_vegetation", "bare_or_paved"),
+                    ("sediment_deposit", "heavy"),
+                    ("shade", "open"),
+                    ("access", "play_or_drinking"),
+                ]
+            ]
+        ),
+        invasives=("Red Swamp Crayfish (Procambarus clarkii)",),
+        site_name="Everything Brook",
+        warm_season=True,
+    )

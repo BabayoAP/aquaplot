@@ -1,7 +1,7 @@
 [project]
 name = "riffle"
 version = "0.1.0"
-description = "SpeciesGuard: automated invasive vs. native species classification from imagery (PRD.md)"
+description = "Riffle: guided citizen stream checks that turn a photo into a WFD-banded stream-health reading and a One Health signal"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",

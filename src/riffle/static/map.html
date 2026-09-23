@@ -75,14 +75,17 @@
 <button class="toggle" id="toggle">Layers</button>
 <aside id="panel">
   <div>
-    <h1><a href="/">SpeciesGuard</a> · Area viewer</h1>
-    <p class="sub">Satellite view of what has been seen where. Pan or zoom to reload. <a href="/">Classify a photo</a></p>
+    <h1><a href="/">Riffle</a> · Stream map</h1>
+    <p class="sub">Citizen stream assessments over a satellite view of what else has been recorded nearby.
+      Pan or zoom to reload. <a href="/">Check a stream</a> · <a href="/dashboard">Dashboard</a></p>
   </div>
 
   <section>
     <h2>Layers</h2>
+    <label class="layer"><input type="checkbox" data-layer="riffle" checked><i class="sw" style="background:linear-gradient(90deg,#1a7f5a,#a5342b)"></i> Riffle stream assessments <span class="cnt" id="c-riffle"></span></label>
+    <label class="layer" style="padding-left:22px"><span class="sub">colour = ecological band, ring = a site where the last visit scored worse than the one before</span></label>
     <label class="layer"><input type="checkbox" data-layer="introduced" checked><i class="sw introduced"></i> Introduced species sightings <span class="cnt" id="c-introduced"></span></label>
-    <label class="layer" style="padding-left:22px"><i class="sw listed"></i> <span class="sub">darker ring = Cal-IPC / CDFW listed invasive</span></label>
+    <label class="layer" style="padding-left:22px"><i class="sw listed"></i> <span class="sub">darker ring = on an invasive-species list (EU Union list, Cal-IPC, CDFW)</span></label>
     <label class="layer"><input type="checkbox" data-layer="native"><i class="sw native"></i> Native species sightings <span class="cnt" id="c-native"></span></label>
     <label class="layer"><input type="checkbox" data-layer="threatened"><i class="sw threatened"></i> Threatened species sightings <span class="cnt" id="c-threatened"></span></label>
     <label class="layer"><input type="checkbox" data-layer="heat"><i class="sw heat"></i> Introduced-species density heatmap</label>
@@ -102,14 +105,21 @@
       </select></label>
       <label>Years<div class="row"><input type="number" id="y1" min="1990" placeholder="from"><input type="number" id="y2" min="1990" placeholder="to"></div></label>
     </div>
-    <label class="layer" style="margin-top:6px"><input type="checkbox" id="oc" checked> Orange County only</label>
+    <label style="margin-top:6px">Jump to a OneAquaHealth research city
+      <select id="pilot"><option value="">Choose a city…</option></select>
+    </label>
     <div id="taxonchip" class="row" style="display:none;margin-top:6px"><span class="tag" id="taxonname" style="background:var(--accent)"></span><button class="ghost" id="taxonclear" style="padding:4px 10px">Show all species</button></div>
     <div class="row" style="margin-top:6px">
       <button class="primary" id="apply">Apply</button>
       <button class="ghost" id="locate">My location</button>
-      <button class="ghost" id="home">Orange County</button>
+      <button class="ghost" id="home">Whole world</button>
     </div>
     <div id="status"></div>
+  </section>
+
+  <section id="sitesection" style="display:none">
+    <h2>Stream assessments in view</h2>
+    <ol id="sites"></ol>
   </section>
 
   <section>
@@ -125,7 +135,10 @@
   </section>
 
   <section>
-    <p class="sub">Sightings: <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> research-grade observations, live. "Introduced" is iNaturalist's establishment flag, not a legal invasive status; the listed ring marks taxa in the project's seed list (see docs/AREA-VIEWER.md). Tree-cover loss: Hansen/UMD/Google/USGS/NASA via Global Forest Watch. Imagery: Esri.</p>
+    <p class="sub">Stream assessments: recorded through Riffle by citizens; a screening estimate, not a Water Framework Directive classification.
+      Sightings: <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> research-grade observations, live.
+      "Introduced" is iNaturalist's establishment flag, not a legal invasive status; the listed ring marks taxa on a regional invasive list
+      (see docs/AREA-VIEWER.md). Tree-cover loss: Hansen/UMD/Google/USGS/NASA via Global Forest Watch. Imagery: Esri.</p>
   </section>
 </aside>
 
@@ -134,8 +147,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
-  const OC = { center: [33.68, -117.80], zoom: 10 };
+  const HOME = { center: [45.0, 6.0], zoom: 4 };
   const COLORS = { introduced: "#d64545", listed: "#8b1a1a", native: "#2f9e5b", threatened: "#e0a020" };
+  const BAND_COLORS = { High: "#1a7f5a", Good: "#4f9d46", Moderate: "#b8860b", Poor: "#c2662a", Bad: "#a5342b" };
 
   const thisYear = new Date().getFullYear();
   $("y1").max = thisYear; $("y2").max = thisYear;
@@ -143,7 +157,7 @@
   let taxonFilter = qs.get("taxon_id") ? { id: qs.get("taxon_id"), name: qs.get("taxon_name") || ("taxon " + qs.get("taxon_id")) } : null;
   const start = qs.has("lat") && qs.has("lon")
     ? { center: [parseFloat(qs.get("lat")), parseFloat(qs.get("lon"))], zoom: parseInt(qs.get("z") || "14", 10) }
-    : OC;
+    : HOME;
 
   const map = L.map("map", { zoomControl: true, worldCopyJump: true }).setView(start.center, start.zoom);
   L.control.scale({ imperial: true }).addTo(map);
@@ -170,15 +184,67 @@
   }
   const heat = L.heatLayer([], { radius: 22, blur: 18, maxZoom: 14, gradient: { 0.2: "#2c7bb6", 0.5: "#ffffbf", 0.9: "#d7191c" } });
 
-  if (start !== OC) L.circleMarker(start.center, { radius: 9, color: "#fff", fillColor: "#2f6b3a", fillOpacity: 1, weight: 2 })
+  // Riffle's own assessments. Deliberately not clustered: there are far fewer of
+  // these than iNaturalist sightings, and each one is a place someone stood.
+  const riffleLayer = L.layerGroup().addTo(map);
+
+  function sitePopup(site) {
+    const invasive = site.invasives ? `<br><b>${site.invasives}</b> invasive-species record${site.invasives === 1 ? "" : "s"}` : "";
+    return `<b>${esc(site.name)}</b><br>`
+      + `<span style="color:${BAND_COLORS[site.band]};font-weight:700">${esc(site.band)}</span>`
+      + ` · pressure ${Math.round(site.pressure)}/100 · <span style="text-transform:uppercase;font-size:11px;letter-spacing:.06em">${esc(site.level)}</span><br>`
+      + `<small>${site.assessments} assessment${site.assessments === 1 ? "" : "s"}, last ${esc(site.last_seen.slice(0, 10))}</small><br>`
+      + `<small>${esc(site.trend.detail)}</small>${invasive}<br>`
+      + `<a href="/dashboard">See the dashboard</a>`;
+  }
+
+  async function loadSites(params) {
+    riffleLayer.clearLayers();
+    if (!enabled("riffle")) { $("c-riffle").textContent = ""; $("sitesection").style.display = "none"; return; }
+    const { sites } = await getJSON("/api/sites", params);
+    const list = $("sites"); list.innerHTML = "";
+    sites.forEach((site) => {
+      if (site.lat === null || site.lon === null) return;
+      L.circleMarker([site.lat, site.lon], {
+        radius: 10,
+        color: site.trend.direction === "declining" ? "#000" : "#fff",
+        weight: site.trend.direction === "declining" ? 4 : 2,
+        fillColor: BAND_COLORS[site.band] || "#888", fillOpacity: 0.95,
+      }).bindPopup(sitePopup(site), { maxWidth: 280 }).addTo(riffleLayer);
+      const li = document.createElement("li");
+      li.innerHTML = `<b>${esc(site.name)}</b> <span class="tag" style="background:${BAND_COLORS[site.band]}">${esc(site.band)}</span>`
+        + `<br><span class="sub">${esc(site.trend.detail)}</span>`;
+      li.style.cursor = "pointer";
+      li.addEventListener("click", () => map.setView([site.lat, site.lon], Math.max(map.getZoom(), 15)));
+      list.append(li);
+    });
+    $("c-riffle").textContent = sites.length ? String(sites.length) : "";
+    $("sitesection").style.display = sites.length ? "" : "none";
+  }
+
+  if (start !== HOME) L.circleMarker(start.center, { radius: 9, color: "#fff", fillColor: "#2f6b3a", fillOpacity: 1, weight: 2 })
     .addTo(map).bindPopup("Your photo's location");
 
   function enabled(name) { return document.querySelector(`input[data-layer="${name}"]`).checked; }
 
+  fetch("/api/pilots").then((r) => r.json()).then((p) => {
+    p.sites.forEach((site) => {
+      const o = document.createElement("option");
+      o.value = JSON.stringify(site.bbox);
+      o.textContent = `${site.city}, ${site.country}`;
+      o.title = site.about;
+      $("pilot").append(o);
+    });
+    $("pilot").addEventListener("change", () => {
+      if (!$("pilot").value) return;
+      const [s1, w, n, e] = JSON.parse($("pilot").value);
+      map.fitBounds([[s1, w], [n, e]]);
+    });
+  }).catch(() => {});
+
   function filters() {
     const b = map.getBounds();
     const p = new URLSearchParams({ south: b.getSouth().toFixed(5), west: b.getWest().toFixed(5), north: b.getNorth().toFixed(5), east: b.getEast().toFixed(5) });
-    if ($("oc").checked) p.set("oc", "true");
     if ($("taxa").value) p.set("taxa", $("taxa").value);
     if ($("y1").value) p.set("year_from", $("y1").value);
     if ($("y2").value) p.set("year_to", $("y2").value);
@@ -210,7 +276,7 @@
     const mine = ++seq;
     const params = filters();
     $("status").className = ""; $("status").textContent = "Loading…";
-    const jobs = [];
+    const jobs = [loadSites(new URLSearchParams([...params].filter(([k]) => ["south", "west", "north", "east"].includes(k))))];
     for (const s of ["introduced", "native", "threatened"]) {
       if (!enabled(s) && !(s === "introduced" && enabled("heat"))) { $(`c-${s}`).textContent = ""; continue; }
       jobs.push(getJSON("/api/area/observations", new URLSearchParams([...params, ["status", s]])).then((fc) => {
@@ -293,7 +359,7 @@
   let timer;
   map.on("moveend", () => { clearTimeout(timer); timer = setTimeout(reload, 350); });
   $("apply").addEventListener("click", reload);
-  $("home").addEventListener("click", () => map.setView(OC.center, OC.zoom));
+  $("home").addEventListener("click", () => map.setView(HOME.center, HOME.zoom));
   $("locate").addEventListener("click", () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 14),

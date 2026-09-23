@@ -1,4 +1,4 @@
-# Render Blueprint: one-click deploy of the app for the hackathon live link.
+# Render Blueprint: one-click deploy for the hackathon live link.
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
@@ -7,13 +7,22 @@ services:
     plan: free
     healthCheckPath: /api/health
     autoDeploy: true
+    disk:
+      # Assessments are the product: a free-tier container filesystem is wiped on
+      # every deploy, which would delete the trends citizens contributed.
+      name: riffle-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
-      # Paste the key in the Render dashboard when prompted; without it the
-      # classifier runs the placeholder ("no species model configured").
+      # Paste the key in the Render dashboard when prompted. Without it nothing is
+      # read from photographs automatically and the citizen fills the form by hand;
+      # every band, finding, trend and export is otherwise identical.
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: CLAUDE_MODEL
         value: claude-opus-5
-      # Classifications per client address per 10 minutes; protects the key.
+      - key: RIFFLE_DB
+        value: /data/riffle.db
+      # Assessments per client address per 10 minutes; protects the key.
       - key: RIFFLE_CLASSIFY_LIMIT
         value: "20"

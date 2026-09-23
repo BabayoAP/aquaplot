@@ -1,25 +1,33 @@
-# riffle
+# Riffle
 
-Build strictly against `PRD.md` (product name SpeciesGuard). Cite the PRD section
-in every module docstring and name tests after the acceptance criterion they check.
-Record any deviation from the PRD in README "Decisions and deviations" with the reason.
+A citizen stream-health tool for the IEEE OneAquaHealth Global Hackathon 2026.
+Build against [README.md](README.md), [docs/ASSESSMENT.md](docs/ASSESSMENT.md) and
+[docs/ONE-HEALTH.md](docs/ONE-HEALTH.md). Cite the document a module implements in its
+docstring, and name tests after the behaviour they protect, not the function they call.
 
 - Python 3.12 in `.venv` (system python is 3.9). `uv venv --python 3.12 .venv`,
   then `uv pip install --python .venv/bin/python -e ".[dev]"`.
 - Tests: `.venv/bin/python -m pytest`. Run: `.venv/bin/uvicorn riffle.app:app --reload`.
-- The result contract in `src/riffle/schema.py` is the interface between the
-  page and the pipeline. Extend it, do not break it.
-- FR-8: never return a "needs review" label. Always one of the three labels plus a
-  certainty percentage, with reasons in `evidence.certainty_penalties`.
-- Milestone order is PRD §11 (M0, M1, M2, M6 done, Stage 2 crop pass done; see PRD §12). Region is Orange County, CA only in v1.
-- Species model backends live in `src/riffle/identify.py`; tests inject fakes and must
-  never call Claude, Ollama or the network. `docs/CLASSIFIER.md` explains the certainty rule;
-  bump `PIPELINE_VERSION` whenever that rule changes.
-- The area viewer is specified in `docs/AREA-VIEWER.md` (FR-A1..A10). Its data layer is
-  `src/riffle/area.py`; tests inject a fake fetcher and must never hit the network.
-- "Introduced" (iNaturalist) is not "invasive" (Cal-IPC/CDFW). Keep that distinction in
-  UI copy and docs. The seed list in `src/riffle/data/status_seed.json` is unverified;
-  `scientific_name` is iNaturalist's accepted name, `synonyms` hold the older names, and
-  new entries must be checked against `/v1/taxa?q=` before they go in.
-- Hackathon: NextStep Hacks 2026, deadline Sep 20 2026 2 pm PDT. `docs/HACKATHON.md`
-  holds the submission checklist and the required before/during timeline.
+- **The model observes, the rules decide.** `observe.py` may return only structured
+  observations. Any determination about health belongs in `bioindex.py` or `onehealth.py`,
+  where it is readable and testable. Do not move judgement into the prompt.
+- **An alert waits for a human.** `onehealth.evaluate` downgrades an unconfirmed alert to
+  concern and says so. If you add a rule that can reach alert, list the habitat answers it
+  rests on in `assess.RULE_EVIDENCE` so the confirmation queue knows what to ask for.
+- **A review must never call the model again** (`assess.reassess`). Re-running it would let
+  the model overwrite a correction a person just made.
+- **`data/habitat_indicators.json` is the single source of truth** for the field form: the
+  model prompt, the server validator, the UI questions and the pressure scoring are all
+  generated from it. Add an indicator there and nowhere else.
+- Certainty is multiplicative and every factor below 1.0 must leave a sentence in the
+  penalties. Bump `ASSESSMENT_VERSION` whenever the rule changes.
+- Tests inject fakes and must never reach Claude, Ollama or the network. Every network call
+  goes through an injectable callable for that reason.
+- "Introduced" (iNaturalist establishment) is not "invasive" (a listing by an authority).
+  Keep the distinction in copy, in the seed and in the UI. Seed entries carry iNaturalist's
+  accepted name in `scientific_name` and older names in `synonyms`; matching checks both.
+- The band is a **screening** estimate, never a Water Framework Directive classification, and
+  every surface that shows it must say so.
+- Geography is resolved from coordinates, never assumed. Nothing may hard-code a place.
+- `src/riffle/{identify,pipeline,schema,inputs,area,inat}.py` and the `/classify` page are
+  inherited from SpeciesGuard and still work; keep them working.
