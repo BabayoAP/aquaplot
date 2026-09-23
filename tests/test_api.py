@@ -38,7 +38,7 @@ def test_image_returns_full_contract_with_exif_region(client):
     assert result.input_kind == "image"
     assert result.label in set(Label)  # FR-8: always one of the three labels
     assert 0 <= result.certainty <= 100
-    assert result.region.source == "exif" and result.region.in_orange_county is True
+    assert result.region.source == "exif" and (result.region.lat, result.region.lon) == pytest.approx(IRVINE, abs=1e-4)
     assert any("no species model" in p for p in result.evidence.certainty_penalties)  # must say why certainty is 0
 
 
@@ -50,8 +50,7 @@ def test_image_wins_over_description_when_both_sent(client):
     )
     result = Classification.model_validate(res.json())
     assert result.input_kind == "image"
-    assert result.region.source == "user" and result.region.in_orange_county is False
-    assert any("outside Orange County" in p for p in result.evidence.certainty_penalties)
+    assert result.region.source == "user" and result.region.place is None
 
 
 def test_text_fallback_is_flagged_lower_confidence(client):
@@ -61,7 +60,7 @@ def test_text_fallback_is_flagged_lower_confidence(client):
     assert result.input_kind == "text"
     assert result.region.source == "none"
     assert any("lower confidence" in p for p in result.evidence.certainty_penalties)
-    assert any("no geolocation" in p for p in result.evidence.certainty_penalties)
+    assert any("no location was available" in p for p in result.evidence.certainty_penalties)
 
 
 def test_empty_file_part_falls_through_to_description(client):

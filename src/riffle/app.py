@@ -31,7 +31,7 @@ from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
 from .pipeline import PIPELINE_VERSION, Pipeline
-from .places import OrangeCountyPlace
+from .places import PlaceResolver
 from .schema import Classification
 from .status import StatusResolver
 
@@ -74,7 +74,7 @@ app.state.area = AreaService()
 app.state.pipeline = Pipeline(
     identifier=select_identifier(),
     status=StatusResolver(app.state.area.inat),
-    places=OrangeCountyPlace(app.state.area.inat),
+    places=PlaceResolver(app.state.area.inat),
 )
 app.state.limiter = RateLimiter()
 
@@ -139,7 +139,7 @@ def _area_query(
     west: float | None = None,
     north: float | None = None,
     east: float | None = None,
-    oc: bool = Query(default=False, description="Restrict to the Orange County polygon"),
+    place_id: int | None = Query(default=None, ge=1, description="Restrict to an iNaturalist place (municipality, province, country)"),
     taxa: str | None = Query(default=None, description="Comma-separated iconic taxa, e.g. Plantae,Insecta"),
     year_from: int | None = Query(default=None, ge=1900, le=2100),
     year_to: int | None = Query(default=None, ge=1900, le=2100),
@@ -154,7 +154,7 @@ def _area_query(
             bbox = BBox(south=south, west=west, north=north, east=east)  # type: ignore[arg-type]
         groups = tuple(t.strip() for t in taxa.split(",") if t.strip()) if taxa else ()
         return AreaQuery(
-            bbox=bbox, orange_county_only=oc, taxa=groups, year_from=year_from, year_to=year_to, limit=limit, taxon_id=taxon_id
+            bbox=bbox, place_id=place_id, taxa=groups, year_from=year_from, year_to=year_to, limit=limit, taxon_id=taxon_id
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -39,12 +39,12 @@ MAX_SIDE = 1024  # px for Claude; enough for identification, keeps tokens and up
 OLLAMA_MAX_SIDE = 512  # px; vision tokens scale with pixels and local models are slow
 OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "300"))
 
-SYSTEM_PROMPT = """You are a field biologist identifying organisms for an invasive-species screening tool in Orange County, California, USA.
+SYSTEM_PROMPT = """You are a field biologist identifying organisms for a freshwater citizen-science screening tool. Observations come from urban streams and their banks anywhere in the world.
 Given a photo and/or a written description, name the most likely species. Consider plants, insects, fungi, aquatic species, vertebrates and microscopic organisms.
 Rules:
 - Use the accepted scientific (Latin binomial) name for each candidate. If only genus-level confidence is justified, give the genus and set rank to "genus".
 - Rank up to five candidates, best first. Confidences are probabilities in [0, 1] that this candidate is correct; they need not sum to 1.
-- Prefer species known to occur in Southern California when the image is ambiguous, but do not force it.
+- Prefer species known to occur near the stated location when the image is ambiguous, but do not force it.
 - Set framing to how the subject was photographed: microscopic, extreme_macro, close_up, mid_distance or far.
 - If there is a photo, set subject_box to the tightest box around the main organism as [x0, y0, x1, y1], fractions of the image width and height from the top-left corner (0 to 1). Leave it empty when the subject fills the frame or nothing can be localized.
 - Keep reasoning to one or two sentences about the diagnostic features you used.
@@ -91,10 +91,9 @@ class Identifier(Protocol):
 def _user_text(description: str, region: Region) -> str:
     parts = []
     if region.source != "none":
-        where = "inside Orange County, CA" if region.in_orange_county else "outside Orange County, CA"
-        parts.append(f"Location: {region.lat:.3f}, {region.lon:.3f} ({where}).")
+        parts.append(f"Location: {region.lat:.3f}, {region.lon:.3f} ({region.where}).")
     else:
-        parts.append("Location: unknown (assume Southern California).")
+        parts.append("Location: unknown.")
     if description:
         parts.append(f"Observer's description: {description}")
     parts.append("Identify the organism.")

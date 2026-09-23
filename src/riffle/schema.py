@@ -36,16 +36,38 @@ class Regime(StrEnum):
     UNKNOWN = "unknown"
 
 
+class PlaceRef(BaseModel):
+    """An administrative place, as iNaturalist knows it."""
+
+    id: int
+    name: str
+    display_name: str
+    kind: str = Field(description="municipality | county or province | region or state | country | place")
+
+
 class Region(BaseModel):
-    """Where the observation was made, at the coarseness v1 needs (PRD §7)."""
+    """Where the observation was made, and which administration it falls under.
+
+    SpeciesGuard carried a single boolean here - in Orange County, or not - because
+    it only ever answered for one county. Riffle resolves the real place from the
+    coordinates, because every status question it asks is relative to a
+    jurisdiction and those jurisdictions are now anywhere on Earth.
+    """
 
     source: Literal["exif", "user", "none"]
     lat: float | None = None
     lon: float | None = None
-    in_orange_county: bool | None = Field(
-        default=None,
-        description="None when no coordinates were available at all.",
-    )
+    place: PlaceRef | None = Field(default=None, description="Most specific administrative place containing the point.")
+    country: PlaceRef | None = None
+    chain: list[str] = Field(default_factory=list, description="Administrative chain, most specific first.")
+
+    @property
+    def known(self) -> bool:
+        return self.place is not None
+
+    @property
+    def where(self) -> str:
+        return self.place.display_name if self.place else "an unresolved location"
 
 
 class SpeciesCandidate(BaseModel):

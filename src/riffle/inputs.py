@@ -7,8 +7,8 @@ Geolocation precedence follows FR-6 exactly: EXIF GPS first, then coordinates th
 user supplied (the browser's geolocation API, in practice), then "unknown". EXIF
 wins over the browser because EXIF records where the *photo* was taken, while the
 browser records where the *upload* happens, and those differ for any photo taken
-earlier in the field. The privacy requirement (PRD §5.2) is met by never storing
-the coordinates: they are used for the in-county test and echoed back once.
+earlier in the field - and for a stream assessment the difference is the whole
+point, since the reading belongs to the reach, not to the sofa it was uploaded from.
 """
 
 from __future__ import annotations
@@ -24,13 +24,8 @@ from .schema import Region
 
 register_heif_opener()
 
-SUPPORTED_FORMATS = {"JPEG", "PNG", "HEIF"}  # PRD FR-1: JPEG / PNG / HEIC
+SUPPORTED_FORMATS = {"JPEG", "PNG", "HEIF"}  # JPEG / PNG / HEIC, the three a phone produces
 MAX_IMAGE_BYTES = 25 * 1024 * 1024
-
-# Coarse bounding box around Orange County, CA. v1 only has to answer "is this
-# in Orange County" (PRD §7 region mapping); a polygon can replace this later
-# without changing callers.
-ORANGE_COUNTY_BBOX = (33.38, -118.13, 33.95, -117.41)  # min_lat, min_lon, max_lat, max_lon
 
 _GPS_IFD = 0x8825
 _GPS_LAT_REF, _GPS_LAT, _GPS_LON_REF, _GPS_LON = 1, 2, 3, 4
@@ -89,22 +84,21 @@ def _dms_to_degrees(dms, ref) -> float:
     return -value if ref.upper() in ("S", "W") else value
 
 
-def in_orange_county(lat: float, lon: float) -> bool:
-    min_lat, min_lon, max_lat, max_lon = ORANGE_COUNTY_BBOX
-    return min_lat <= lat <= max_lat and min_lon <= lon <= max_lon
-
-
 def resolve_region(
     exif_gps: tuple[float, float] | None,
     user_lat: float | None,
     user_lon: float | None,
 ) -> Region:
-    """FR-6 precedence: EXIF, then user-supplied, then unknown."""
+    """FR-6 precedence: EXIF, then user-supplied, then unknown.
+
+    This function only decides *which* coordinates to believe. Turning them into a
+    place is ``places.PlaceResolver``'s job and needs the network, so it happens in
+    the pipeline where a failure can degrade gracefully rather than here, where it
+    would fail the request.
+    """
     if exif_gps is not None:
         lat, lon = exif_gps
-        return Region(source="exif", lat=lat, lon=lon, in_orange_county=in_orange_county(lat, lon))
+        return Region(source="exif", lat=lat, lon=lon)
     if user_lat is not None and user_lon is not None:
-        return Region(
-            source="user", lat=user_lat, lon=user_lon, in_orange_county=in_orange_county(user_lat, user_lon)
-        )
+        return Region(source="user", lat=user_lat, lon=user_lon)
     return Region(source="none")

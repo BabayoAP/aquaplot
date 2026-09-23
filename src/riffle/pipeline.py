@@ -34,15 +34,15 @@ from PIL import Image
 
 from .identify import Identification, Identifier, IdentifyError, NullIdentifier
 from .inputs import DecodedImage
-from .places import OrangeCountyPlace
+from .places import PlaceResolver
 from .schema import Classification, Evidence, Label, Regime, Region, SpeciesCandidate
 from .status import StatusResolver, StatusResult
 
 PIPELINE_VERSION = "m4-crop-regime-v1"
 
-REGION_FACTOR_IN = 1.0
-REGION_FACTOR_OUT = 0.8
-REGION_FACTOR_UNKNOWN = 0.85
+REGION_FACTOR_IN = 1.0  # the place resolved, so the status question had a real jurisdiction
+REGION_FACTOR_OUT = 0.8  # coordinates known, place lookup failed
+REGION_FACTOR_UNKNOWN = 0.85  # no coordinates at all
 INPUT_FACTOR_TEXT = 0.7
 REGIME_FACTOR = {Regime.MID_DISTANCE: 0.92, Regime.FAR: 0.85}  # PRD §9: distant shots carry more error in v1
 
@@ -55,9 +55,13 @@ CROP_MIN_SIDE = 64  # px
 
 def _region_factor(region: Region) -> tuple[float, list[str]]:
     if region.source == "none":
-        return REGION_FACTOR_UNKNOWN, ["no geolocation available; status evaluated for Orange County by assumption (FR-6)"]
-    if region.in_orange_county is False:
-        return REGION_FACTOR_OUT, ["location is outside Orange County, the only region covered in v1; status evaluated for Orange County"]
+        return REGION_FACTOR_UNKNOWN, [
+            "no location was available, so native/introduced status could not be asked of any particular place"
+        ]
+    if region.place is None:
+        return REGION_FACTOR_OUT, [
+            "the coordinates could not be resolved to an administrative place, so the status answer is global rather than local"
+        ]
     return REGION_FACTOR_IN, []
 
 
@@ -95,16 +99,19 @@ def _top_confidence(ident: Identification) -> float:
 class Pipeline:
     identifier: Identifier
     status: StatusResolver | None
-    places: OrangeCountyPlace | None = None
+    places: PlaceResolver | None = None
 
     async def classify(self, decoded: DecodedImage | None, description: str, region: Region) -> Classification:
         input_kind = "image" if decoded is not None else "text"
         penalties: list[str] = []
         image = decoded.image if decoded is not None else None
 
-        # Stage 1: refine the bounding-box region answer with the county polygon.
+        # Stage 1: resolve the coordinates to an administrative place, which is
+        # the jurisdiction every status question below is asked of.
+        locality = None
         if self.places is not None:
             region = await self.places.refine(region)
+            locality = await self.places.locality(region)
 
         # Stage 3 on the whole frame (also yields the Stage 2 subject box).
         try:
@@ -142,7 +149,7 @@ class Pipeline:
         if self.status is None:
             status = StatusResult(Label.NATURALIZED, 0.35, "none", "none", None, None, None, "no status source configured")
         else:
-            status = await self.status.resolve(top.scientific_name)
+            status = await self.status.resolve(top.scientific_name, locality)
         if status.taxon is not None:
             top = top.model_copy(
                 update={

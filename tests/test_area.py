@@ -85,7 +85,7 @@ def test_query_needs_a_scope_and_known_taxa():
 
 
 def test_params_carry_status_scope_taxa_and_years():
-    q = AreaQuery(bbox=OC_BBOX, orange_county_only=True, taxa=("Insecta", "Plantae"), year_from=2020, year_to=2024)
+    q = AreaQuery(bbox=OC_BBOX, place_id=2738, taxa=("Insecta", "Plantae"), year_from=2020, year_to=2024)
     p = q.params("introduced")
     assert p["introduced"] == "true" and "native" not in p
     assert p["place_id"] == 2738 and p["swlat"] == 33.38 and p["nelng"] == -117.41
@@ -115,7 +115,7 @@ def test_seed_is_well_formed(service):
     names = [e.scientific_name for e in service.listed]
     assert len(names) == len(set(names))
     for e in service.listed:
-        assert e.rating in {"High", "Moderate", "Limited", "Listed"} and e.source and e.group
+        assert e.rating in {"High", "Moderate", "Limited", "Listed", "Union list", "Widely regulated", "Widely established"} and e.source and e.group
         assert len(e.scientific_name.split()) >= 2  # binomials only; genus-level entries would over-match
 
 
@@ -215,8 +215,8 @@ def test_observations_endpoint(client):
     assert res.json()["features"][0]["properties"]["status"] == "introduced"
 
 
-def test_orange_county_scope_without_bbox(client, fake):
-    res = client.get("/api/area/species", params={"oc": "true", "status": "native"})
+def test_place_scope_without_bbox(client, fake):
+    res = client.get("/api/area/species", params={"place_id": 2738, "status": "native"})
     assert res.status_code == 200
     assert fake.calls[-1][1]["place_id"] == 2738 and "swlat" not in fake.calls[-1][1]
 
@@ -224,8 +224,8 @@ def test_orange_county_scope_without_bbox(client, fake):
 def test_bad_inputs_are_422(client):
     assert client.get("/api/area/observations").status_code == 422  # no scope
     assert client.get("/api/area/observations", params={"south": 33, "west": -118, "north": 34}).status_code == 422  # partial bbox
-    assert client.get("/api/area/observations", params={"oc": "true", "taxa": "Dragons"}).status_code == 422
-    assert client.get("/api/area/observations", params={"oc": "true", "status": "alien"}).status_code == 422
+    assert client.get("/api/area/observations", params={"place_id": 2738, "taxa": "Dragons"}).status_code == 422
+    assert client.get("/api/area/observations", params={"place_id": 2738, "status": "alien"}).status_code == 422
 
 
 def test_upstream_failure_is_502(client):
@@ -233,7 +233,7 @@ def test_upstream_failure_is_502(client):
         raise AreaError("iNaturalist request failed: 503")
 
     app.state.area = AreaService(fetch=boom)
-    res = client.get("/api/area/trend", params={"oc": "true"})
+    res = client.get("/api/area/trend", params={"place_id": 2738})
     assert res.status_code == 502 and "iNaturalist" in res.json()["detail"]
 
 

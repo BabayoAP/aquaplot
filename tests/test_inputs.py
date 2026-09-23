@@ -2,7 +2,7 @@
 
 import pytest
 
-from riffle.inputs import InvalidImage, decode_image, in_orange_county, resolve_region
+from riffle.inputs import InvalidImage, decode_image, resolve_region
 
 from conftest import make_image
 
@@ -53,19 +53,21 @@ def test_no_gps_when_exif_absent():
     assert decode_image(make_image()).gps is None
 
 
-def test_orange_county_bbox():
-    assert in_orange_county(*IRVINE)
-    assert not in_orange_county(*SAN_DIEGO)
-
-
 def test_region_precedence_exif_over_user():
+    """FR-6: where the photo was taken beats where it was uploaded from."""
     region = resolve_region(IRVINE, *SAN_DIEGO)
     assert region.source == "exif"
-    assert region.in_orange_county is True
+    assert (region.lat, region.lon) == IRVINE
 
 
 def test_region_falls_back_to_user_then_none():
     user = resolve_region(None, *SAN_DIEGO)
-    assert user.source == "user" and user.in_orange_county is False
+    assert user.source == "user" and (user.lat, user.lon) == SAN_DIEGO
     none = resolve_region(None, None, None)
-    assert none.source == "none" and none.in_orange_county is None and none.lat is None
+    assert none.source == "none" and none.lat is None
+
+
+def test_resolve_region_does_not_guess_a_place():
+    """Turning coordinates into a jurisdiction needs the network, so it is not done here."""
+    region = resolve_region(IRVINE, None, None)
+    assert region.place is None and region.chain == [] and region.known is False

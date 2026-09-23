@@ -1,14 +1,23 @@
-"""Stage 4, status resolution (PRD §6.4): species plus place to Native / Invasive / Naturalized.
+"""Species plus place to Native / Invasive / Naturalized, anywhere (FR-7).
 
 Two sources, consulted in this order:
 
-1. The project's seed list of documented invasives (Cal-IPC, CDFW, USGS, UC IPM).
-   A hit is the only way to earn the *Invasive* label, because "invasive" is a
-   policy determination, not a biological one (PRD §9 regional/legal drift).
-2. iNaturalist's establishment means for the taxon *in Orange County*. iNaturalist
-   resolves this through place ancestry (county, then California, then the US),
-   and reports which place answered, so the certainty can drop as the answer gets
-   coarser. Native gives *Native*; introduced gives *Naturalized/Non-native*.
+1. The project's seed list of documented invasives, now carrying the aquatic and
+   riparian species of Union concern under EU Regulation 1143/2014 alongside the
+   Californian entries Riffle inherited. A hit is the only way to earn the
+   *Invasive* label, because "invasive" is a policy determination by a named
+   authority, not a biological property of an organism.
+2. iNaturalist's establishment means for the taxon *at the place the observer is
+   standing*. iNaturalist resolves this through place ancestry - municipality,
+   then region, then country - and reports which place answered, so the certainty
+   drops as the answer gets coarser. Native gives *Native*; introduced gives
+   *Naturalized/Non-native*.
+
+The place is no longer a constant. SpeciesGuard asked every question of Orange
+County; Riffle asks it of whatever municipality ``places.PlaceResolver`` found
+under the observer's coordinates, which is what lets the same deployment answer
+for a stream in Coimbra and one in Oslo. When no place could be resolved the
+lookup still runs globally and the answer is discounted and labelled.
 
 Every result records the source and its version so a later reviewer can see what
 the call was based on, and the status stage never invents a label when both
@@ -18,18 +27,19 @@ and says so.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
 from .area import ListedTaxon, load_seed, match_listed_any
-from .inat import ORANGE_COUNTY_PLACE_ID, InatClient, InatError
+from .inat import InatClient, InatError
+from .places import CONFIDENCE_BY_ADMIN_LEVEL, EU_MEMBER_CODES, Locality, Place
 from .schema import Label
 
 # How much to trust a status answer, by where it came from. These are priors,
-# not measured calibration (PRD §8 lists calibration as M7 work).
+# not measured calibration.
 CONFIDENCE_SEED = 0.95
-CONFIDENCE_BY_PLACE = {ORANGE_COUNTY_PLACE_ID: 0.9, 14: 0.8}  # 14 = California
-CONFIDENCE_COARSE = 0.65  # US / North America / anything else
+CONFIDENCE_COARSE = 0.6  # an answer from a place whose specificity we cannot tell
 CONFIDENCE_UNKNOWN = 0.35
 
 
@@ -54,6 +64,31 @@ class StatusResult:
     establishment: str | None  # native | introduced | endemic | ... | None
     place: str | None  # which place answered, e.g. "Orange County, US, CA"
     note: str | None  # a penalty-worthy caveat, or None
+
+
+def _scope_covers(scope: str, locality: Locality) -> bool:
+    """Does a list's jurisdiction plausibly cover where the observer is standing?
+
+    "European Union" is resolved through the member-state list, because no
+    iNaturalist place is called that. Everything else is crude string containment
+    against the administrative chain. It is a hint that drives a caveat sentence
+    and a small confidence discount, never a legal determination, so being wrong
+    costs a sentence rather than a label.
+    """
+    tokens = {t for p in locality.places for t in re.split(r"[^a-z0-9]+", p.display_name.lower()) if len(t) >= 2}
+    country = locality.country
+    for part in (x.strip() for x in scope.split(";")):
+        if not part:
+            continue
+        if part.lower() == "european union":
+            if country is not None and country.name.upper() in EU_MEMBER_CODES:
+                return True
+            continue
+        # "California, US" matches a chain containing either word. Loose on purpose:
+        # a false positive costs a missing caveat, a false negative costs a wrong one.
+        if any(word.strip().lower() in tokens for word in part.split(",") if len(word.strip()) >= 2):
+            return True
+    return False
 
 
 class StatusResolver:
@@ -86,15 +121,17 @@ class StatusResolver:
             observations=pick.get("observations_count", 0),
         )
 
-    async def establishment(self, taxon_id: int) -> tuple[str | None, dict[str, Any] | None]:
-        raw = await self.inat.get(f"/taxa/{taxon_id}", {"place_id": ORANGE_COUNTY_PLACE_ID})
+    async def establishment(self, taxon_id: int, place: Place | None) -> tuple[str | None, dict[str, Any] | None]:
+        params = {"place_id": place.id} if place is not None else {}
+        raw = await self.inat.get(f"/taxa/{taxon_id}", params)
         results = raw.get("results") or []
         if not results:
             return None, None
         em = results[0].get("establishment_means") or {}
         return em.get("establishment_means"), em.get("place")
 
-    async def resolve(self, scientific_name: str) -> StatusResult:
+    async def resolve(self, scientific_name: str, locality: Locality | None = None) -> StatusResult:
+        place = locality.best if locality is not None else None
         # PRD §5.2: an iNaturalist outage must not fail the request. The seed list
         # still answers offline; anything else degrades to the neutral label with
         # the outage named in the evidence trail.
@@ -110,9 +147,19 @@ class StatusResolver:
             [scientific_name, taxon.scientific_name if taxon else None], self.listed
         )
         if listed is not None:
+            # A list is a statement about a jurisdiction. Saying so is the difference
+            # between "this species is invasive" (false as stated) and "this species
+            # is on the EU Union list, and you are in the EU" (actionable).
+            elsewhere = locality is not None and bool(locality.places) and bool(listed.scope) and not _scope_covers(listed.scope, locality)
             return StatusResult(
-                label=Label.INVASIVE, confidence=CONFIDENCE_SEED, source=listed.source, version=self.seed_version,
-                taxon=taxon, establishment="introduced", place="Orange County, US, CA (seed list)", note=None,
+                label=Label.INVASIVE, confidence=CONFIDENCE_SEED if not elsewhere else 0.7,
+                source=listed.source, version=self.seed_version,
+                taxon=taxon, establishment="introduced", place=listed.scope or "seed list",
+                note=(
+                    f"'{listed.scope}' is the jurisdiction that lists this species; the observation is in "
+                    f"{place.display_name}, so the listing is indicative rather than binding here"
+                    if elsewhere else None
+                ),
             )
         if taxon is None:
             note = (
@@ -125,23 +172,29 @@ class StatusResolver:
                 taxon=None, establishment=None, place=None, note=note,
             )
         try:
-            means, place = await self.establishment(taxon.id)
+            means, answered = await self.establishment(taxon.id, place)
         except InatError as exc:
             return StatusResult(
                 label=Label.NATURALIZED, confidence=CONFIDENCE_UNKNOWN, source="none", version=self.seed_version,
                 taxon=taxon, establishment=None, place=None,
                 note=f"status source unavailable ({exc}); species identified but status could not be looked up",
             )
+        where = place.display_name if place is not None else "this region"
         if means is None:
             return StatusResult(
                 label=Label.NATURALIZED, confidence=CONFIDENCE_UNKNOWN, source="iNaturalist establishment means",
                 version=self.seed_version, taxon=taxon, establishment=None, place=None,
-                note="iNaturalist has no establishment record for this taxon in California; neutral label used",
+                note=f"iNaturalist has no establishment record for this taxon in {where}; neutral label used",
             )
-        place_id = (place or {}).get("id")
-        place_name = (place or {}).get("display_name") or (place or {}).get("name")
-        confidence = CONFIDENCE_BY_PLACE.get(place_id, CONFIDENCE_COARSE)
-        note = None if place_id == ORANGE_COUNTY_PLACE_ID else f"status comes from {place_name}, not Orange County specifically"
+        answered = answered or {}
+        place_id = answered.get("id")
+        place_name = answered.get("display_name") or answered.get("name")
+        admin_level = answered.get("admin_level")
+        confidence = CONFIDENCE_BY_ADMIN_LEVEL.get(admin_level, CONFIDENCE_COARSE)
+        # Only claim the answer is coarser than the observation when there is an
+        # observation place to compare it with.
+        same = place is None or place_id == place.id
+        note = None if same else f"status comes from {place_name}, which is broader than {where}"
         label = Label.NATIVE if means in ("native", "endemic") else Label.NATURALIZED
         return StatusResult(
             label=label, confidence=confidence, source="iNaturalist establishment means", version=self.seed_version,

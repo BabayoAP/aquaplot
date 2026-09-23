@@ -31,7 +31,7 @@ from dataclasses import asdict, dataclass, field
 from importlib import resources
 from typing import Any, Literal
 
-from .inat import CACHE_TTL_SECONDS, ORANGE_COUNTY_PLACE_ID, Fetcher, InatClient, InatError, inat_fetch
+from .inat import CACHE_TTL_SECONDS, Fetcher, InatClient, InatError, inat_fetch
 
 AreaError = InatError  # kept for callers; the map and the status stage share one upstream
 
@@ -65,7 +65,7 @@ class BBox:
 @dataclass(frozen=True, slots=True)
 class AreaQuery:
     bbox: BBox | None = None
-    orange_county_only: bool = False
+    place_id: int | None = None  # any iNaturalist place: a municipality, a province, a country
     taxa: tuple[str, ...] = ()
     year_from: int | None = None
     year_to: int | None = None
@@ -73,8 +73,8 @@ class AreaQuery:
     taxon_id: int | None = None  # restrict to one iNaturalist taxon (and its descendants)
 
     def __post_init__(self) -> None:
-        if self.bbox is None and not self.orange_county_only:
-            raise ValueError("a bounding box or the Orange County scope is required")
+        if self.bbox is None and self.place_id is None:
+            raise ValueError("a bounding box or a place id is required")
         bad = set(self.taxa) - ICONIC_TAXA
         if bad:
             raise ValueError(f"unknown taxa group(s): {', '.join(sorted(bad))}")
@@ -87,8 +87,8 @@ class AreaQuery:
         p: dict[str, Any] = {status: "true", "quality_grade": "research", "geo": "true", "verifiable": "true"}
         if self.bbox is not None:
             p.update(swlat=self.bbox.south, swlng=self.bbox.west, nelat=self.bbox.north, nelng=self.bbox.east)
-        if self.orange_county_only:
-            p["place_id"] = ORANGE_COUNTY_PLACE_ID
+        if self.place_id is not None:
+            p["place_id"] = self.place_id
         if self.taxa:
             p["iconic_taxa"] = ",".join(sorted(self.taxa))
         if self.year_from is not None:
@@ -108,9 +108,19 @@ class ListedTaxon:
     rating: str
     source: str
     synonyms: tuple[str, ...] = ()  # older names still used by field guides, lists and vision models
+    scope: str = ""  # the jurisdiction whose list this entry comes from
+    habitat: str = "terrestrial"  # freshwater | riparian | terrestrial
+    why: str = ""  # the One Health consequence, in plain language
 
     def names(self) -> tuple[str, ...]:
         return (self.scientific_name, *self.synonyms)
+
+    @property
+    def aquatic(self) -> bool:
+        return self.habitat in ("freshwater", "riparian")
+
+    def summary(self) -> str:
+        return f"{self.common_name} ({self.scientific_name})"
 
 
 def load_seed() -> tuple[str, list[ListedTaxon]]:

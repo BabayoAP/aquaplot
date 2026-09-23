@@ -7,14 +7,17 @@ from riffle.app import app
 from riffle.area import AreaService
 from riffle.identify import Candidate, Identification, IdentifyError, NullIdentifier, OllamaIdentifier
 from riffle.inat import InatClient
+from riffle.places import PlaceResolver
 from riffle.pipeline import Pipeline
-from riffle.schema import Classification, Label, Regime, Region
+from riffle.schema import Classification, Label, Regime, PlaceRef, Region
 from riffle.status import StatusResolver
 
 from conftest import make_image
 
-IRVINE = Region(source="exif", lat=33.68, lon=-117.83, in_orange_county=True)
-SAN_DIEGO = Region(source="user", lat=32.7, lon=-117.2, in_orange_county=False)
+OC_REF = PlaceRef(id=2738, name="Orange County", display_name="Orange County, US, CA", kind="county or province")
+US_REF = PlaceRef(id=1, name="US", display_name="United States", kind="country")
+IRVINE = Region(source="exif", lat=33.68, lon=-117.83, place=OC_REF, country=US_REF, chain=["Orange County, US, CA"])
+SAN_DIEGO = Region(source="user", lat=32.7, lon=-117.2)  # coordinates known, place never resolved
 NOWHERE = Region(source="none")
 
 
@@ -32,24 +35,41 @@ TAXA = {
     "Zosterops simplex": taxon(1289467, "Zosterops simplex", "Swinhoe's White-eye", "Aves"),
     "Mysterium": taxon(999, "Mysterium", None, rank="genus"),
 }
+OC = {"id": 2738, "display_name": "Orange County, US, CA", "admin_level": 20}
+CA = {"id": 14, "display_name": "California, US", "admin_level": 10}
+USA = {"id": 1, "display_name": "United States", "admin_level": 0}
 ESTABLISHMENT = {
-    53357: ("native", {"id": 2738, "display_name": "Orange County, US, CA"}),
-    64177: ("native", {"id": 14, "display_name": "California, US"}),
-    1289467: ("introduced", {"id": 1, "display_name": "United States"}),
+    53357: ("native", OC),
+    64177: ("native", CA),
+    1289467: ("introduced", USA),
     999: (None, None),
 }
+NEARBY = {"results": {"standard": [
+    {"id": 1, "name": "US", "display_name": "United States", "admin_level": 0},
+    {"id": 14, "name": "California", "display_name": "California, US", "admin_level": 10},
+    {"id": 2738, "name": "Orange County", "display_name": "Orange County, US, CA", "admin_level": 20},
+]}}
 
 
 async def fake_inat(path, params):
+    if path == "/places/nearby":
+        return NEARBY
     if path == "/taxa":
         hit = TAXA.get(params["q"])
         return {"results": [hit] if hit else []}
     if path.startswith("/taxa/"):
         tid = int(path.split("/")[-1])
-        means, place = ESTABLISHMENT.get(tid, ("introduced", {"id": 2738, "display_name": "Orange County, US, CA"}))
+        means, place = ESTABLISHMENT.get(tid, ("introduced", OC))
         em = {"establishment_means": means, "place": place} if means else None
         return {"results": [{"id": tid, "establishment_means": em}]}
     raise AssertionError(path)
+
+
+async def fake_inat_without_places(path, params):
+    """iNaturalist up, but the point falls outside every standard place it knows."""
+    if path == "/places/nearby":
+        return {"results": {"standard": []}}
+    return await fake_inat(path, params)
 
 
 class FakeIdentifier:
@@ -87,7 +107,8 @@ class SequencedIdentifier:
 
 
 def make_pipeline(*candidates, **kw):
-    return Pipeline(identifier=FakeIdentifier(*candidates, **kw), status=StatusResolver(InatClient(fetch=fake_inat)))
+    inat = InatClient(fetch=fake_inat)
+    return Pipeline(identifier=FakeIdentifier(*candidates, **kw), status=StatusResolver(inat), places=PlaceResolver(inat))
 
 
 # ---- status resolution ----------------------------------------------------
@@ -106,10 +127,15 @@ async def test_native_in_orange_county_is_native_at_full_confidence():
 
 
 async def test_status_from_coarser_place_is_less_certain_and_says_so():
-    r = await StatusResolver(InatClient(fetch=fake_inat)).resolve("Leersia oryzoides")
-    assert r.label == Label.NATIVE and r.confidence == 0.8 and "California" in r.note
-    r = await StatusResolver(InatClient(fetch=fake_inat)).resolve("Zosterops simplex")
-    assert r.label == Label.NATURALIZED and r.confidence == 0.65
+    """The observer stood in a county; iNaturalist only knows the answer for the state. Say so."""
+    inat = InatClient(fetch=fake_inat)
+    here = await PlaceResolver(inat).locate(33.68, -117.83)
+    r = await StatusResolver(inat).resolve("Leersia oryzoides", here)
+    assert r.label == Label.NATIVE and r.confidence == 0.8
+    assert "California" in r.note and "broader than Orange County" in r.note
+    r = await StatusResolver(inat).resolve("Zosterops simplex", here)
+    assert r.label == Label.NATURALIZED and r.confidence == 0.7  # answered only at country level
+    assert "United States" in r.note
 
 
 async def test_unknown_taxon_and_missing_record_fall_to_neutral():
@@ -224,41 +250,57 @@ SQUARE = {"type": "Polygon", "coordinates": [[[-118.0, 33.5], [-117.5, 33.5], [-
 
 
 async def fake_places(path, params):
-    assert path == "/places/2738"
-    return {"results": [{"id": 2738, "geometry_geojson": SQUARE}]}
+    """iNaturalist /places/nearby: the administrative chain containing a point."""
+    assert path == "/places/nearby"
+    return {
+        "results": {
+            "standard": [
+                {"id": 1, "name": "US", "display_name": "United States", "admin_level": 0},
+                {"id": 14, "name": "California", "display_name": "California, US", "admin_level": 10},
+                {"id": 2738, "name": "Orange County", "display_name": "Orange County, US, CA", "admin_level": 20},
+            ]
+        }
+    }
 
 
-def test_point_in_polygon_with_hole():
-    from riffle.places import point_in_geojson, point_in_ring
+async def test_coordinates_resolve_to_the_most_specific_place():
+    """FR-6: the jurisdiction a status question is asked of comes from the coordinates."""
+    from riffle.places import PlaceResolver
 
-    ring = [(0, 0), (10, 0), (10, 10), (0, 10)]
-    assert point_in_ring(5, 5, ring) and not point_in_ring(15, 5, ring)
-    donut = {"type": "MultiPolygon", "coordinates": [[[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[4, 4], [6, 4], [6, 6], [4, 6], [4, 4]]]]}
-    assert point_in_geojson(2, 2, donut) and not point_in_geojson(5, 5, donut)
-
-
-async def test_region_is_refined_with_the_county_polygon():
-    from riffle.places import OrangeCountyPlace
-
-    place = OrangeCountyPlace(InatClient(fetch=fake_places))
-    edge = Region(source="user", lat=33.45, lon=-118.1, in_orange_county=True)  # inside the box, outside the polygon
-    assert (await place.refine(edge)).in_orange_county is False
-    assert (await place.refine(IRVINE)).in_orange_county is True
-    assert (await place.refine(NOWHERE)).in_orange_county is None
-    p = Pipeline(identifier=FakeIdentifier(Candidate(scientific_name="Artemisia californica", confidence=1.0)), status=StatusResolver(InatClient(fetch=fake_inat)), places=place)
-    c = await p.classify(None, "shrub", edge)
-    assert c.region.in_orange_county is False and any("outside Orange County" in s for s in c.evidence.certainty_penalties)
+    resolver = PlaceResolver(InatClient(fetch=fake_places))
+    refined = await resolver.refine(Region(source="user", lat=33.45, lon=-118.1))
+    assert refined.place is not None
+    assert refined.place.display_name == "Orange County, US, CA"  # county beats state beats country
+    assert refined.country is not None and refined.country.display_name == "United States"
+    assert refined.chain[0] == "Orange County, US, CA"
 
 
-async def test_polygon_fetch_failure_keeps_bbox_answer():
+async def test_place_lookup_is_skipped_without_coordinates():
+    from riffle.places import PlaceResolver
+
+    assert (await PlaceResolver(InatClient(fetch=fake_places)).refine(NOWHERE)).place is None
+
+
+async def test_place_lookup_failure_never_fails_the_classification():
+    """A place lookup can only improve the answer, so its failure must degrade, not raise."""
     from riffle.inat import InatError
-    from riffle.places import OrangeCountyPlace
+    from riffle.places import PlaceResolver
 
     async def down(path, params):
-        raise InatError("503")
+        if path == "/places/nearby":
+            raise InatError("503")
+        return await fake_inat(path, params)
 
-    edge = Region(source="user", lat=33.45, lon=-118.1, in_orange_county=True)
-    assert (await OrangeCountyPlace(InatClient(fetch=down)).refine(edge)).in_orange_county is True
+    resolver = PlaceResolver(InatClient(fetch=down))
+    region = Region(source="user", lat=33.45, lon=-118.1)
+    assert (await resolver.refine(region)).place is None
+    p = Pipeline(
+        identifier=FakeIdentifier(Candidate(scientific_name="Artemisia californica", confidence=1.0)),
+        status=StatusResolver(InatClient(fetch=down)),
+        places=resolver,
+    )
+    c = await p.classify(None, "shrub", region)
+    assert any("could not be resolved to an administrative place" in s for s in c.evidence.certainty_penalties)
 
 
 async def test_photo_in_county_of_listed_invasive():
@@ -274,22 +316,28 @@ async def test_photo_in_county_of_listed_invasive():
     assert c.evidence.certainty_penalties == []
 
 
-async def test_text_outside_county_stacks_penalties():
-    p = make_pipeline(Candidate(scientific_name="Artemisia californica", confidence=0.5))
+async def test_unresolvable_place_and_text_input_stack_penalties():
+    """Every weakness in the evidence must show up as its own sentence and its own factor."""
+    inat = InatClient(fetch=fake_inat_without_places)
+    p = Pipeline(
+        identifier=FakeIdentifier(Candidate(scientific_name="Artemisia californica", confidence=0.5)),
+        status=StatusResolver(inat),
+        places=PlaceResolver(inat),
+    )
     c = await p.classify(None, "grey aromatic shrub", SAN_DIEGO)
     assert c.input_kind == "text" and c.label == Label.NATIVE
     assert c.certainty == pytest.approx(100 * 0.5 * 0.9 * 0.8 * 0.7, abs=0.1)
     joined = " ".join(c.evidence.certainty_penalties)
-    assert "outside Orange County" in joined and "text-only" in joined and "unsure" in joined
+    assert "could not be resolved to an administrative place" in joined and "text-only" in joined and "unsure" in joined
 
 
-async def test_unknown_region_is_assumed_orange_county_with_penalty():
+async def test_no_location_at_all_is_penalised_and_said_so():
     p = make_pipeline(Candidate(scientific_name="Artemisia californica", confidence=1.0))
     from riffle.inputs import decode_image
 
     c = await p.classify(decode_image(make_image()), "", NOWHERE)
     assert c.certainty == pytest.approx(100 * 0.9 * 0.85, abs=0.1)
-    assert any("no geolocation" in s for s in c.evidence.certainty_penalties)
+    assert any("no location was available" in s for s in c.evidence.certainty_penalties)
 
 
 async def test_genus_level_answer_is_flagged():
@@ -338,7 +386,7 @@ async def test_ollama_backend_parses_structured_reply():
     out = await ident.identify(decode_image(make_image()).image, "tall grass", IRVINE)
     assert out.candidates[0].scientific_name == "Cortaderia selloana" and out.framing == "far"
     assert seen["path"] == "/api/chat" and seen["body"]["model"] == "qwen2.5vl:3b"
-    assert seen["body"]["messages"][1]["images"] and "inside Orange County" in seen["body"]["messages"][1]["content"]
+    assert seen["body"]["messages"][1]["images"] and "Orange County, US, CA" in seen["body"]["messages"][1]["content"]
     assert seen["body"]["format"]["type"] == "object"
 
 
@@ -394,5 +442,5 @@ def test_map_taxon_filter_is_passed_upstream(client):
         return {"results": [], "total_results": 0}
 
     app.state.area = AreaService(fetch=spy)
-    res = client.get("/api/area/observations", params={"oc": "true", "taxon_id": 64240})
+    res = client.get("/api/area/observations", params={"place_id": 2738, "taxon_id": 64240})
     assert res.status_code == 200 and calls[-1]["taxon_id"] == 64240
