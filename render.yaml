@@ -1,0 +1,19 @@
+# Render Blueprint: one-click deploy of the app for the hackathon live link.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: riffle
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Paste the key in the Render dashboard when prompted; without it the
+      # classifier runs the placeholder ("no species model configured").
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-opus-5
+      # Classifications per client address per 10 minutes; protects the key.
+      - key: RIFFLE_CLASSIFY_LIMIT
+        value: "20"

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeciesGuard · Area viewer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+<style>
+  :root {
+    --bg: #f6f7f4; --card: #ffffff; --ink: #1d221c; --muted: #66705f; --line: #dfe3da;
+    --accent: #2f6b3a; --introduced: #d64545; --listed: #8b1a1a; --native: #2f9e5b; --threatened: #e0a020; --loss: #b04ad6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171a; --card: #1e2226; --ink: #e8ebe6; --muted: #98a193; --line: #2d3338; --accent: #6fbf7c; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; }
+  #map { flex: 1; min-width: 0; }
+  aside { width: 340px; max-width: 100%; background: var(--card); border-left: 1px solid var(--line);
+          overflow-y: auto; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+  h1 { font-size: 18px; margin: 0; }
+  h1 a { color: inherit; text-decoration: none; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+  .sub a { color: var(--accent); }
+  section { border-top: 1px solid var(--line); padding-top: 12px; }
+  .layer { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+  .layer input { margin: 0; }
+  .sw { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  .sw.introduced { background: var(--introduced); }
+  .sw.listed { background: var(--listed); box-shadow: 0 0 0 2px var(--introduced); }
+  .sw.native { background: var(--native); }
+  .sw.threatened { background: var(--threatened); }
+  .sw.loss { background: var(--loss); border-radius: 2px; }
+  .sw.heat { background: linear-gradient(90deg, #2c7bb6, #ffffbf, #d7191c); border-radius: 2px; }
+  .cnt { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+  select, input[type=number] { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px;
+    background: transparent; color: inherit; font: inherit; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  button { border: 0; border-radius: 8px; padding: 9px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  ol { margin: 0; padding-left: 0; list-style: none; }
+  ol li { display: flex; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  ol img { width: 28px; height: 28px; border-radius: 4px; object-fit: cover; flex: none; background: var(--line); }
+  ol .n { flex: 1; min-width: 0; }
+  ol .n small { display: block; color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: var(--listed); color: #fff; }
+  .tag.High { background: #8b1a1a; } .tag.Moderate { background: #b35a1a; } .tag.Limited { background: #8a6d1f; }
+  svg.trend { width: 100%; height: 110px; display: block; }
+  .legend { font-size: 12px; color: var(--muted); display: flex; gap: 12px; margin-top: 4px; }
+  .legend i { display: inline-block; width: 10px; height: 3px; vertical-align: middle; margin-right: 4px; }
+  #status { font-size: 12px; color: var(--muted); min-height: 16px; }
+  #status.err { color: var(--introduced); }
+  .leaflet-popup-content { font: 13px/1.35 system-ui, sans-serif; margin: 10px 12px; }
+  .leaflet-popup-content img { width: 100%; border-radius: 6px; margin-top: 6px; }
+  .leaflet-popup-content b { font-size: 14px; }
+  .toggle { display: none; position: fixed; right: 12px; bottom: 12px; z-index: 1002; background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .toggle.open { bottom: calc(62vh + 12px); }
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    aside { position: fixed; left: 0; right: 0; bottom: 0; max-height: 62vh; width: auto; border-left: 0;
+            border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; transform: translateY(100%); transition: transform .2s; z-index: 1001; }
+    aside.open { transform: none; }
+    .toggle { display: block; }
+  }
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Satellite map of species sightings"></div>
+<button class="toggle" id="toggle">Layers</button>
+<aside id="panel">
+  <div>
+    <h1><a href="/">SpeciesGuard</a> · Area viewer</h1>
+    <p class="sub">Satellite view of what has been seen where. Pan or zoom to reload. <a href="/">Classify a photo</a></p>
+  </div>
+
+  <section>
+    <h2>Layers</h2>
+    <label class="layer"><input type="checkbox" data-layer="introduced" checked><i class="sw introduced"></i> Introduced species sightings <span class="cnt" id="c-introduced"></span></label>
+    <label class="layer" style="padding-left:22px"><i class="sw listed"></i> <span class="sub">darker ring = Cal-IPC / CDFW listed invasive</span></label>
+    <label class="layer"><input type="checkbox" data-layer="native"><i class="sw native"></i> Native species sightings <span class="cnt" id="c-native"></span></label>
+    <label class="layer"><input type="checkbox" data-layer="threatened"><i class="sw threatened"></i> Threatened species sightings <span class="cnt" id="c-threatened"></span></label>
+    <label class="layer"><input type="checkbox" data-layer="heat"><i class="sw heat"></i> Introduced-species density heatmap</label>
+    <label class="layer"><input type="checkbox" data-layer="loss"><i class="sw loss"></i> Tree-cover loss 2001–2024 (Hansen / GFW)</label>
+    <label class="layer"><input type="checkbox" data-layer="labels" checked><i class="sw" style="background:#888"></i> Place labels</label>
+  </section>
+
+  <section>
+    <h2>Filters</h2>
+    <div class="grid2">
+      <label>Group<select id="taxa">
+        <option value="">All groups</option>
+        <option value="Plantae">Plants</option><option value="Insecta">Insects</option><option value="Aves">Birds</option>
+        <option value="Mammalia">Mammals</option><option value="Reptilia">Reptiles</option><option value="Amphibia">Amphibians</option>
+        <option value="Actinopterygii">Fish</option><option value="Fungi">Fungi</option><option value="Mollusca">Mollusks</option>
+        <option value="Arachnida">Arachnids</option>
+      </select></label>
+      <label>Years<div class="row"><input type="number" id="y1" min="1990" placeholder="from"><input type="number" id="y2" min="1990" placeholder="to"></div></label>
+    </div>
+    <label class="layer" style="margin-top:6px"><input type="checkbox" id="oc" checked> Orange County only</label>
+    <div id="taxonchip" class="row" style="display:none;margin-top:6px"><span class="tag" id="taxonname" style="background:var(--accent)"></span><button class="ghost" id="taxonclear" style="padding:4px 10px">Show all species</button></div>
+    <div class="row" style="margin-top:6px">
+      <button class="primary" id="apply">Apply</button>
+      <button class="ghost" id="locate">My location</button>
+      <button class="ghost" id="home">Orange County</button>
+    </div>
+    <div id="status"></div>
+  </section>
+
+  <section>
+    <h2>Most-seen <span id="sp-status">introduced</span> species in view</h2>
+    <ol id="species"></ol>
+  </section>
+
+  <section>
+    <h2>Sightings per year in view</h2>
+    <svg class="trend" id="trend" viewBox="0 0 300 110" preserveAspectRatio="none"></svg>
+    <div class="legend"><span><i style="background:var(--introduced)"></i>introduced</span><span><i style="background:var(--native)"></i>native</span><span><i style="background:var(--threatened)"></i>threatened</span></div>
+    <p class="sub" id="share"></p>
+  </section>
+
+  <section>
+    <p class="sub">Sightings: <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> research-grade observations, live. "Introduced" is iNaturalist's establishment flag, not a legal invasive status; the listed ring marks taxa in the project's seed list (see docs/AREA-VIEWER.md). Tree-cover loss: Hansen/UMD/Google/USGS/NASA via Global Forest Watch. Imagery: Esri.</p>
+  </section>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const OC = { center: [33.68, -117.80], zoom: 10 };
+  const COLORS = { introduced: "#d64545", listed: "#8b1a1a", native: "#2f9e5b", threatened: "#e0a020" };
+
+  const thisYear = new Date().getFullYear();
+  $("y1").max = thisYear; $("y2").max = thisYear;
+  const qs = new URLSearchParams(location.search);
+  let taxonFilter = qs.get("taxon_id") ? { id: qs.get("taxon_id"), name: qs.get("taxon_name") || ("taxon " + qs.get("taxon_id")) } : null;
+  const start = qs.has("lat") && qs.has("lon")
+    ? { center: [parseFloat(qs.get("lat")), parseFloat(qs.get("lon"))], zoom: parseInt(qs.get("z") || "14", 10) }
+    : OC;
+
+  const map = L.map("map", { zoomControl: true, worldCopyJump: true }).setView(start.center, start.zoom);
+  L.control.scale({ imperial: true }).addTo(map);
+
+  const imagery = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics"
+  }).addTo(map);
+  const labels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19, pane: "overlayPane", opacity: 0.9
+  }).addTo(map);
+  const loss = L.tileLayer("https://tiles.globalforestwatch.org/umd_tree_cover_loss/v1.13/dynamic/{z}/{x}/{y}.png?implementation=tcd_30", {
+    maxNativeZoom: 12, maxZoom: 19, opacity: 0.85, attribution: "Tree cover loss: Hansen/UMD/Google/USGS/NASA via Global Forest Watch"
+  });
+
+  const clusters = {};
+  for (const s of ["introduced", "native", "threatened"]) {
+    clusters[s] = L.markerClusterGroup({
+      maxClusterRadius: 40, disableClusteringAtZoom: 15, showCoverageOnHover: false,
+      iconCreateFunction: (c) => L.divIcon({
+        html: `<div style="background:${COLORS[s]};color:#fff;border-radius:50%;width:32px;height:32px;line-height:32px;text-align:center;font-weight:700;opacity:.9">${c.getChildCount()}</div>`,
+        className: "", iconSize: [32, 32]
+      })
+    });
+  }
+  const heat = L.heatLayer([], { radius: 22, blur: 18, maxZoom: 14, gradient: { 0.2: "#2c7bb6", 0.5: "#ffffbf", 0.9: "#d7191c" } });
+
+  if (start !== OC) L.circleMarker(start.center, { radius: 9, color: "#fff", fillColor: "#2f6b3a", fillOpacity: 1, weight: 2 })
+    .addTo(map).bindPopup("Your photo's location");
+
+  function enabled(name) { return document.querySelector(`input[data-layer="${name}"]`).checked; }
+
+  function filters() {
+    const b = map.getBounds();
+    const p = new URLSearchParams({ south: b.getSouth().toFixed(5), west: b.getWest().toFixed(5), north: b.getNorth().toFixed(5), east: b.getEast().toFixed(5) });
+    if ($("oc").checked) p.set("oc", "true");
+    if ($("taxa").value) p.set("taxa", $("taxa").value);
+    if ($("y1").value) p.set("year_from", $("y1").value);
+    if ($("y2").value) p.set("year_to", $("y2").value);
+    if (taxonFilter) p.set("taxon_id", taxonFilter.id);
+    $("taxonchip").style.display = taxonFilter ? "flex" : "none";
+    if (taxonFilter) $("taxonname").textContent = "Only: " + taxonFilter.name;
+    return p;
+  }
+  function setTaxon(t) { taxonFilter = t; reload(); }
+  $("taxonclear").addEventListener("click", () => setTaxon(null));
+
+  async function getJSON(path, params) {
+    const res = await fetch(`${path}?${params}`);
+    const body = await res.json();
+    if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail));
+    return body;
+  }
+
+  function popup(p) {
+    const name = p.common_name ? `<b>${esc(p.common_name)}</b><br><i>${esc(p.scientific_name || "")}</i>` : `<b><i>${esc(p.scientific_name || "unknown")}</i></b>`;
+    const listed = p.listed ? `<br><span style="color:${COLORS.listed};font-weight:600">Listed invasive · ${esc(p.listed)}</span> <small>(${esc(p.listed_source)})</small>` : "";
+    const img = p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` : "";
+    return `${name}${listed}<br><small>${esc(p.status)} · ${esc(p.observed_on || "date unknown")}${p.place_guess ? " · " + esc(p.place_guess) : ""}</small>${img}<br><a href="${esc(p.uri || "")}" target="_blank" rel="noopener">View on iNaturalist</a>`;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  let seq = 0;
+  async function reload() {
+    const mine = ++seq;
+    const params = filters();
+    $("status").className = ""; $("status").textContent = "Loading…";
+    const jobs = [];
+    for (const s of ["introduced", "native", "threatened"]) {
+      if (!enabled(s) && !(s === "introduced" && enabled("heat"))) { $(`c-${s}`).textContent = ""; continue; }
+      jobs.push(getJSON("/api/area/observations", new URLSearchParams([...params, ["status", s]])).then((fc) => {
+        if (mine !== seq) return;
+        clusters[s].clearLayers();
+        const pts = [];
+        for (const f of fc.features) {
+          const [lon, lat] = f.geometry.coordinates;
+          const p = f.properties;
+          pts.push([lat, lon, 1]);
+          if (!enabled(s)) continue;
+          const m = L.circleMarker([lat, lon], {
+            radius: p.listed ? 8 : 6, color: p.listed ? COLORS.listed : "#fff", weight: p.listed ? 3 : 1,
+            fillColor: COLORS[s], fillOpacity: 0.9
+          }).bindPopup(popup(p), { maxWidth: 260 });
+          clusters[s].addLayer(m);
+        }
+        $(`c-${s}`).textContent = fc.total > fc.features.length ? `${fc.features.length} of ${fc.total.toLocaleString()}` : `${fc.features.length}`;
+        if (s === "introduced") heat.setLatLngs(pts);
+      }));
+    }
+    const spStatus = enabled("introduced") ? "introduced" : enabled("threatened") ? "threatened" : "native";
+    $("sp-status").textContent = spStatus;
+    jobs.push(getJSON("/api/area/species", new URLSearchParams([...params, ["status", spStatus], ["top", "12"]])).then((rows) => {
+      if (mine !== seq) return;
+      $("species").replaceChildren(...rows.map((r) => {
+        const li = document.createElement("li");
+        li.style.cursor = "pointer"; li.title = "Show only this species";
+        li.addEventListener("click", () => setTaxon({ id: r.taxon_id, name: r.common_name || r.scientific_name }));
+        const img = document.createElement("img"); if (r.photo) img.src = r.photo; img.alt = "";
+        const n = document.createElement("div"); n.className = "n";
+        n.textContent = r.common_name || r.scientific_name || "unknown";
+        const sm = document.createElement("small"); sm.textContent = r.scientific_name || ""; n.appendChild(sm);
+        li.append(img, n);
+        if (r.listed) { const t = document.createElement("span"); t.className = "tag " + r.listed; t.textContent = r.listed; li.appendChild(t); }
+        const c = document.createElement("span"); c.className = "cnt"; c.textContent = r.count.toLocaleString(); li.appendChild(c);
+        return li;
+      }));
+    }));
+    jobs.push(getJSON("/api/area/trend", params).then((t) => { if (mine === seq) drawTrend(t); }));
+    try {
+      await Promise.all(jobs);
+      if (mine === seq) $("status").textContent = `Updated ${new Date().toLocaleTimeString()} · research-grade sightings only`;
+    } catch (e) {
+      if (mine === seq) { $("status").className = "err"; $("status").textContent = e.message; }
+    }
+  }
+
+  function drawTrend(t) {
+    const svg = $("trend");
+    const W = 300, H = 110, padL = 4, padB = 16, padT = 6;
+    const years = t.years;
+    if (!years.length) { svg.innerHTML = ""; $("share").textContent = "No sightings in view."; return; }
+    const max = Math.max(1, ...t.introduced, ...t.native, ...t.threatened);
+    const x = (i) => padL + (years.length === 1 ? (W - padL) / 2 : i * (W - padL - 2) / (years.length - 1));
+    const y = (v) => padT + (H - padB - padT) * (1 - v / max);
+    const line = (arr, color) => `<polyline fill="none" stroke="${color}" stroke-width="2" points="${arr.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/>`;
+    const step = Math.max(1, Math.ceil(years.length / 6));
+    const ticks = years.filter((_, i) => (years.length - 1 - i) % step === 0);  // anchored at the last year so labels never collide there
+    const tickEls = ticks.map((yr) => { const i = years.indexOf(yr); return `<text x="${x(i)}" y="${H - 3}" font-size="9" fill="currentColor" text-anchor="${i === 0 ? "start" : i === years.length - 1 ? "end" : "middle"}">${yr}</text>`; }).join("");
+    svg.innerHTML = line(t.native, COLORS.native) + line(t.introduced, COLORS.introduced) + line(t.threatened, COLORS.threatened) + tickEls
+      + `<text x="${W - 2}" y="${padT + 8}" font-size="9" fill="currentColor" text-anchor="end">max ${max.toLocaleString()}/yr</text>`;
+    const last = t.introduced_share_pct.filter((v) => v !== null);
+    if (last.length >= 2) {
+      const a = last[0], b = last[last.length - 1];
+      $("share").textContent = `Introduced species were ${a}% of native+introduced sightings in ${years[t.introduced_share_pct.indexOf(a)]} and ${b}% in ${years[t.introduced_share_pct.lastIndexOf(b)]}.`;
+    } else $("share").textContent = "";
+  }
+
+  document.querySelectorAll("input[data-layer]").forEach((cb) => cb.addEventListener("change", () => {
+    const name = cb.dataset.layer;
+    if (name === "loss") { cb.checked ? loss.addTo(map) : map.removeLayer(loss); return; }
+    if (name === "labels") { cb.checked ? labels.addTo(map) : map.removeLayer(labels); return; }
+    if (name === "heat") { cb.checked ? heat.addTo(map) : map.removeLayer(heat); if (cb.checked) reload(); return; }
+    cb.checked ? clusters[name].addTo(map) : map.removeLayer(clusters[name]);
+    reload();
+  }));
+  clusters.introduced.addTo(map);
+
+  let timer;
+  map.on("moveend", () => { clearTimeout(timer); timer = setTimeout(reload, 350); });
+  $("apply").addEventListener("click", reload);
+  $("home").addEventListener("click", () => map.setView(OC.center, OC.zoom));
+  $("locate").addEventListener("click", () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 14),
+      (err) => { $("status").className = "err"; $("status").textContent = err.message; }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+  $("toggle").addEventListener("click", () => {
+    const open = $("panel").classList.toggle("open");
+    $("toggle").classList.toggle("open", open);
+    $("toggle").textContent = open ? "Map" : "Layers";
+  });
+  reload();
+</script>
+</body>
+</html>

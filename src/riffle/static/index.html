@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeciesGuard</title>
+<style>
+  :root {
+    --bg: #f6f7f4; --card: #ffffff; --ink: #1d221c; --muted: #66705f; --line: #dfe3da;
+    --accent: #2f6b3a; --native: #2f6b3a; --invasive: #b3412b; --naturalized: #8a6d1f; --warn-bg: #fff6df; --warn-ink: #6b4d00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171a; --card: #1e2226; --ink: #e8ebe6; --muted: #98a193; --line: #2d3338;
+            --accent: #6fbf7c; --native: #6fbf7c; --invasive: #e07a63; --naturalized: #d9b45a; --warn-bg: #3a3020; --warn-ink: #f0d9a0; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  form, .result, .notice { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .notice { background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; font-size: 14px; margin-bottom: 12px; }
+  label { display: block; font-weight: 600; margin: 12px 0 6px; }
+  label:first-child { margin-top: 0; }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; background: transparent; color: inherit; font: inherit; min-height: 90px; resize: vertical; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+  .row.tight { margin-top: 0; }
+  button { border: 0; border-radius: 8px; padding: 12px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; flex: 1; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  input[type=file] { display: none; }
+  .previewwrap { display: none; position: relative; margin-top: 10px; line-height: 0; }
+  #preview { display: block; max-width: 100%; max-height: 300px; border-radius: 8px; }
+  #box { display: none; position: absolute; border: 2px solid #fff; outline: 2px solid var(--invasive); border-radius: 3px; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); pointer-events: none; }
+  #box span { position: absolute; left: -2px; bottom: 100%; background: var(--invasive); color: #fff; font-size: 11px; line-height: 1.3; padding: 1px 5px; border-radius: 3px 3px 0 0; white-space: nowrap; }
+  .result { margin-top: 16px; display: none; }
+  .label { font-size: 26px; font-weight: 700; }
+  .label.Native { color: var(--native); }
+  .label.Invasive { color: var(--invasive); }
+  .label.Naturalized { color: var(--naturalized); }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; margin: 10px 0 4px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+  dl { margin: 12px 0 0; font-size: 14px; }
+  dt { color: var(--muted); margin-top: 8px; }
+  dd { margin: 0; }
+  ul { margin: 4px 0 0; padding-left: 18px; }
+  .error { color: var(--invasive); margin-top: 12px; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  .caveat { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>SpeciesGuard</h1>
+  <p class="sub">Photo in, native / invasive call out, with a certainty score. Orange County, CA. <a href="/map" id="maplink">Open the area viewer</a></p>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <form id="form">
+    <label>Photo</label>
+    <div class="row tight">
+      <button type="button" class="ghost" id="camerabtn">Take photo</button>
+      <button type="button" class="ghost" id="librarybtn">Choose from library</button>
+      <span class="hint" id="filename">JPEG, PNG or HEIC.</span>
+    </div>
+    <input id="camera" type="file" accept="image/*" capture="environment">
+    <input id="library" type="file" accept="image/*,.heic,.heif">
+    <div class="previewwrap" id="previewwrap"><img id="preview" alt="Selected photo"><div id="box"><span>subject</span></div></div>
+    <p class="hint" id="previewnote" hidden>Preview not available for this format in this browser; the photo will still be classified.</p>
+
+    <label for="description">Describe it (optional with a photo, required without)</label>
+    <textarea id="description" name="description"
+      placeholder="e.g. shrub about 2 m tall, yellow pea-like flowers, spiny green stems, on a dry hillside"></textarea>
+    <p class="hint">Text-only results carry lower certainty than a photo.</p>
+
+    <div class="row">
+      <button type="button" class="ghost" id="locate">Use my location</button>
+      <span class="hint" id="locstatus">Location comes from the photo if it has GPS data.</span>
+    </div>
+
+    <div class="row">
+      <button type="submit" class="primary" id="submit">Classify</button>
+      <button type="button" class="ghost" id="clear" hidden>Clear</button>
+    </div>
+    <p class="error" id="error" hidden></p>
+  </form>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="label" id="rlabel"></div>
+    <div class="bar"><i id="rbar"></i></div>
+    <div id="rcert"></div>
+    <dl>
+      <dt>Top match</dt><dd id="rspecies"></dd>
+      <dt>Other candidates</dt><dd><ul id="rcands"></ul></dd>
+      <dt>Why</dt><dd id="rwhy"></dd>
+      <dt>Subject in frame</dt><dd id="rdetect"></dd>
+      <dt>Location</dt><dd id="rregion"></dd>
+      <dt>Framing</dt><dd id="rregime"></dd>
+      <dt>What lowered the certainty</dt><dd><ul id="rpen"></ul></dd>
+      <dt>Status source</dt><dd id="rsource"></dd>
+      <dt>Species model</dt><dd id="rmodel"></dd>
+    </dl>
+    <p><a id="rmap" href="/map">See sightings around this location on the area viewer</a></p>
+    <p class="caveat">Decision support, not a regulatory finding. "Invasive" here means the species is on a Cal-IPC, CDFW, USGS or UC IPM list; "Naturalized/Non-native" means iNaturalist records it as introduced but no list in the seed names it. Verify before removing anything.</p>
+    <p class="foot" id="rver"></p>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const form = $("form");
+  let chosen = null;      // the File to upload
+  let lat = "", lon = "";
+
+  fetch("/api/health").then((r) => r.json()).then((h) => {
+    if (h.identifier === "none") {
+      $("notice").textContent = "No species model is configured on this server, so results are the neutral placeholder at 0 % certainty. Set ANTHROPIC_API_KEY or run Ollama with a vision model.";
+      $("notice").hidden = false;
+    } else if (h.identifier === "ollama") {
+      $("notice").textContent = "Identification runs on a local vision model; a photo can take a minute or two.";
+      $("notice").hidden = false;
+    }
+  }).catch(() => {});
+
+  $("camerabtn").addEventListener("click", () => $("camera").click());
+  $("librarybtn").addEventListener("click", () => $("library").click());
+  for (const id of ["camera", "library"]) $(id).addEventListener("change", () => choose($(id).files[0]));
+
+  function choose(f) {
+    chosen = f || null;
+    $("box").style.display = "none";
+    $("previewnote").hidden = true;
+    if (!chosen) { $("previewwrap").style.display = "none"; $("filename").textContent = "JPEG, PNG or HEIC."; $("clear").hidden = true; return; }
+    $("filename").textContent = `${chosen.name} · ${(chosen.size / 1048576).toFixed(1)} MB`;
+    $("clear").hidden = false;
+    const p = $("preview");
+    p.onload = () => { $("previewwrap").style.display = "block"; };
+    p.onerror = () => { $("previewwrap").style.display = "none"; $("previewnote").hidden = false; };  // HEIC outside Safari
+    p.src = URL.createObjectURL(chosen);
+  }
+
+  $("clear").addEventListener("click", () => {
+    $("camera").value = ""; $("library").value = ""; choose(null);
+    $("result").style.display = "none";
+  });
+
+  $("locate").addEventListener("click", () => {
+    if (!navigator.geolocation) { $("locstatus").textContent = "Geolocation not available."; return; }
+    $("locstatus").textContent = "Locating…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        lat = pos.coords.latitude.toFixed(5); lon = pos.coords.longitude.toFixed(5);
+        $("locstatus").textContent = `Using ${lat}, ${lon} (photo GPS still wins if present)`;
+      },
+      (err) => { $("locstatus").textContent = "Could not get location: " + err.message; },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    $("error").hidden = true;
+    const desc = $("description").value.trim();
+    if (!chosen && !desc) { $("error").textContent = "Add a photo or a description."; $("error").hidden = false; return; }
+    $("submit").disabled = true;
+    $("submit").textContent = chosen ? "Identifying…" : "Matching description…";
+    try {
+      const fd = new FormData();
+      if (chosen) fd.append("image", chosen, chosen.name);
+      if (desc) fd.append("description", desc);
+      if (lat && lon) { fd.append("lat", lat); fd.append("lon", lon); }
+      const res = await fetch("/api/classify", { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail));
+      render(body);
+    } catch (e) {
+      $("error").textContent = e.message;
+      $("error").hidden = false;
+    } finally {
+      $("submit").disabled = false;
+      $("submit").textContent = "Classify";
+    }
+  });
+
+  function li(text) { const el = document.createElement("li"); el.textContent = text; return el; }
+
+  function render(r) {
+    const el = $("rlabel");
+    el.textContent = r.label;
+    el.className = "label " + r.label.split("/")[0];
+    $("rbar").style.width = r.certainty + "%";
+    $("rcert").textContent = `${r.certainty.toFixed(0)}% certainty` + (r.input_kind === "text" ? " (text-only)" : "");
+    const c = r.top_candidate;
+    $("rspecies").replaceChildren();
+    if (c) {
+      const wrap = document.createElement("span");
+      wrap.textContent = `${c.common_name ? c.common_name + " · " : ""}`;
+      const sci = document.createElement("i"); sci.textContent = c.scientific_name; wrap.appendChild(sci);
+      wrap.appendChild(document.createTextNode(` · model ${(c.confidence * 100).toFixed(0)}%`));
+      if (c.inat_url) { wrap.appendChild(document.createTextNode(" · ")); const a = document.createElement("a"); a.href = c.inat_url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "iNaturalist"; wrap.appendChild(a); }
+      if (c.photo) { const img = document.createElement("img"); img.src = c.photo; img.alt = ""; img.style.cssText = "display:block;width:72px;height:72px;border-radius:8px;object-fit:cover;margin-top:6px"; wrap.appendChild(img); }
+      $("rspecies").appendChild(wrap);
+    } else $("rspecies").textContent = "none";
+    const others = r.evidence.candidates_considered.slice(1);
+    $("rcands").replaceChildren(...(others.length ? others.map((k) => li(`${k.common_name ? k.common_name + " · " : ""}${k.scientific_name} · ${(k.confidence * 100).toFixed(0)}%`)) : [li("none")]));
+    $("rwhy").textContent = r.evidence.reasoning || "—";
+    $("rmodel").textContent = r.evidence.identifier === "claude" ? "Claude (Anthropic API)" : r.evidence.identifier === "ollama" ? "local vision model via Ollama" : "none configured (placeholder result)";
+
+    // Stage 2: draw the subject box over the preview and say whether the crop was used.
+    const b = r.evidence.subject_box;
+    if (b && r.input_kind === "image") {
+      const area = ((b[2] - b[0]) * (b[3] - b[1]) * 100).toFixed(0);
+      $("rdetect").textContent = `found in ${area}% of the frame` + (r.evidence.identified_from_crop ? "; small, so it was cropped and identified again at full resolution" : "");
+      const box = $("box");
+      box.style.left = (b[0] * 100) + "%"; box.style.top = (b[1] * 100) + "%";
+      box.style.width = ((b[2] - b[0]) * 100) + "%"; box.style.height = ((b[3] - b[1]) * 100) + "%";
+      box.style.display = $("previewwrap").style.display === "block" ? "block" : "none";
+    } else {
+      $("rdetect").textContent = r.input_kind === "image" ? "fills the frame or not localized" : "no photo";
+      $("box").style.display = "none";
+    }
+
+    const g = r.region;
+    $("rregion").textContent = g.source === "none"
+      ? "unknown"
+      : `${g.lat.toFixed(4)}, ${g.lon.toFixed(4)} from ${g.source === "exif" ? "photo GPS" : "device"} · ` +
+        (g.in_orange_county ? "in Orange County" : "outside Orange County");
+    $("rregime").textContent = r.regime.replace("_", " ");
+    const pens = r.evidence.certainty_penalties.length ? r.evidence.certainty_penalties : ["nothing: every factor was at full weight"];
+    $("rpen").replaceChildren(...pens.map(li));
+    $("rsource").textContent = r.evidence.status_source && r.evidence.status_source !== "none"
+      ? `${r.evidence.status_source}${r.evidence.establishment ? " · " + r.evidence.establishment : ""}${r.evidence.status_place ? " in " + r.evidence.status_place : ""} (${r.evidence.status_db_version || "unversioned"})`
+      : "none consulted";
+    const mp = new URLSearchParams();
+    if (g.source !== "none") { mp.set("lat", g.lat.toFixed(5)); mp.set("lon", g.lon.toFixed(5)); mp.set("z", "13"); }
+    if (c && c.taxon_id) { mp.set("taxon_id", c.taxon_id); mp.set("taxon_name", c.common_name || c.scientific_name); }
+    $("rmap").href = "/map" + (mp.toString() ? "?" + mp : "");
+    $("rmap").textContent = c ? `See where ${c.common_name || c.scientific_name} has been seen on the area viewer` : "See sightings around this location on the area viewer";
+    $("rver").textContent = "pipeline " + r.pipeline_version;
+    $("result").style.display = "block";
+    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+</script>
+</body>
+</html>
