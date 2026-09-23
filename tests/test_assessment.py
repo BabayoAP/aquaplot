@@ -422,3 +422,21 @@ def test_health_reports_every_version_that_shaped_a_result(api):
     assert body["status"] == "ok"
     assert body["observer"] == "fake"
     assert body["bioindicator_catalogue"] and body["habitat_form"] and body["status_seed"]
+
+
+async def test_a_model_that_declines_to_guess_turns_its_declines_into_questions():
+    """'I cannot tell from this photo' is correct behaviour, and the answer must not be lost."""
+    shy = FakeObserver(
+        StreamObservation(
+            photo_kind="stream_scene",
+            reasoning="Taken from too far away to judge anything.",
+            cannot_tell=["water_clarity", "algae", "substrate", "not_a_real_key"],
+        )
+    )
+    a = await run(observer=shy)
+    assert any("could not judge 3 indicator" in p for p in a.penalties)
+    asked = {q["key"] for q in a.needs_confirmation}
+    assert {"water_clarity", "algae", "substrate"} <= asked
+    assert "not_a_real_key" not in asked
+    declined = next(q for q in a.needs_confirmation if q["key"] == "substrate")
+    assert declined["why_it_matters"].startswith("The model looked and could not tell")

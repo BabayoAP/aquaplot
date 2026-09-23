@@ -178,6 +178,7 @@ class StreamAssessor:
         model_taxa: list[bioindex.TaxonObservation] = []
         photo_kinds: list[str] = []
         notes: list[str] = []
+        declined: set[str] = set()  # indicators the model looked at and would not guess
         for image in submission.photos:
             try:
                 seen = await self.observer.observe(image.image, submission.description, region)
@@ -192,6 +193,9 @@ class StreamAssessor:
                 continue
             model_readings.extend(_readings_from(seen))
             model_taxa.extend(_taxa_from(seen))
+            # A model that says "I cannot tell from this photo" is behaving well, and
+            # the answer is not lost: it becomes a question for the person instead.
+            declined.update(k for k in seen.cannot_tell if k in habitat.BY_KEY)
 
         if submission.photos and not photo_kinds:
             penalties.append("no photo could be used, so everything below rests on what the observer entered by hand")
@@ -202,6 +206,12 @@ class StreamAssessor:
         #    gives a citizen answer precedence over a model answer for the same key.
         pressures = habitat.assess([*model_readings, *submission.answers])
         penalties.extend(pressures.penalties)
+        open_to_person = sorted(declined - {r.key for r in pressures.readings} - {r.key for r in pressures.exposure})
+        if open_to_person:
+            penalties.append(
+                f"the model could not judge {len(open_to_person)} indicator(s) from the photos "
+                f"({', '.join(open_to_person)}) and said so rather than guessing; they are waiting for you"
+            )
 
         # 4. Biological index over model and citizen identifications together.
         ecology = bioindex.score([*model_taxa, *submission.taxa])
@@ -237,7 +247,7 @@ class StreamAssessor:
             invasives=invasives,
             certainty=certainty,
             penalties=_dedupe(penalties),
-            needs_confirmation=_confirmation_queue(ecology, pressures, signal),
+            needs_confirmation=_confirmation_queue(ecology, pressures, signal, open_to_person),
             observer=self.observer.name,
             model_notes=notes,
             confirmations=len([r for r in pressures.readings if r.source == "citizen"])
@@ -343,7 +353,10 @@ RULE_EVIDENCE: dict[str, tuple[str, ...]] = {
 
 
 def _confirmation_queue(
-    ecology: bioindex.EcologicalStatus, pressures: habitat.HabitatPressure, signal: onehealth.Signal
+    ecology: bioindex.EcologicalStatus,
+    pressures: habitat.HabitatPressure,
+    signal: onehealth.Signal,
+    declined: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """The human-in-the-loop queue, ordered by how much confirming each item would change.
 
@@ -372,8 +385,13 @@ def _confirmation_queue(
                 }
             )
 
-    for key in pressures.unanswered_by_person:
+    asked = {q["key"] for q in queue}
+    for key in [*pressures.unanswered_by_person, *(declined or [])]:
+        if key in asked:
+            continue
+        asked.add(key)
         indicator = habitat.BY_KEY[key]
+        declined_here = key in (declined or [])
         queue.append(
             {
                 "kind": "habitat",
@@ -381,7 +399,11 @@ def _confirmation_queue(
                 "question": indicator.question,
                 "model_said": None,
                 "confidence": None,
-                "why_it_matters": indicator.why,
+                "why_it_matters": (
+                    f"The model looked and could not tell from your photo. {indicator.why}"
+                    if declined_here
+                    else indicator.why
+                ),
                 "priority": 2,
             }
         )
