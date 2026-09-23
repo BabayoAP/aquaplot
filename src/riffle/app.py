@@ -48,9 +48,9 @@ from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
 
-from . import bioindex, fhir, habitat
+from . import bioindex, fhir, habitat, onehealth
 from .area import AreaError, AreaQuery, AreaService, BBox, Status
-from .assess import ASSESSMENT_VERSION, Review, StreamAssessor, Submission, reassess
+from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
 from .observe import select_observer
@@ -434,14 +434,28 @@ def pilots():
     return pilot_sites()
 
 
-def _rehydrate(stored: dict[str, Any]):
-    """Rebuild an Assessment object from a stored payload, for the FHIR exporter."""
-    from .assess import Assessment, InvasiveHit
+def _rehydrate(stored: dict[str, Any]) -> "Assessment":
+    """Rebuild an Assessment object from a stored payload, for the FHIR exporter.
+
+    The index, the pressures and the rules are recomputed from the stored
+    observations rather than read back from the stored conclusions, so an exported
+    bundle always matches what the current rules say about that evidence. The
+    stored ``band`` and ``certainty`` stay authoritative for the row; this rebuild
+    is for export, and the version that produced the row travels with it.
+    """
+    from .assess import Assessment, InvasiveHit, readings_of, taxa_of
     from .schema import Region as _Region
 
-    eco = bioindex.score(assess_taxa(stored))
-    pressures = habitat.assess(assess_readings(stored))
-    signal = onehealth_from(stored)
+    ecology = bioindex.score(taxa_of(stored))
+    pressures = habitat.assess(readings_of(stored))
+    signal = onehealth.evaluate(
+        onehealth.Context(
+            status=ecology,
+            habitat=pressures,
+            invasives=tuple(i["name"] for i in stored.get("invasives", [])),
+            site_name=stored.get("site_name"),
+        )
+    )
     seeded = {e.summary(): e for e in app.state.assessor.listed}
     return Assessment(
         id=stored["id"],
@@ -450,7 +464,7 @@ def _rehydrate(stored: dict[str, Any]):
         region=_Region.model_validate(stored["region"]),
         photos=stored.get("photos", 0),
         photo_kinds=stored.get("photo_kinds", []),
-        ecology=eco,
+        ecology=ecology,
         pressures=pressures,
         signal=signal,
         invasives=[
@@ -470,35 +484,8 @@ def _rehydrate(stored: dict[str, Any]):
         observer=stored.get("observer", "none"),
         model_notes=stored.get("model_notes", []),
         confirmations=stored.get("confirmations", 0),
+        supersedes=stored.get("supersedes"),
         version=stored.get("version", ASSESSMENT_VERSION),
-    )
-
-
-def assess_taxa(stored: dict[str, Any]):
-    from .assess import taxa_of
-
-    return taxa_of(stored)
-
-
-def assess_readings(stored: dict[str, Any]):
-    from .assess import readings_of
-
-    return readings_of(stored)
-
-
-def onehealth_from(stored: dict[str, Any]):
-    """Re-run the rules over a stored assessment so the exported bundle matches it."""
-    from . import onehealth as oh
-
-    eco = bioindex.score(assess_taxa(stored))
-    pressures = habitat.assess(assess_readings(stored))
-    return oh.evaluate(
-        oh.Context(
-            status=eco,
-            habitat=pressures,
-            invasives=tuple(i["name"] for i in stored.get("invasives", [])),
-            site_name=stored.get("site_name"),
-        )
     )
 
 

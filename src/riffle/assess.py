@@ -495,8 +495,8 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
     ecology = bioindex.score(taxa)
     region = Region.model_validate(previous["region"])
     when = datetime.fromisoformat(previous["created_at"])
-    invasives_before = previous.get("invasives", [])
-    still_listed = [i for i in invasives_before if i.get("reported_as", "").strip().lower() not in rejected]
+    still_listed = [i for i in previous.get("invasives", []) if i.get("reported_as", "").strip().lower() not in rejected]
+    seeded = {entry.summary(): entry for entry in load_seed()[1]}
 
     signal = onehealth.evaluate(
         onehealth.Context(
@@ -512,17 +512,14 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
     hits = [
         InvasiveHit(
             name=i.get("reported_as", i["name"]),
-            listed=next(
-                (e for e in load_seed()[1] if e.summary() == i["name"]),
-                None,
-            ),
+            listed=seeded[i["name"]],
             confidence=i.get("confidence", 1.0),
             in_jurisdiction=i.get("listed_for_this_place", True),
             note=i.get("note"),
         )
         for i in still_listed
+        if i["name"] in seeded
     ]
-    hits = [h for h in hits if h.listed is not None]
 
     return Assessment(
         id=uuid.uuid4().hex[:12],
