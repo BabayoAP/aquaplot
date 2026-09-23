@@ -1,0 +1,423 @@
+{
+  "version": "habitat-2026-09-23",
+  "note": "The visual site-characterisation form, modelled on the OneAquaHealth field sampling protocol's site sheet (geolocation, water and habitat description, hydromorphology, land cover) and cut down to what a citizen with a phone can honestly judge. This file is the single source of truth: the vision model's output schema, the server-side validation, the questions the guided workflow asks, and the pressure scoring are all generated from it, so adding an indicator is one edit here. score runs 0 (no pressure) to 3 (severe); weight is how much the indicator moves the overall pressure number. photo_visible marks indicators a model can judge from an image at all - the rest can only come from a person standing in the stream, which is why the workflow asks.",
+  "indicators": [
+    {
+      "key": "water_clarity",
+      "question": "How clear is the water?",
+      "weight": 1.2,
+      "photo_visible": true,
+      "why": "Suspended sediment smothers the gravel that insect larvae and fish eggs need, and carries phosphorus and bacteria with it.",
+      "options": [
+        {
+          "value": "clear",
+          "label": "Clear - I can see the bed",
+          "score": 0
+        },
+        {
+          "value": "slightly_turbid",
+          "label": "Slightly cloudy",
+          "score": 1
+        },
+        {
+          "value": "turbid",
+          "label": "Cloudy - the bed disappears in shallow water",
+          "score": 2
+        },
+        {
+          "value": "opaque",
+          "label": "Opaque - I cannot see in at all",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "key": "water_colour",
+      "question": "What colour is the water?",
+      "weight": 1.0,
+      "photo_visible": true,
+      "why": "Colour points at the source: green means algae, grey or black means sewage or sludge, orange means iron or mine drainage.",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural - clear, or tea-coloured from peat or leaves",
+          "score": 0
+        },
+        {
+          "value": "green",
+          "label": "Green",
+          "score": 2,
+          "note": "algal growth fed by nutrients"
+        },
+        {
+          "value": "brown",
+          "label": "Brown or muddy",
+          "score": 1,
+          "note": "sediment, often after rain"
+        },
+        {
+          "value": "grey",
+          "label": "Grey or milky",
+          "score": 3,
+          "note": "possible sewage, concrete washings or industrial discharge"
+        },
+        {
+          "value": "black",
+          "label": "Black",
+          "score": 3,
+          "note": "anoxic sludge"
+        },
+        {
+          "value": "orange",
+          "label": "Orange or rust-red",
+          "score": 3,
+          "note": "iron, or drainage from made ground"
+        },
+        {
+          "value": "unusual",
+          "label": "An unusual colour I cannot place",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "key": "algae",
+      "question": "How much algae is there?",
+      "weight": 1.2,
+      "photo_visible": true,
+      "why": "Thick algae is the visible face of nutrient pollution. It swings oxygen wildly between day and night and some blooms are toxic to dogs, livestock and people.",
+      "options": [
+        {
+          "value": "none",
+          "label": "None or a thin film on stones",
+          "score": 0
+        },
+        {
+          "value": "patchy",
+          "label": "Patchy green growth",
+          "score": 1
+        },
+        {
+          "value": "extensive",
+          "label": "Extensive - long strands or most stones covered",
+          "score": 2
+        },
+        {
+          "value": "bloom",
+          "label": "Mats, scum or a blue-green paint-like bloom",
+          "score": 3,
+          "note": "possible cyanobacteria; do not let dogs or children in"
+        }
+      ]
+    },
+    {
+      "key": "foam_or_sheen",
+      "question": "Is there foam or an oily film?",
+      "weight": 1.1,
+      "photo_visible": true,
+      "why": "Natural foam is tan and breaks up; persistent white foam suggests detergent, and a rainbow sheen suggests oil from a road drain.",
+      "options": [
+        {
+          "value": "none",
+          "label": "Neither",
+          "score": 0
+        },
+        {
+          "value": "natural_foam",
+          "label": "Tan-coloured foam below a fall, which breaks up",
+          "score": 0,
+          "note": "natural - dissolved plant matter whipped by turbulence"
+        },
+        {
+          "value": "white_foam",
+          "label": "Persistent white or soapy foam",
+          "score": 2,
+          "note": "possible detergent or a misconnected drain"
+        },
+        {
+          "value": "oil_sheen",
+          "label": "Rainbow film on the surface",
+          "score": 3,
+          "note": "possible oil or fuel from surface-water drainage"
+        }
+      ]
+    },
+    {
+      "key": "litter",
+      "question": "How much litter can you see?",
+      "weight": 0.7,
+      "photo_visible": true,
+      "why": "Litter is the pressure citizens notice first and the one a community can fix itself. It also traps sediment and releases plastics.",
+      "options": [
+        {
+          "value": "none",
+          "label": "None",
+          "score": 0
+        },
+        {
+          "value": "scattered",
+          "label": "A few items",
+          "score": 1
+        },
+        {
+          "value": "heavy",
+          "label": "A lot, or trapped in rafts",
+          "score": 3
+        },
+        {
+          "value": "sanitary",
+          "label": "Wet wipes, sanitary items or toilet paper on the banks",
+          "score": 3,
+          "note": "a direct sign of sewage overflow - report this"
+        }
+      ]
+    },
+    {
+      "key": "riparian_vegetation",
+      "question": "What is growing along the banks?",
+      "weight": 1.0,
+      "photo_visible": true,
+      "why": "A vegetated buffer shades the water, holds the bank together and filters run-off before it arrives. Mown grass to the edge does almost none of that.",
+      "options": [
+        {
+          "value": "continuous_natural",
+          "label": "Continuous trees, shrubs or tall plants",
+          "score": 0
+        },
+        {
+          "value": "patchy",
+          "label": "Patchy - gaps between planted areas",
+          "score": 1
+        },
+        {
+          "value": "mown_grass",
+          "label": "Mown grass right to the water",
+          "score": 2
+        },
+        {
+          "value": "bare_or_paved",
+          "label": "Bare ground, paving or wall",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "key": "bank_modification",
+      "question": "What are the banks made of?",
+      "weight": 1.0,
+      "photo_visible": true,
+      "why": "Hydromorphology is the pressure European urban streams fail on most often. A concrete channel moves water fast and gives nothing anywhere to live.",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural earth, stone or vegetation",
+          "score": 0
+        },
+        {
+          "value": "partly_reinforced",
+          "label": "Partly reinforced - some walls, gabions or rip-rap",
+          "score": 2
+        },
+        {
+          "value": "fully_channelised",
+          "label": "Fully concrete or culverted",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "key": "flow",
+      "question": "How is the water moving?",
+      "weight": 1.0,
+      "photo_visible": true,
+      "why": "Moving water carries oxygen. Standing warm water loses it, and still water is where mosquitoes breed.",
+      "options": [
+        {
+          "value": "fast",
+          "label": "Fast, broken and splashing over stones",
+          "score": 0
+        },
+        {
+          "value": "moderate",
+          "label": "Steady and visibly moving",
+          "score": 0
+        },
+        {
+          "value": "slow",
+          "label": "Slow - barely moving",
+          "score": 1
+        },
+        {
+          "value": "stagnant",
+          "label": "Standing pools, no flow",
+          "score": 3,
+          "note": "low oxygen and mosquito breeding habitat"
+        },
+        {
+          "value": "dry",
+          "label": "Dry bed",
+          "score": 3,
+          "note": "record it - drying is a climate and abstraction signal"
+        }
+      ]
+    },
+    {
+      "key": "substrate",
+      "question": "What is the stream bed made of?",
+      "weight": 0.8,
+      "photo_visible": true,
+      "why": "Insect larvae need the gaps between stones. Silt or concrete fills or removes them, so the sensitive animals have nowhere to live even if the water is clean.",
+      "options": [
+        {
+          "value": "boulders_cobbles",
+          "label": "Boulders and cobbles",
+          "score": 0
+        },
+        {
+          "value": "gravel",
+          "label": "Gravel and pebbles",
+          "score": 0
+        },
+        {
+          "value": "sand",
+          "label": "Sand",
+          "score": 1
+        },
+        {
+          "value": "silt",
+          "label": "Silt or soft mud",
+          "score": 2
+        },
+        {
+          "value": "concrete",
+          "label": "Concrete or artificial lining",
+          "score": 3
+        },
+        {
+          "value": "not_visible",
+          "label": "I cannot see the bed",
+          "score": null
+        }
+      ]
+    },
+    {
+      "key": "sediment_deposit",
+      "question": "Is there sludge or heavy silt on the bed?",
+      "weight": 0.9,
+      "photo_visible": true,
+      "why": "A black, smelly layer means the sediment has run out of oxygen. Nothing sensitive lives in it.",
+      "options": [
+        {
+          "value": "none",
+          "label": "No, the stones are clean",
+          "score": 0
+        },
+        {
+          "value": "light",
+          "label": "A light dusting of silt",
+          "score": 1
+        },
+        {
+          "value": "heavy",
+          "label": "Thick silt, or black sludge that smells when disturbed",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "key": "shade",
+      "question": "How shaded is the water?",
+      "weight": 0.5,
+      "photo_visible": true,
+      "why": "Shade keeps the water cool as the climate warms. Cold water holds more oxygen and is what sensitive species need.",
+      "options": [
+        {
+          "value": "shaded",
+          "label": "Mostly shaded by trees",
+          "score": 0
+        },
+        {
+          "value": "partial",
+          "label": "Dappled - some shade",
+          "score": 1
+        },
+        {
+          "value": "open",
+          "label": "Fully open to the sun",
+          "score": 2
+        }
+      ]
+    },
+    {
+      "key": "odour",
+      "question": "What can you smell? (only you can answer this)",
+      "weight": 1.3,
+      "photo_visible": false,
+      "why": "Smell separates a cloudy but healthy stream in spate from a sewage discharge, and no camera can report it. This is the field where the person, not the model, decides.",
+      "options": [
+        {
+          "value": "none",
+          "label": "Nothing unusual",
+          "score": 0
+        },
+        {
+          "value": "earthy",
+          "label": "Earthy or vegetation",
+          "score": 0
+        },
+        {
+          "value": "musty",
+          "label": "Musty or stagnant",
+          "score": 1
+        },
+        {
+          "value": "sewage",
+          "label": "Sewage or rotten eggs",
+          "score": 3,
+          "note": "report this to the water authority today"
+        },
+        {
+          "value": "chemical",
+          "label": "Chemical, solvent or fuel",
+          "score": 3,
+          "note": "do not enter the water; report it"
+        },
+        {
+          "value": "not_recorded",
+          "label": "I did not check",
+          "score": null
+        }
+      ]
+    },
+    {
+      "key": "access",
+      "question": "Do people or animals use this water?",
+      "weight": 0.0,
+      "photo_visible": true,
+      "why": "The One Health question. A degraded stream nobody touches is an ecological problem; a degraded stream children paddle in is also a public-health one.",
+      "options": [
+        {
+          "value": "none",
+          "label": "Fenced off or inaccessible",
+          "score": 0
+        },
+        {
+          "value": "path_only",
+          "label": "A path runs alongside",
+          "score": 1
+        },
+        {
+          "value": "contact",
+          "label": "People or dogs get into the water",
+          "score": 2
+        },
+        {
+          "value": "play_or_drinking",
+          "label": "Children play in it, or animals drink from it",
+          "score": 3
+        }
+      ],
+      "exposure": true
+    }
+  ]
+}
