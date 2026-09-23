@@ -7,7 +7,7 @@ two never meet, which is exactly the fragmentation this hackathon's Track 7 name
 
 FHIR R4 turns out to fit an environmental observation with no abuse of the spec,
 because ``Observation.subject`` and ``Flag.subject`` both admit a **Location**.
-So a Riffle assessment becomes:
+So a AquaPlot assessment becomes:
 
 * one ``Location`` with the site's coordinates and municipality,
 * one ``Observation`` panel for the ecological status, carrying BMWP, ASPT, EPT
@@ -40,8 +40,8 @@ from .assess import Assessment
 from .bioindex import Band
 from .onehealth import Domain, Level
 
-CODE_SYSTEM = "https://github.com/BabayoAP/riffle/fhir/CodeSystem/stream-health"
-PROFILE = "https://github.com/BabayoAP/riffle/fhir/StructureDefinition/stream-assessment"
+CODE_SYSTEM = "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health"
+PROFILE = "https://github.com/BabayoAP/aquaplot/fhir/StructureDefinition/stream-assessment"
 
 # HL7 terminology, used unchanged where it applies.
 OBS_CATEGORY = "http://terminology.hl7.org/CodeSystem/observation-category"
@@ -278,7 +278,7 @@ def provenance(a: Assessment) -> dict[str, Any]:
             },
             {
                 "type": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/provenance-participant-type", "code": "assembler"}]},
-                "who": {"display": f"Riffle {a.version} (vision model: {a.observer})"},
+                "who": {"display": f"AquaPlot {a.version} (vision model: {a.observer})"},
             },
         ],
         "entity": [
@@ -306,7 +306,7 @@ def bundle(a: Assessment) -> dict[str, Any]:
     ]
     return {
         "resourceType": "Bundle",
-        "id": _id("riffle", a.id),
+        "id": _id("aquaplot", a.id),
         "type": "collection",
         "timestamp": a.created_at,
         "entry": [{"fullUrl": f"urn:uuid:{r['resourceType'].lower()}-{r['id']}", "resource": r} for r in resources],

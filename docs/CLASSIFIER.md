@@ -1,16 +1,16 @@
 # Classifier — how a photo becomes "Invasive, 72 %"
 
 > **Inherited feature.** This is SpeciesGuard's single-organism classifier, kept working in
-> Riffle and served at `/classify`. Riffle's own product is the guided stream check at `/`,
+> AquaPlot and served at `/classify`. AquaPlot's own product is the guided stream check at `/`,
 > specified in [ASSESSMENT.md](ASSESSMENT.md). What changed here: the region is no longer
 > Orange County but whatever administrative place the coordinates resolve to
-> ([places.py](../src/riffle/places.py)), and the seed list now carries the EU Union list
+> ([places.py](../src/aquaplot/places.py)), and the seed list now carries the EU Union list
 > alongside the Californian entries, with each result naming the jurisdiction that lists a
 > species. Read "Orange County" below as "the place the observation was made".
 
 Implements PRD §6 (the four-stage pipeline), FR-8 (always answer, with a
 certainty) and §9 (the certainty carries the honesty). This page is the
-reader's guide; the rule itself lives in `src/riffle/pipeline.py`.
+reader's guide; the rule itself lives in `src/aquaplot/pipeline.py`.
 
 ## Stages
 
@@ -106,8 +106,8 @@ is memory-hungry (a headless browser, a second model) pushes it into swap and
 generation drops from ~1 token/s to ~0.1, which is why the Ollama timeout is
 generous (`OLLAMA_TIMEOUT`, default 300 s) and why the UI warns that a local
 model can take a while. A 16 GB machine or a 7B model changes both speed and
-accuracy. `RIFFLE_IDENTIFIER=none` turns identification off explicitly;
-`RIFFLE_IDENTIFIER=claude|ollama` forces a backend.
+accuracy. `AQUAPLOT_IDENTIFIER=none` turns identification off explicitly;
+`AQUAPLOT_IDENTIFIER=claude|ollama` forces a backend.
 
 ## Failure behaviour (FR-8, §5.2 degrade gracefully)
 
@@ -117,7 +117,7 @@ accuracy. `RIFFLE_IDENTIFIER=none` turns identification off explicitly;
 - iNaturalist down → species still identified; seed-listed species still *Invasive*;
   otherwise neutral label at 35 % status confidence with the outage in the penalties.
 - Too many requests from one address → HTTP 429 with `Retry-After`
-  (`RIFFLE_CLASSIFY_LIMIT` per 10 minutes, default 20, 0 disables).
+  (`AQUAPLOT_CLASSIFY_LIMIT` per 10 minutes, default 20, 0 disables).
 - Location missing → status evaluated for Orange County by assumption, with a penalty.
 
 ## Trying it
@@ -125,10 +125,10 @@ accuracy. `RIFFLE_IDENTIFIER=none` turns identification off explicitly;
 ```sh
 # local model
 ollama pull qwen2.5vl:3b
-.venv/bin/uvicorn riffle.app:app --reload        # health shows "identifier": "ollama"
+.venv/bin/uvicorn aquaplot.app:app --reload        # health shows "identifier": "ollama"
 
 # Claude
-ANTHROPIC_API_KEY=sk-ant-... .venv/bin/uvicorn riffle.app:app --reload
+ANTHROPIC_API_KEY=sk-ant-... .venv/bin/uvicorn aquaplot.app:app --reload
 ```
 
 The result page links straight to the area viewer filtered to the identified

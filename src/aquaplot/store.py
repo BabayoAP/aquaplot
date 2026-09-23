@@ -48,7 +48,7 @@ from .assess import Assessment
 from .bioindex import Band
 from .onehealth import Level
 
-DEFAULT_DB = os.environ.get("RIFFLE_DB", "riffle.db")
+DEFAULT_DB = os.environ.get("AQUAPLOT_DB", "aquaplot.db")
 SITE_PRECISION = 3  # decimal degrees, about 110 m: close enough to be "the same spot"
 RECENT_DAYS = 90
 

@@ -66,7 +66,7 @@ class Indicator:
 
 
 def _load() -> tuple[str, list[Indicator]]:
-    raw = json.loads(resources.files("riffle.data").joinpath("habitat_indicators.json").read_text())
+    raw = json.loads(resources.files("aquaplot.data").joinpath("habitat_indicators.json").read_text())
     indicators = [
         Indicator(
             key=row["key"],

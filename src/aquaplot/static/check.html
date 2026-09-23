@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Riffle — check a stream</title>
+<title>AquaPlot — check a stream</title>
 <style>
   :root {
     --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
@@ -105,7 +105,7 @@
 <body>
 <header>
   <div class="bar">
-    <div class="brand">Riffle<span>.</span></div>
+    <div class="brand">AquaPlot<span>.</span></div>
     <nav>
       <a href="/dashboard">Dashboard</a>
       <a href="/map">Map</a>
@@ -125,7 +125,7 @@
   <section class="step" id="step1">
     <div class="steptag">Step 1 · Where</div>
     <h2>Which stretch of water?</h2>
-    <p class="hint">Your position lets Riffle compare this visit with the last one and check whether anything you find
+    <p class="hint">Your position lets AquaPlot compare this visit with the last one and check whether anything you find
       is on an invasive-species list where you are.</p>
     <div class="row">
       <button type="button" class="ghost" id="locate">Use my location</button>
@@ -228,11 +228,11 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const api = (path, opts) => fetch(path, { headers: { "X-Riffle-Contributor": who(), ...(opts||{}).headers }, ...opts });
+const api = (path, opts) => fetch(path, { headers: { "X-AquaPlot-Contributor": who(), ...(opts||{}).headers }, ...opts });
 
 function who() {
-  let id = localStorage.getItem("riffle-contributor");
-  if (!id) { id = "anon-" + Math.random().toString(36).slice(2, 12); localStorage.setItem("riffle-contributor", id); }
+  let id = localStorage.getItem("aquaplot-contributor");
+  if (!id) { id = "anon-" + Math.random().toString(36).slice(2, 12); localStorage.setItem("aquaplot-contributor", id); }
   return id;
 }
 

@@ -5,7 +5,7 @@ description, a 3–5 minute demo video, a public repository, and a working proto
 
 ## One paragraph
 
-Riffle turns a walk past an urban stream into a health reading. A citizen photographs the
+AquaPlot turns a walk past an urban stream into a health reading. A citizen photographs the
 reach, scoops gravel from a shallow fast patch into a pale tray and photographs what moves,
 and answers the two questions a camera cannot answer — what it smells like, and who gets into
 the water. A vision model reads structured field observations out of the photographs; published
@@ -67,7 +67,7 @@ the map.
 
 ## Build timeline and prior work
 
-Riffle is a fork of the author's own earlier project, **SpeciesGuard**
+AquaPlot is a fork of the author's own earlier project, **SpeciesGuard**
 ([BabayoAP/nativeview](https://github.com/BabayoAP/nativeview)), a terrestrial
 invasive-species classifier built for NextStep Hacks 2026 (Sep 11–17, 2026). That is stated
 here, in the README and in the first commit message rather than left to be discovered.
@@ -75,7 +75,7 @@ here, in the README and in the first commit message rather than left to be disco
 | When | What |
 |---|---|
 | Sep 11–17, 2026 | **Prior work, not part of this submission.** SpeciesGuard: the classification pipeline, the certainty rule and evidence trail, the cached iNaturalist client, pluggable model backends, and the area viewer. Its PRD is at [PRD-SPECIESGUARD.md](PRD-SPECIESGUARD.md) and its own submission notes at [HACKATHON-NEXTSTEP.md](HACKATHON-NEXTSTEP.md). |
-| Sep 23, 2026 | **Built for this hackathon.** The freshwater domain: the BMWP/ASPT index and its 53-family catalogue; the visual field form and its vocabulary; the One Health rule engine; the assessment pipeline, its certainty rule and its review loop; the generalised geography and the EU Union-list entries; persistence, site trends, the alert feed and badges; the FHIR R4 exporter; the guided citizen workflow, the dashboard and the Riffle layer on the map; 73 new tests. |
+| Sep 23, 2026 | **Built for this hackathon.** The freshwater domain: the BMWP/ASPT index and its 53-family catalogue; the visual field form and its vocabulary; the One Health rule engine; the assessment pipeline, its certainty rule and its review loop; the generalised geography and the EU Union-list entries; persistence, site trends, the alert feed and badges; the FHIR R4 exporter; the guided citizen workflow, the dashboard and the AquaPlot layer on the map; 73 new tests. |
 
 Roughly 2,600 lines of new Python and 1,400 of new interface. `git log` separates the imported
 commit from everything after it.
@@ -94,7 +94,7 @@ commit from everything after it.
 ## Demo script (for the video)
 
 1. **The problem, at a real stream.** Open `/`, locate, name the spot.
-2. **Two photographs.** The reach, then the tray. Say what a riffle is and why the sample comes
+2. **Two photographs.** The reach, then the tray. Say what a aquaplot is and why the sample comes
    from there.
 3. **The two questions a camera cannot answer.** Smell, and who gets into the water.
 4. **The result.** Band first, then the sentence about people. Point at one finding and read

@@ -6,7 +6,7 @@ macroinvertebrates answer it better than a spot chemical reading because they
 cannot leave. A sample integrates weeks of conditions, so it catches the sewage
 misconnection that discharged on Tuesday and was gone by the time anyone sampled.
 OneAquaHealth's field protocols put this group first for urban streams, which is
-why Riffle's whole assessment hangs off it.
+why AquaPlot's whole assessment hangs off it.
 
 The index is BMWP/ASPT, the family-level score used across Europe:
 
@@ -23,7 +23,7 @@ The index is BMWP/ASPT, the family-level score used across Europe:
   presence or absence is the single most legible signal for a non-specialist.
 
 The band names are the Water Framework Directive's five classes, because that is
-the vocabulary European city authorities already act on. Riffle reports a
+the vocabulary European city authorities already act on. AquaPlot reports a
 *screening* band, never a WFD classification: a real classification needs a
 standardised kick-sample, laboratory identification and a reference-site
 comparison (see ``EcologicalStatus.caveat`` and docs/ASSESSMENT.md).
@@ -128,7 +128,7 @@ class Family:
 
 
 def _load() -> tuple[str, list[Family]]:
-    raw = json.loads(resources.files("riffle.data").joinpath("bioindicators.json").read_text())
+    raw = json.loads(resources.files("aquaplot.data").joinpath("bioindicators.json").read_text())
     return raw["version"], [Family(**row) for row in raw["families"]]
 
 

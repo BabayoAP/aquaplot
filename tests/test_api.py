@@ -2,7 +2,7 @@
 
 import pytest
 
-from riffle.schema import Classification, Label
+from aquaplot.schema import Classification, Label
 
 from conftest import make_image
 
@@ -81,7 +81,7 @@ def test_empty_file_part_falls_through_to_description(client):
 
 
 def test_classify_is_rate_limited_per_client(client):
-    from riffle.app import RateLimiter, app
+    from aquaplot.app import RateLimiter, app
 
     app.state.limiter = RateLimiter(limit=2)
     try:
@@ -96,7 +96,7 @@ def test_classify_is_rate_limited_per_client(client):
 
 
 def test_rate_limiter_window_slides():
-    from riffle.app import RateLimiter
+    from aquaplot.app import RateLimiter
 
     rl = RateLimiter(limit=1, window=10)
     assert rl.retry_after("a", now=0) == 0

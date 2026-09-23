@@ -2,8 +2,8 @@
 
 import pytest
 
-from riffle import habitat
-from riffle.bioindex import (
+from aquaplot import habitat
+from aquaplot.bioindex import (
     CATALOGUE,
     Band,
     TaxonObservation,

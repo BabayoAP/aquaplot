@@ -4,12 +4,12 @@ import re
 
 import pytest
 
-from riffle import fhir
-from riffle.assess import Assessment
-from riffle.bioindex import TaxonObservation, score
-from riffle.habitat import Reading, assess as assess_habitat
-from riffle.onehealth import Context, Domain, Level, evaluate
-from riffle.schema import PlaceRef, Region
+from aquaplot import fhir
+from aquaplot.assess import Assessment
+from aquaplot.bioindex import TaxonObservation, score
+from aquaplot.habitat import Reading, assess as assess_habitat
+from aquaplot.onehealth import Context, Domain, Level, evaluate
+from aquaplot.schema import PlaceRef, Region
 
 CLEAN = ["Perlidae", "Heptageniidae", "Leptoceridae", "Rhyacophilidae", "Gammaridae", "Elmidae", "Ancylidae", "Goeridae"]
 FOUL = ["Oligochaeta", "Chironomidae", "Asellidae", "Physidae"]
@@ -47,7 +47,7 @@ def test_a_confirmed_bloom_with_contact_is_an_alert_for_people_and_animals():
 
 
 def test_an_unconfirmed_bloom_is_held_below_alert_until_a_person_confirms_it():
-    """Riffle will not tell a parent to keep their child out of the water on a model's unreviewed guess."""
+    """AquaPlot will not tell a parent to keep their child out of the water on a model's unreviewed guess."""
     s = evaluate(context(answers=[("algae", "bloom", "model"), ("access", "play_or_drinking", "model")]))
     finding = rules(s)["human.cyanobacteria"]
     assert finding.level is Level.CONCERN
@@ -220,7 +220,7 @@ def test_no_code_pretends_to_be_a_standard_it_is_not(assessment):
 def test_the_bundle_is_json_serialisable(assessment):
     import json
 
-    assert json.loads(json.dumps(fhir.bundle(assessment)))["id"].startswith("riffle-")
+    assert json.loads(json.dumps(fhir.bundle(assessment)))["id"].startswith("aquaplot-")
 
 
 # ---- documentation is part of the contract ---------------------------------
@@ -230,7 +230,7 @@ def test_every_rule_is_documented():
     """A health rule nobody can read is a health rule nobody can correct."""
     from pathlib import Path
 
-    from riffle.onehealth import RULES
+    from aquaplot.onehealth import RULES
 
     doc = Path(__file__).resolve().parents[1].joinpath("docs/ONE-HEALTH.md").read_text()
     fired = [r(ctx) for ctx in [_maximal_context()] for r in RULES]
@@ -242,7 +242,7 @@ def test_every_rule_is_documented():
 
 def test_every_alert_capable_rule_declares_the_answers_it_rests_on():
     """Otherwise the confirmation queue cannot tell the user what to confirm."""
-    from riffle.assess import RULE_EVIDENCE
+    from aquaplot.assess import RULE_EVIDENCE
 
     alerting = {f.rule for f in evaluate(_maximal_context()).findings if f.level is Level.ALERT}
     assert alerting

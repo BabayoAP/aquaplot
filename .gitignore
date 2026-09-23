@@ -7,5 +7,5 @@ dist/
 .DS_Store
 
 # local assessment database
-riffle.db
+aquaplot.db
 *.db-journal

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fill a running Riffle with a realistic demo dataset.
+"""Fill a running AquaPlot with a realistic demo dataset.
 
 A fresh deployment has an empty dashboard and an empty map, which is the worst
 possible first impression of a tool whose whole argument is that a *series* of
@@ -11,7 +11,7 @@ It goes through the public HTTP API rather than the database, so it exercises
 exactly what a citizen's browser does - including the place lookup, which needs
 the network.
 
-    .venv/bin/uvicorn riffle.app:app &
+    .venv/bin/uvicorn aquaplot.app:app &
     .venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000
 
 Nothing here is a real observation. Every site is labelled "(demo data)" so it
@@ -95,22 +95,22 @@ VISITS: list[dict] = [
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--url", default="http://127.0.0.1:8000", help="base URL of a running Riffle")
+    parser.add_argument("--url", default="http://127.0.0.1:8000", help="base URL of a running AquaPlot")
     args = parser.parse_args()
 
     with httpx.Client(base_url=args.url.rstrip("/"), timeout=60) as client:
         try:
             health = client.get("/api/health").json()
         except httpx.HTTPError as exc:
-            print(f"Cannot reach Riffle at {args.url}: {exc}", file=sys.stderr)
+            print(f"Cannot reach AquaPlot at {args.url}: {exc}", file=sys.stderr)
             return 1
-        print(f"Riffle {health['assessment_version']}, observer '{health['observer']}', "
+        print(f"AquaPlot {health['assessment_version']}, observer '{health['observer']}', "
               f"{health['assessments_stored']} assessments already stored.\n")
 
         for visit in VISITS:
             res = client.post(
                 "/api/assess",
-                headers={"X-Riffle-Contributor": visit["who"]},
+                headers={"X-AquaPlot-Contributor": visit["who"]},
                 data={
                     "lat": visit["lat"], "lon": visit["lon"], "site_name": visit["site_name"],
                     "answers": json.dumps(visit["answers"]), "taxa": json.dumps(visit["taxa"]),

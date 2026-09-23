@@ -1,10 +1,12 @@
-# Riffle
+# AquaPlot
+
+*Plot the health of your local water.*
 
 **From a photo at the water's edge to a stream-health reading and a One Health signal.**
 
 A citizen scoops gravel from a shallow, fast patch of an urban stream into a pale tray,
 photographs what moves, photographs the reach, and answers two questions a camera cannot
-answer. Riffle returns a **Water Framework Directive band** for the stream, a **visual
+answer. AquaPlot returns a **Water Framework Directive band** for the stream, a **visual
 pressure score**, and what that means for the **people and animals** around it — with
 every finding traceable to the observation behind it, and an alert held back until a
 person has confirmed the observation it rests on.
@@ -39,7 +41,7 @@ person has reviewed. It downgrades to *concern*, says why in the evidence, and t
 puts that exact observation at the top of the confirmation queue. Confirming it raises the
 alert. Human-in-the-loop here is a mechanism with a test, not a slogan.
 
-**Certainty is multiplicative and itemised.** Inherited from the project Riffle grew out
+**Certainty is multiplicative and itemised.** Inherited from the project AquaPlot grew out
 of: a result must never look more confident than its weakest input. Every factor below 1.0
 leaves a sentence behind — *8 of 12 habitat questions were answered*, *2 animals were
 identified only to order*, *the coordinates could not be resolved to a municipality* — so
@@ -84,7 +86,7 @@ and how many observations a human confirmed. No code pretends to be LOINC; see
 **It works with no model at all.** With no API key and no local model, nothing is read off
 the photos and the citizen answers the form themselves — and the band, the pressure score,
 the findings, the actions, the trends and the FHIR export are all identical. The model makes
-Riffle usable by a novice; it is not what makes it work.
+AquaPlot usable by a novice; it is not what makes it work.
 
 ## Run
 
@@ -94,7 +96,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
 .venv/bin/python -m pytest                       # 141 tests, no network, no model
-.venv/bin/uvicorn riffle.app:app --reload        # http://127.0.0.1:8000
+.venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
 Open `/` to check a stream, `/dashboard` for the insights, `/map` for the map, `/docs` for
@@ -117,8 +119,8 @@ declines between visits — through the public API:
 | no | yes (`ollama pull qwen2.5vl:3b`) | local model via Ollama (`OLLAMA_MODEL` to pick one) |
 | no | no | none: the citizen fills the form, everything else is unchanged |
 
-`RIFFLE_OBSERVER=claude|ollama|none` forces a choice and `/api/health` reports which is
-active. `RIFFLE_DB` sets the SQLite path (default `riffle.db`). `RIFFLE_CLASSIFY_LIMIT`
+`AQUAPLOT_OBSERVER=claude|ollama|none` forces a choice and `/api/health` reports which is
+active. `AQUAPLOT_DB` sets the SQLite path (default `aquaplot.db`). `AQUAPLOT_CLASSIFY_LIMIT`
 caps assessments per client address per 10 minutes (default 20, `0` disables) so a public
 demo cannot drain an API key.
 
@@ -126,23 +128,23 @@ demo cannot drain an API key.
 
 | Path | What |
 |---|---|
-| `src/riffle/observe.py` | The vision model's only job: photo → structured observations. Three backends, one schema. |
-| `src/riffle/bioindex.py` | BMWP/ASPT, WFD bands, the effort cap, the coarse-identification rule. |
-| `src/riffle/habitat.py` | The visual field form: scoring, validation, model-vs-citizen precedence. |
-| `src/riffle/onehealth.py` | The rule engine. Every finding carries a rule id, its evidence and an action. |
-| `src/riffle/assess.py` | Composes the stages; the certainty rule; the confirmation queue; `reassess` for review. |
-| `src/riffle/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
-| `src/riffle/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
-| `src/riffle/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
-| `src/riffle/fhir.py` | FHIR R4 Bundle export. |
-| `src/riffle/data/bioindicators.json` | 53 families: BMWP score, what to look for, what finding it means. |
-| `src/riffle/data/habitat_indicators.json` | The field form. Drives the prompt, the validator, the UI and the scoring. |
-| `src/riffle/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
-| `src/riffle/data/pilot_sites.json` | The five OneAquaHealth research cities. |
-| `src/riffle/static/check.html` | The guided citizen workflow. |
-| `src/riffle/static/dashboard.html` | The insights dashboard. |
-| `src/riffle/static/map.html` | Leaflet map: Riffle sites over iNaturalist layers. No build step. |
-| `src/riffle/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |
+| `src/aquaplot/observe.py` | The vision model's only job: photo → structured observations. Three backends, one schema. |
+| `src/aquaplot/bioindex.py` | BMWP/ASPT, WFD bands, the effort cap, the coarse-identification rule. |
+| `src/aquaplot/habitat.py` | The visual field form: scoring, validation, model-vs-citizen precedence. |
+| `src/aquaplot/onehealth.py` | The rule engine. Every finding carries a rule id, its evidence and an action. |
+| `src/aquaplot/assess.py` | Composes the stages; the certainty rule; the confirmation queue; `reassess` for review. |
+| `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
+| `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
+| `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
+| `src/aquaplot/fhir.py` | FHIR R4 Bundle export. |
+| `src/aquaplot/data/bioindicators.json` | 53 families: BMWP score, what to look for, what finding it means. |
+| `src/aquaplot/data/habitat_indicators.json` | The field form. Drives the prompt, the validator, the UI and the scoring. |
+| `src/aquaplot/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
+| `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
+| `src/aquaplot/static/check.html` | The guided citizen workflow. |
+| `src/aquaplot/static/dashboard.html` | The insights dashboard. |
+| `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites over iNaturalist layers. No build step. |
+| `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |
 
 ## Documentation
 
@@ -154,7 +156,7 @@ demo cannot drain an API key.
 
 ## Lineage
 
-Riffle is a fork of **SpeciesGuard** ([BabayoAP/nativeview](https://github.com/BabayoAP/nativeview)),
+AquaPlot is a fork of **SpeciesGuard** ([BabayoAP/nativeview](https://github.com/BabayoAP/nativeview)),
 a terrestrial invasive-species classifier the same author built for NextStep Hacks 2026.
 What carried over: the pipeline shape, the certainty rule and its insistence on an evidence
 trail, the cached iNaturalist client, the pluggable model backends, and the area viewer.
@@ -170,7 +172,7 @@ on the record rather than implied.
 
 - **Not a Water Framework Directive classification.** A formal classification needs a
   standardised three-minute kick sample, laboratory identification and a reference-site
-  comparison. Riffle is a screening tool, and every result says so.
+  comparison. AquaPlot is a screening tool, and every result says so.
 - **Not a medical, water-quality or regulatory determination.** Findings name the authority
   that can make one and tell the user to contact it.
 - **The certainty factors are priors, not measured calibration.** They order outcomes

@@ -2,7 +2,7 @@
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
-    name: riffle
+    name: aquaplot
     runtime: docker
     plan: free
     healthCheckPath: /api/health
@@ -10,7 +10,7 @@ services:
     disk:
       # Assessments are the product: a free-tier container filesystem is wiped on
       # every deploy, which would delete the trends citizens contributed.
-      name: riffle-data
+      name: aquaplot-data
       mountPath: /data
       sizeGB: 1
     envVars:
@@ -21,8 +21,8 @@ services:
         sync: false
       - key: CLAUDE_MODEL
         value: claude-opus-5
-      - key: RIFFLE_DB
-        value: /data/riffle.db
+      - key: AQUAPLOT_DB
+        value: /data/aquaplot.db
       # Assessments per client address per 10 minutes; protects the key.
-      - key: RIFFLE_CLASSIFY_LIMIT
+      - key: AQUAPLOT_CLASSIFY_LIMIT
         value: "20"

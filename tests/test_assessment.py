@@ -5,13 +5,13 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from riffle.app import app
-from riffle.assess import Review, StreamAssessor, Submission, reassess, warm_season
-from riffle.bioindex import TaxonObservation
-from riffle.habitat import Reading
-from riffle.observe import HabitatCall, SeenTaxon, StreamObservation
-from riffle.schema import PlaceRef, Region
-from riffle.store import Store, longest_run, site_key, trend_of
+from aquaplot.app import app
+from aquaplot.assess import Review, StreamAssessor, Submission, reassess, warm_season
+from aquaplot.bioindex import TaxonObservation
+from aquaplot.habitat import Reading
+from aquaplot.observe import HabitatCall, SeenTaxon, StreamObservation
+from aquaplot.schema import PlaceRef, Region
+from aquaplot.store import Store, longest_run, site_key, trend_of
 
 from conftest import make_image
 
@@ -90,7 +90,7 @@ async def test_photos_become_a_band_a_pressure_score_and_a_one_health_read_out()
 
 async def test_the_pipeline_works_with_no_model_at_all():
     """No API key, no local model: a citizen who fills the form by hand still gets everything."""
-    from riffle.observe import NullObserver
+    from aquaplot.observe import NullObserver
 
     a = await StreamAssessor(observer=NullObserver()).assess(
         Submission(
@@ -118,7 +118,7 @@ async def test_a_photo_that_is_not_a_stream_is_ignored_and_said_so():
 
 
 async def test_a_model_failure_degrades_instead_of_failing_the_request():
-    from riffle.identify import IdentifyError
+    from aquaplot.identify import IdentifyError
 
     a = await run(observer=FakeObserver(error=IdentifyError("model down")))
     assert any("could not be read by the vision model" in p for p in a.penalties)
@@ -399,9 +399,9 @@ def test_sites_insights_and_alerts_reflect_what_was_stored(api):
 
 def test_progress_is_anonymous_and_opt_in(api):
     api.post("/api/assess", data={"lat": "40.2", "lon": "-8.4", "taxa": json.dumps(["Gammaridae"])},
-             headers={"X-Riffle-Contributor": "anon-42"})
+             headers={"X-AquaPlot-Contributor": "anon-42"})
     assert api.get("/api/me/progress").json()["assessments"] == 0  # no header, no record
-    mine = api.get("/api/me/progress", headers={"X-Riffle-Contributor": "anon-42"}).json()
+    mine = api.get("/api/me/progress", headers={"X-AquaPlot-Contributor": "anon-42"}).json()
     assert mine["assessments"] == 1 and mine["badges"]
 
 

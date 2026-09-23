@@ -54,7 +54,7 @@ conservation groups use, so results are directly actionable.
 ## Submission checklist
 
 - [ ] Video ≤ 5 min (script below).
-- [ ] Repository link: https://github.com/BabayoAP/riffle. **The repo is private today**: make it public (Settings → Danger zone → Change visibility) before submitting.
+- [ ] Repository link: https://github.com/BabayoAP/aquaplot. **The repo is private today**: make it public (Settings → Danger zone → Change visibility) before submitting.
 - [ ] Live link (deploy notes below).
 - [ ] Devpost "built with": Python, FastAPI, Claude API, Ollama, Leaflet, iNaturalist API, Global Forest Watch, Esri.
 - [ ] Set `ANTHROPIC_API_KEY` on the deployed instance so judges get Claude-quality identification (Claude is a sponsor; the prize includes Claude credits). Without it the live link runs the placeholder.
@@ -92,15 +92,15 @@ The app is one process with no database, so any container host works. A `Dockerf
 in the repo root.
 
 ```sh
-docker build -t riffle .
-docker run -p 8000:8000 riffle
+docker build -t aquaplot .
+docker run -p 8000:8000 aquaplot
 ```
 
 **Render (free tier, one click).** The repo has a `render.yaml` blueprint. Sign in at
 <https://dashboard.render.com>, choose *New → Blueprint*, pick this repository, and
 accept the defaults. The free instance sleeps after 15 minutes idle and takes about
 30 s to wake, so open the link once before the judges do. Alternatively:
-<https://render.com/deploy?repo=https://github.com/BabayoAP/riffle>.
+<https://render.com/deploy?repo=https://github.com/BabayoAP/aquaplot>.
 
 The blueprint prompts for `ANTHROPIC_API_KEY` and sets a 20-per-10-minute
 classification limit per address. Railway and Fly.io also work: Docker build,

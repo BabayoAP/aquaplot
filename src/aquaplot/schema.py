@@ -49,7 +49,7 @@ class Region(BaseModel):
     """Where the observation was made, and which administration it falls under.
 
     SpeciesGuard carried a single boolean here - in Orange County, or not - because
-    it only ever answered for one county. Riffle resolves the real place from the
+    it only ever answered for one county. AquaPlot resolves the real place from the
     coordinates, because every status question it asks is relative to a
     jurisdiction and those jurisdictions are now anywhere on Earth.
     """

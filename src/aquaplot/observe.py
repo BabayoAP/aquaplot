@@ -1,6 +1,6 @@
 """The vision model's job: a photo to *structured field observations*, nothing more (FR-2).
 
-Riffle splits the work at the point where the two technologies are each good.
+AquaPlot splits the work at the point where the two technologies are each good.
 
 A vision-language model is excellent at "what is in this picture": is the water
 cloudy, is there a bloom, is the bank concrete, is that a mayfly nymph. Those are
@@ -220,10 +220,10 @@ class OllamaObserver:
 
 
 def select_observer(env: dict[str, str] | None = None) -> StreamObserver:
-    """``RIFFLE_OBSERVER`` (claude | ollama | none) forces a backend; otherwise Claude
+    """``AQUAPLOT_OBSERVER`` (claude | ollama | none) forces a backend; otherwise Claude
     if a key is present, else a local Ollama vision model, else none."""
     env = os.environ if env is None else env
-    forced = env.get("RIFFLE_OBSERVER", env.get("RIFFLE_IDENTIFIER", "")).lower()
+    forced = env.get("AQUAPLOT_OBSERVER", env.get("AQUAPLOT_IDENTIFIER", "")).lower()
     if forced == "none":
         return NullObserver()
     if forced == "claude" or (not forced and env.get("ANTHROPIC_API_KEY")):

@@ -124,7 +124,7 @@ class ListedTaxon:
 
 
 def load_seed() -> tuple[str, list[ListedTaxon]]:
-    raw = json.loads(resources.files("riffle.data").joinpath("status_seed.json").read_text())
+    raw = json.loads(resources.files("aquaplot.data").joinpath("status_seed.json").read_text())
     return raw["version"], [ListedTaxon(**{**e, "synonyms": tuple(e.get("synonyms", ()))}) for e in raw["entries"]]
 
 

@@ -5,7 +5,7 @@ This is the module the hackathon is actually about. Everything upstream produces
 question a resident, a parent or a city public-health officer is asking, which is
 "so what, for us?". OneAquaHealth's premise is that the two are one question -
 degraded urban water produces pathogens, disease vectors, exposure and lost
-wellbeing - and this module is where Riffle makes that link explicit instead of
+wellbeing - and this module is where AquaPlot makes that link explicit instead of
 implying it.
 
 It is a **rule engine, deliberately not a model.** Every finding carries the rule
@@ -38,7 +38,7 @@ from .bioindex import Band, EcologicalStatus
 from .habitat import HabitatPressure
 
 DISCLAIMER = (
-    "Riffle is a citizen-science screening tool. It is not a medical, water-quality or "
+    "AquaPlot is a citizen-science screening tool. It is not a medical, water-quality or "
     "regulatory determination. If a finding concerns you, report it to your local water "
     "authority or environmental agency, who can sample and test."
 )
@@ -502,7 +502,7 @@ def evaluate(ctx: Context) -> Signal:
         if found is None:
             continue
         if found.level is Level.ALERT and not found.confirmed:
-            # An alert tells someone to change their behaviour today. Riffle will
+            # An alert tells someone to change their behaviour today. AquaPlot will
             # not do that on the strength of a model's unreviewed guess; it asks
             # for the tick instead.
             found = Finding(
@@ -553,7 +553,7 @@ def _headline(ctx: Context, levels: dict[Domain, Level], findings: list[Finding]
 
 def _community_actions(ctx: Context, findings: list[Finding]) -> list[str]:
     out = [
-        "Check the same spot again in a month. Riffle compares readings at a site over time, and a trend is what "
+        "Check the same spot again in a month. AquaPlot compares readings at a site over time, and a trend is what "
         "moves a municipality when a single complaint does not."
     ]
     if any(f.rule == "ecosystem.habitat_degradation" for f in findings):

@@ -4,7 +4,7 @@ Two sources, consulted in this order:
 
 1. The project's seed list of documented invasives, now carrying the aquatic and
    riparian species of Union concern under EU Regulation 1143/2014 alongside the
-   Californian entries Riffle inherited. A hit is the only way to earn the
+   Californian entries AquaPlot inherited. A hit is the only way to earn the
    *Invasive* label, because "invasive" is a policy determination by a named
    authority, not a biological property of an organism.
 2. iNaturalist's establishment means for the taxon *at the place the observer is
@@ -14,7 +14,7 @@ Two sources, consulted in this order:
    *Naturalized/Non-native*.
 
 The place is no longer a constant. SpeciesGuard asked every question of Orange
-County; Riffle asks it of whatever municipality ``places.PlaceResolver`` found
+County; AquaPlot asks it of whatever municipality ``places.PlaceResolver`` found
 under the observer's coordinates, which is what lets the same deployment answer
 for a stream in Coimbra and one in Oslo. When no place could be resolved the
 lookup still runs globally and the answer is discounted and labelled.

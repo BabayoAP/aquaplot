@@ -47,7 +47,7 @@ from .places import PlaceResolver
 from .schema import Label, Region
 from .status import StatusResolver
 
-ASSESSMENT_VERSION = "riffle-assess-v1"
+ASSESSMENT_VERSION = "aquaplot-assess-v1"
 
 # Certainty factors. Priors, not measured calibration.
 FACTOR_PLACE_UNKNOWN = 0.9  # the band does not depend on the place; the invasive check does

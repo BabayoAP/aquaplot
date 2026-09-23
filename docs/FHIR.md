@@ -23,15 +23,15 @@ is an Observation about it; an instruction to keep out of the water is a Flag on
 | `Observation` | `habitat-{id}` | The field form, answer by answer, each interpreted with *who* answered it — `reported by model` or `reported by citizen`. |
 | `Observation` ×3 | `onehealth-{domain}-{id}` | One per domain. `valueCodeableConcept` is the level; `interpretation` maps it to HL7 v3 ObservationInterpretation (`N`, `A`, `H`, `HH`); components carry each finding's evidence; `note` carries each finding's action. |
 | `Flag` | `flag-{rule}-{id}` | One per finding at alert level — the resource a receiving system can surface to a clinician or a public-health officer without parsing anything else. Category `safety` plus the One Health domain. |
-| `Provenance` | `prov-{id}` | Who and what produced it: the citizen, Riffle and its model backend, the bioindicator catalogue version, the habitat form version, iNaturalist. Extensions record the number of human confirmations and the assessment certainty. |
+| `Provenance` | `prov-{id}` | Who and what produced it: the citizen, AquaPlot and its model backend, the bioindicator catalogue version, the habitat form version, iNaturalist. Extensions record the number of human confirmations and the assessment certainty. |
 
 ## About the codes
 
 **There is no LOINC code for "BMWP score".** Inventing one that looks real would be the worst
 possible thing to do in a standards track, so:
 
-- Every Riffle-specific code comes from one project CodeSystem,
-  `https://github.com/BabayoAP/riffle/fhir/CodeSystem/stream-health`, and is marked provisional.
+- Every AquaPlot-specific code comes from one project CodeSystem,
+  `https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health`, and is marked provisional.
 - Where a genuine standard applies, it is used unchanged: `observation-category`,
   `v3-ObservationInterpretation`, `flag-category`, `location-physical-type`,
   `provenance-participant-type`, and UCUM for units.
@@ -48,7 +48,7 @@ possible thing to do in a standards track, so:
 3. **Decide the subject convention with a receiving system.** Location-as-subject is valid R4
    and reads naturally, but an environmental-health programme may prefer a `Group` for a
    catchment. Both are one field.
-4. **Agree the Flag lifecycle.** Riffle emits `active` flags with a start period. Who clears
+4. **Agree the Flag lifecycle.** AquaPlot emits `active` flags with a start period. Who clears
    them, and on what evidence, is an operational decision that belongs with the authority
    receiving them — the natural answer is a later assessment at the same site.
 

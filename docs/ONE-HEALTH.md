@@ -1,7 +1,7 @@
 # The One Health rules
 
-Every determination Riffle makes about people or animals comes from a rule in
-`src/riffle/onehealth.py`. This document lists all of them so that someone with domain
+Every determination AquaPlot makes about people or animals comes from a rule in
+`src/aquaplot/onehealth.py`. This document lists all of them so that someone with domain
 knowledge — a public-health officer, a freshwater ecologist, a vector biologist — can read
 the logic and tell us where it is wrong. That is the point of using rules rather than a model
 for this part of the system.
@@ -73,7 +73,7 @@ health one, and the tool should not say the same thing about both.
 
 ## The disclaimer travels with every result
 
-> Riffle is a citizen-science screening tool. It is not a medical, water-quality or regulatory
+> AquaPlot is a citizen-science screening tool. It is not a medical, water-quality or regulatory
 > determination. If a finding concerns you, report it to your local water authority or
 > environmental agency, who can sample and test.
 

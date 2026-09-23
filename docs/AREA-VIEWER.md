@@ -1,7 +1,7 @@
 # Area viewer — feature spec
 
-> **Inherited feature.** This is SpeciesGuard's area viewer, kept working in Riffle and
-> served at `/map`, where it now also draws Riffle's own stream assessments coloured by
+> **Inherited feature.** This is SpeciesGuard's area viewer, kept working in AquaPlot and
+> served at `/map`, where it now also draws AquaPlot's own stream assessments coloured by
 > ecological band. What changed: the Orange County scope switch became a `place_id` filter
 > that accepts any iNaturalist place, the default view is the world rather than one county,
 > and a selector jumps to the five OneAquaHealth research cities. Read "Orange County" below
@@ -120,7 +120,7 @@ viewport or unknown group is a 422; an upstream failure is a 502 with the reason
 |---|---|---|---|
 | Sightings | iNaturalist API v1, research-grade only | Free, attribution required, ~1 req/s | Observer effort bias: dense where people are, sparse in closed or private land. |
 | Introduced / native / threatened | iNaturalist establishment means and conservation status, relative to the observation's place | as above | "Introduced" is *non-native*, not *invasive*. Threatened is IUCN/NatureServe-style status, not local rarity. |
-| Listed invasive ring | `src/riffle/data/status_seed.json` (76 entries hand-picked from Cal-IPC Inventory, CDFW, USGS NAS, UC IPM, CDFA, OC Vector Control; iNaturalist-accepted names plus synonyms) | Seed only | Unverified by an expert. Its version is echoed in every response. To be replaced by the full Cal-IPC inventory. |
+| Listed invasive ring | `src/aquaplot/data/status_seed.json` (76 entries hand-picked from Cal-IPC Inventory, CDFW, USGS NAS, UC IPM, CDFA, OC Vector Control; iNaturalist-accepted names plus synonyms) | Seed only | Unverified by an expert. Its version is echoed in every response. To be replaced by the full Cal-IPC inventory. |
 | Tree-cover loss | Hansen/UMD/Google/USGS/NASA via Global Forest Watch tiles | Attribution required (CC BY 4.0) | 30 m resolution, tree cover ≥30 %, so it shows canopy loss, not scrub or grassland change, and Orange County has little canopy outside riparian corridors and parks. |
 | Imagery | Esri World Imagery and Reference tiles | Esri attribution required | Capture dates vary by tile. |
 

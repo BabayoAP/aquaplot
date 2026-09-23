@@ -1,6 +1,6 @@
 """HTTP surface: the stream assessment, the area viewer and the inherited classifier.
 
-Three groups of routes, and the split says what Riffle is.
+Three groups of routes, and the split says what AquaPlot is.
 
 ``/api/assess`` and its neighbours are the product: photos and answers in, a
 banded One Health read-out out, stored so the next visit to the same spot becomes
@@ -29,7 +29,7 @@ Area viewer: thin routes over ``AreaService``. Query validation lives in
 
 Classification is rate-limited per client address because the deployed demo
 runs with a paid model key and no accounts. The limit is generous for a person
-and cheap for a script to hit; ``RIFFLE_CLASSIFY_LIMIT=0`` disables it.
+and cheap for a script to hit; ``AQUAPLOT_CLASSIFY_LIMIT=0`` disables it.
 """
 
 from __future__ import annotations
@@ -61,7 +61,7 @@ from .status import StatusResolver
 from .store import Store
 
 STATIC_DIR = Path(__file__).parent / "static"
-CLASSIFY_LIMIT = int(os.environ.get("RIFFLE_CLASSIFY_LIMIT", "20"))  # requests per client per window
+CLASSIFY_LIMIT = int(os.environ.get("AQUAPLOT_CLASSIFY_LIMIT", "20"))  # requests per client per window
 CLASSIFY_WINDOW_SECONDS = 600
 
 
@@ -95,7 +95,7 @@ def client_key(request: Request) -> str:
 
 
 app = FastAPI(
-    title="Riffle",
+    title="AquaPlot",
     version=ASSESSMENT_VERSION,
     description=(
         "Guided citizen stream checks. A photo and a few plain-language answers become a "
@@ -195,7 +195,7 @@ class RenameBody(BaseModel):
 
 def contributor_of(request: Request) -> str | None:
     """An opaque id the browser generates and keeps. No account, no way back to a person."""
-    value = (request.headers.get("x-riffle-contributor") or "").strip()
+    value = (request.headers.get("x-aquaplot-contributor") or "").strip()
     return value[:64] or None
 
 

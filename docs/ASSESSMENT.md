@@ -77,7 +77,7 @@ Three rules keep it honest:
   replaces it.
 
 The band names are the Water Framework Directive's five classes because that is the vocabulary
-European city authorities already act on. Riffle reports a **screening** band and says so in
+European city authorities already act on. AquaPlot reports a **screening** band and says so in
 every response.
 
 ## Stage 5 — Visual pressures

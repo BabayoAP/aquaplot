@@ -2,7 +2,7 @@
 
 import pytest
 
-from riffle.inputs import InvalidImage, decode_image, resolve_region
+from aquaplot.inputs import InvalidImage, decode_image, resolve_region
 
 from conftest import make_image
 

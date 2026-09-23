@@ -4,9 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from riffle.app import app
-from riffle.identify import NullIdentifier
-from riffle.pipeline import Pipeline
+from aquaplot.app import app
+from aquaplot.identify import NullIdentifier
+from aquaplot.pipeline import Pipeline
 
 
 @pytest.fixture

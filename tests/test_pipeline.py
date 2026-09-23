@@ -3,14 +3,14 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from riffle.app import app
-from riffle.area import AreaService
-from riffle.identify import Candidate, Identification, IdentifyError, NullIdentifier, OllamaIdentifier
-from riffle.inat import InatClient
-from riffle.places import PlaceResolver
-from riffle.pipeline import Pipeline
-from riffle.schema import Classification, Label, Regime, PlaceRef, Region
-from riffle.status import StatusResolver
+from aquaplot.app import app
+from aquaplot.area import AreaService
+from aquaplot.identify import Candidate, Identification, IdentifyError, NullIdentifier, OllamaIdentifier
+from aquaplot.inat import InatClient
+from aquaplot.places import PlaceResolver
+from aquaplot.pipeline import Pipeline
+from aquaplot.schema import Classification, Label, Regime, PlaceRef, Region
+from aquaplot.status import StatusResolver
 
 from conftest import make_image
 
@@ -154,7 +154,7 @@ async def test_seed_matches_synonym_and_inaturalist_accepted_name():
 
 
 async def test_inaturalist_outage_degrades_instead_of_failing():
-    from riffle.inat import InatError
+    from aquaplot.inat import InatError
 
     async def down(path, params):
         raise InatError("iNaturalist request failed: 503")
@@ -173,7 +173,7 @@ async def test_inaturalist_outage_degrades_instead_of_failing():
 
 
 def big_image():
-    from riffle.inputs import decode_image
+    from aquaplot.inputs import decode_image
 
     return decode_image(make_image(size=(800, 600)))
 
@@ -225,7 +225,7 @@ def test_malformed_boxes_are_ignored():
 def test_crop_to_box_pads_and_clamps():
     from PIL import Image
 
-    from riffle.pipeline import crop_to_box
+    from aquaplot.pipeline import crop_to_box
 
     img = Image.new("RGB", (1000, 500))
     assert crop_to_box(img, (0.4, 0.4, 0.6, 0.6), margin=0.0).size == (201, 101)
@@ -265,7 +265,7 @@ async def fake_places(path, params):
 
 async def test_coordinates_resolve_to_the_most_specific_place():
     """FR-6: the jurisdiction a status question is asked of comes from the coordinates."""
-    from riffle.places import PlaceResolver
+    from aquaplot.places import PlaceResolver
 
     resolver = PlaceResolver(InatClient(fetch=fake_places))
     refined = await resolver.refine(Region(source="user", lat=33.45, lon=-118.1))
@@ -276,15 +276,15 @@ async def test_coordinates_resolve_to_the_most_specific_place():
 
 
 async def test_place_lookup_is_skipped_without_coordinates():
-    from riffle.places import PlaceResolver
+    from aquaplot.places import PlaceResolver
 
     assert (await PlaceResolver(InatClient(fetch=fake_places)).refine(NOWHERE)).place is None
 
 
 async def test_place_lookup_failure_never_fails_the_classification():
     """A place lookup can only improve the answer, so its failure must degrade, not raise."""
-    from riffle.inat import InatError
-    from riffle.places import PlaceResolver
+    from aquaplot.inat import InatError
+    from aquaplot.places import PlaceResolver
 
     async def down(path, params):
         if path == "/places/nearby":
@@ -305,7 +305,7 @@ async def test_place_lookup_failure_never_fails_the_classification():
 
 async def test_photo_in_county_of_listed_invasive():
     p = make_pipeline(Candidate(scientific_name="Cortaderia selloana", confidence=0.9))
-    from riffle.inputs import decode_image
+    from aquaplot.inputs import decode_image
 
     c = await p.classify(decode_image(make_image()), "", IRVINE)
     assert c.label == Label.INVASIVE
@@ -333,7 +333,7 @@ async def test_unresolvable_place_and_text_input_stack_penalties():
 
 async def test_no_location_at_all_is_penalised_and_said_so():
     p = make_pipeline(Candidate(scientific_name="Artemisia californica", confidence=1.0))
-    from riffle.inputs import decode_image
+    from aquaplot.inputs import decode_image
 
     c = await p.classify(decode_image(make_image()), "", NOWHERE)
     assert c.certainty == pytest.approx(100 * 0.9 * 0.85, abs=0.1)
@@ -364,7 +364,7 @@ async def test_null_identifier_is_the_m0_placeholder():
 async def test_identifier_gets_image_description_and_region():
     ident = FakeIdentifier(Candidate(scientific_name="Artemisia californica", confidence=0.9))
     p = Pipeline(identifier=ident, status=StatusResolver(InatClient(fetch=fake_inat)))
-    from riffle.inputs import decode_image
+    from aquaplot.inputs import decode_image
 
     await p.classify(decode_image(make_image()), "grey shrub", IRVINE)
     assert ident.calls == [(True, "grey shrub", "exif")]
@@ -381,7 +381,7 @@ async def test_ollama_backend_parses_structured_reply():
         return {"message": {"content": '{"candidates": [{"scientific_name": "Cortaderia selloana", "confidence": 0.7}], "framing": "far", "reasoning": "plumes"}'}}
 
     ident = OllamaIdentifier(model="qwen2.5vl:3b", post=post)
-    from riffle.inputs import decode_image
+    from aquaplot.inputs import decode_image
 
     out = await ident.identify(decode_image(make_image()).image, "tall grass", IRVINE)
     assert out.candidates[0].scientific_name == "Cortaderia selloana" and out.framing == "far"
@@ -399,15 +399,15 @@ async def test_ollama_backend_rejects_garbage():
 
 
 def test_identifier_selection_is_overridable(monkeypatch):
-    from riffle.identify import ClaudeIdentifier, select_identifier
+    from aquaplot.identify import ClaudeIdentifier, select_identifier
 
-    monkeypatch.setattr("riffle.identify.detect_ollama_vision_model", lambda: "qwen2.5vl:3b")
-    assert select_identifier({"RIFFLE_IDENTIFIER": "none"}).name == "none"
-    assert select_identifier({"RIFFLE_IDENTIFIER": "ollama", "OLLAMA_MODEL": "llava:7b"}).model == "llava:7b"
+    monkeypatch.setattr("aquaplot.identify.detect_ollama_vision_model", lambda: "qwen2.5vl:3b")
+    assert select_identifier({"AQUAPLOT_IDENTIFIER": "none"}).name == "none"
+    assert select_identifier({"AQUAPLOT_IDENTIFIER": "ollama", "OLLAMA_MODEL": "llava:7b"}).model == "llava:7b"
     assert select_identifier({}).name == "ollama"  # auto-detected local model
     claude = select_identifier({"ANTHROPIC_API_KEY": "sk-test", "CLAUDE_MODEL": "claude-sonnet-5"})
     assert isinstance(claude, ClaudeIdentifier) and claude.model == "claude-sonnet-5"
-    monkeypatch.setattr("riffle.identify.detect_ollama_vision_model", lambda: None)
+    monkeypatch.setattr("aquaplot.identify.detect_ollama_vision_model", lambda: None)
     assert select_identifier({}).name == "none"
 
 

@@ -3,8 +3,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from riffle.app import app
-from riffle.area import AreaError, AreaQuery, AreaService, BBox, match_listed
+from aquaplot.app import app
+from aquaplot.area import AreaError, AreaQuery, AreaService, BBox, match_listed
 
 OC_BBOX = BBox(south=33.38, west=-118.13, north=33.95, east=-117.41)
 
@@ -206,7 +206,8 @@ async def test_upstream_failure_is_area_error():
 def test_map_page_serves(client):
     res = client.get("/map")
     assert res.status_code == 200
-    assert "Area viewer" in res.text and "globalforestwatch" in res.text
+    assert "AquaPlot — stream map" in res.text and "globalforestwatch" in res.text
+    assert "AquaPlot stream assessments" in res.text  # our own sites, over the inherited layers
 
 
 def test_observations_endpoint(client):

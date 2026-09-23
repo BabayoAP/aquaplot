@@ -1,4 +1,4 @@
-# Riffle
+# AquaPlot
 
 A citizen stream-health tool for the IEEE OneAquaHealth Global Hackathon 2026.
 Build against [README.md](README.md), [docs/ASSESSMENT.md](docs/ASSESSMENT.md) and
@@ -7,7 +7,7 @@ docstring, and name tests after the behaviour they protect, not the function the
 
 - Python 3.12 in `.venv` (system python is 3.9). `uv venv --python 3.12 .venv`,
   then `uv pip install --python .venv/bin/python -e ".[dev]"`.
-- Tests: `.venv/bin/python -m pytest`. Run: `.venv/bin/uvicorn riffle.app:app --reload`.
+- Tests: `.venv/bin/python -m pytest`. Run: `.venv/bin/uvicorn aquaplot.app:app --reload`.
 - **The model observes, the rules decide.** `observe.py` may return only structured
   observations. Any determination about health belongs in `bioindex.py` or `onehealth.py`,
   where it is readable and testable. Do not move judgement into the prompt.
@@ -29,5 +29,5 @@ docstring, and name tests after the behaviour they protect, not the function the
 - The band is a **screening** estimate, never a Water Framework Directive classification, and
   every surface that shows it must say so.
 - Geography is resolved from coordinates, never assumed. Nothing may hard-code a place.
-- `src/riffle/{identify,pipeline,schema,inputs,area,inat}.py` and the `/classify` page are
+- `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` and the `/classify` page are
   inherited from SpeciesGuard and still work; keep them working.

@@ -227,10 +227,10 @@ class OllamaIdentifier:
 
 
 def select_identifier(env: dict[str, str] | None = None) -> Identifier:
-    """``RIFFLE_IDENTIFIER`` (claude | ollama | none) forces a backend; otherwise
+    """``AQUAPLOT_IDENTIFIER`` (claude | ollama | none) forces a backend; otherwise
     Claude if a key is present, else a local Ollama vision model, else none."""
     env = os.environ if env is None else env
-    forced = env.get("RIFFLE_IDENTIFIER", "").lower()
+    forced = env.get("AQUAPLOT_IDENTIFIER", "").lower()
     if forced == "none":
         return NullIdentifier()
     if forced == "claude" or (not forced and env.get("ANTHROPIC_API_KEY")):

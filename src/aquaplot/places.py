@@ -1,6 +1,6 @@
 """Where is this stream, administratively? (FR-6)
 
-SpeciesGuard, the project Riffle grew out of, hard-coded one county: it fetched
+SpeciesGuard, the project AquaPlot grew out of, hard-coded one county: it fetched
 Orange County's polygon and asked "inside or outside". That was right for a tool
 about one county's invasive plants and wrong for this one. OneAquaHealth runs in
 Benevento, Coimbra, Ghent, Oslo and Toulouse, the hackathon is global, and
@@ -11,7 +11,7 @@ one county cannot answer the question at all.
 So the place is resolved from the coordinates instead of assumed. iNaturalist
 publishes the standard administrative places containing a point, with an
 ``admin_level`` (0 country, 10 state or region, 20 county or province, 30
-municipality). Riffle takes the most specific one as the place to ask status
+municipality). AquaPlot takes the most specific one as the place to ask status
 questions about, and keeps the rest as a fallback chain: if no establishment
 record exists for the municipality, the region usually has one, and an answer
 from the region is worth reporting *and* worth discounting. ``Place.confidence``
@@ -158,7 +158,7 @@ def _ref(place: Place | None) -> PlaceRef | None:
 
 def pilot_sites() -> dict[str, Any]:
     """The five OneAquaHealth research cities, as map presets and demo entry points."""
-    return json.loads(resources.files("riffle.data").joinpath("pilot_sites.json").read_text())
+    return json.loads(resources.files("aquaplot.data").joinpath("pilot_sites.json").read_text())
 
 
 # EU member states. No iNaturalist place is called "European Union", so a seed

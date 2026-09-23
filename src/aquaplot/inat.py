@@ -18,7 +18,7 @@ import httpx
 
 INAT_API = "https://api.inaturalist.org/v1"
 ORANGE_COUNTY_PLACE_ID = 2738  # iNaturalist place for Orange County, CA (admin level 20)
-USER_AGENT = "riffle/0.1 (+https://github.com/BabayoAP/riffle)"
+USER_AGENT = "aquaplot/0.1 (+https://github.com/BabayoAP/aquaplot)"
 
 CACHE_TTL_SECONDS = 600
 CACHE_MAX_ENTRIES = 512

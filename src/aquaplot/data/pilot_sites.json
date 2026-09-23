@@ -1,6 +1,6 @@
 {
   "version": "pilots-2026-09-23",
-  "note": "The five European research cities of the OneAquaHealth Horizon Europe project (Grant Agreement 101086521), with a viewport for each so the map and the demo open on a real urban catchment rather than a blank world. Coordinates are city centroids and the bounding boxes are generous: they frame the urban area, they are not stream reaches. Riffle works anywhere - these are entry points, not a restriction.",
+  "note": "The five European research cities of the OneAquaHealth Horizon Europe project (Grant Agreement 101086521), with a viewport for each so the map and the demo open on a real urban catchment rather than a blank world. Coordinates are city centroids and the bounding boxes are generous: they frame the urban area, they are not stream reaches. AquaPlot works anywhere - these are entry points, not a restriction.",
   "sites": [
     {"key": "coimbra", "city": "Coimbra", "country": "Portugal", "lat": 40.2111, "lon": -8.4291,
      "bbox": [40.13, -8.53, 40.29, -8.34],
