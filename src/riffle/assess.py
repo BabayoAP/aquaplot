@@ -112,6 +112,7 @@ class Assessment:
     observer: str
     model_notes: list[str] = field(default_factory=list)
     confirmations: int = 0
+    supersedes: str | None = None  # the assessment this one replaces after a human review
     version: str = ASSESSMENT_VERSION
 
     def as_dict(self) -> dict[str, Any]:
@@ -133,6 +134,7 @@ class Assessment:
             "observer": self.observer,
             "model_notes": self.model_notes,
             "confirmations": self.confirmations,
+            "supersedes": self.supersedes,
             "version": self.version,
         }
 
@@ -518,4 +520,8 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
         model_notes=list(previous.get("model_notes", [])),
         confirmations=len([r for r in pressures.readings if r.source == "citizen"])
         + len([t for t in ecology.scored if t.confirmed]),
+        # A review is the same visit, looked at again. Saying so is what stops a
+        # careful volunteer's corrections from showing up as a second trip to the
+        # stream and inventing a trend that never happened.
+        supersedes=previous["id"],
     )

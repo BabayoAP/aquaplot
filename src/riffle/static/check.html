@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riffle — check a stream</title>
+<style>
+  :root {
+    --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
+    --accent: #0f6b7a; --accent-ink: #fff; --soft: #e8f1f3;
+    --high: #1a7f5a; --good: #4f9d46; --moderate: #b8860b; --poor: #c2662a; --bad: #a5342b;
+    --ok: #1a7f5a; --watch: #8a6d1f; --concern: #c2662a; --alert: #a5342b;
+    --warn-bg: #fff4e5; --warn-ink: #7a4a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --accent-ink: #0b1216; --soft: #1e2b31;
+            --high: #56c596; --good: #8ec96f; --moderate: #d9b45a; --poor: #e3925f; --bad: #e8756a;
+            --ok: #56c596; --watch: #d9b45a; --concern: #e3925f; --alert: #e8756a;
+            --warn-bg: #33291a; --warn-ink: #f0d9a0; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .bar { max-width: 640px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .brand span { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 14px; font-size: 14px; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 64px; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  p.sub { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+  section.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  section.step[hidden] { display: none; }
+  .steptag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+             color: var(--accent); background: var(--soft); border-radius: 20px; padding: 3px 10px; margin-bottom: 10px; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 15px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  input[type=text], textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px;
+    background: transparent; color: inherit; font: inherit; }
+  textarea { min-height: 70px; resize: vertical; }
+  input[type=file] { display: none; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  button { border: 0; border-radius: 9px; padding: 11px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button.wide { flex: 1; min-width: 150px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .thumb { position: relative; width: 84px; height: 84px; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button { position: absolute; top: 2px; right: 2px; padding: 0 6px; border-radius: 6px; background: #0009; color: #fff; font-size: 13px; }
+  .choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .choices button { background: transparent; border: 1px solid var(--line); color: inherit; font-weight: 500;
+                    padding: 8px 11px; border-radius: 20px; font-size: 14px; text-align: left; }
+  .choices button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .why { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .band { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .band.High { color: var(--high); } .band.Good { color: var(--good); } .band.Moderate { color: var(--moderate); }
+  .band.Poor { color: var(--poor); } .band.Bad { color: var(--bad); }
+  .scale { display: flex; gap: 3px; margin: 10px 0 6px; }
+  .scale i { flex: 1; height: 7px; border-radius: 4px; background: var(--line); }
+  .scale i.on.High { background: var(--high); } .scale i.on.Good { background: var(--good); }
+  .scale i.on.Moderate { background: var(--moderate); } .scale i.on.Poor { background: var(--poor); } .scale i.on.Bad { background: var(--bad); }
+  .domain { border: 1px solid var(--line); border-radius: 11px; padding: 12px; margin-top: 10px; }
+  .domain h3 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+          border-radius: 20px; padding: 3px 9px; color: #fff; }
+  .pill.ok { background: var(--ok); } .pill.watch { background: var(--watch); }
+  .pill.concern { background: var(--concern); } .pill.alert { background: var(--alert); }
+  .finding { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+  .finding strong { display: block; }
+  .finding ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+  .finding .do { margin: 8px 0 0; font-size: 14px; background: var(--soft); border-radius: 8px; padding: 8px 10px; }
+  .notice { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+  details { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 12px; font-size: 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details ul { padding-left: 18px; color: var(--muted); }
+  .taxa { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .taxon { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .taxon .name { font-weight: 600; }
+  .taxon .meta { color: var(--muted); font-size: 13px; }
+  .taxon .row { margin-top: 8px; }
+  .taxon .row button { padding: 6px 12px; font-size: 14px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin-top: 10px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .err { color: var(--alert); margin-top: 10px; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  a { color: var(--accent); }
+  .guide { position: fixed; inset: auto 0 0 0; background: var(--card); border-top: 1px solid var(--line);
+           max-height: 72vh; overflow: auto; padding: 16px; z-index: 10; }
+  .guide[hidden] { display: none; }
+  .guide .close { position: sticky; top: 0; float: right; }
+  .gitem { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  .gitem b { display: block; }
+  .gitem .s { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .badge { display: inline-block; background: var(--soft); color: var(--accent); border-radius: 20px;
+           padding: 4px 11px; font-size: 13px; font-weight: 600; margin: 4px 4px 0 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent;
+             border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">Riffle<span>.</span></div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/map">Map</a>
+      <a href="#" id="guidebtn">ID guide</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1>Check a stream</h1>
+  <p class="sub">Four short steps at the water's edge. You get a health reading for the stream and what it means for the
+    people and animals around it. No account, and it works with or without a signal.</p>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <!-- Step 1 -->
+  <section class="step" id="step1">
+    <div class="steptag">Step 1 · Where</div>
+    <h2>Which stretch of water?</h2>
+    <p class="hint">Your position lets Riffle compare this visit with the last one and check whether anything you find
+      is on an invasive-species list where you are.</p>
+    <div class="row">
+      <button type="button" class="ghost" id="locate">Use my location</button>
+      <span class="hint" id="locstatus">Not set yet. A photo with GPS also works.</span>
+    </div>
+    <label for="sitename">What do people call this spot? (optional)</label>
+    <input type="text" id="sitename" placeholder="e.g. the brook behind the station" maxlength="120">
+    <div class="row"><button type="button" class="primary wide" data-go="2">Next</button></div>
+  </section>
+
+  <!-- Step 2 -->
+  <section class="step" id="step2" hidden>
+    <div class="steptag">Step 2 · Photos</div>
+    <h2>Two photographs</h2>
+    <p class="hint"><b>One of the water</b>, taken from the bank, showing the channel and the margin.
+      <b>One of what lives in it</b>: scoop gravel and leaves from a fast, shallow patch into a pale tray or tub of
+      water, let it settle for a minute, and photograph what moves. Put everything back afterwards.</p>
+    <div class="row">
+      <button type="button" class="ghost" id="camerabtn">Take a photo</button>
+      <button type="button" class="ghost" id="librarybtn">Choose photos</button>
+    </div>
+    <input id="camera" type="file" accept="image/*" capture="environment">
+    <input id="library" type="file" accept="image/*,.heic,.heif" multiple>
+    <div class="thumbs" id="thumbs"></div>
+    <label for="description">Anything else worth writing down? (optional)</label>
+    <textarea id="description" placeholder="e.g. a pipe discharging under the far bank; the water was much lower than last month"></textarea>
+    <div class="row">
+      <button type="button" class="ghost" data-go="1">Back</button>
+      <button type="button" class="primary wide" data-go="3">Next</button>
+    </div>
+  </section>
+
+  <!-- Step 3 -->
+  <section class="step" id="step3" hidden>
+    <div class="steptag">Step 3 · Your senses</div>
+    <h2>What only you can tell</h2>
+    <p class="hint">A camera cannot smell, and it does not know who uses this water. These two answers change the
+      result more than anything else on this page.</p>
+    <div id="personquestions"></div>
+    <details>
+      <summary>Answer the rest yourself instead of letting the model try</summary>
+      <p class="hint">Optional. Anything you answer here overrides what the model reads off your photo.</p>
+      <div id="restquestions"></div>
+    </details>
+    <div class="row">
+      <button type="button" class="ghost" data-go="2">Back</button>
+      <button type="button" class="primary wide" id="submit">See the result</button>
+    </div>
+    <p class="err" id="error" hidden></p>
+  </section>
+
+  <!-- Step 4: review -->
+  <section class="step" id="step4" hidden>
+    <div class="steptag">Step 4 · Check the model</div>
+    <h2>Confirm or correct what it saw</h2>
+    <p class="hint" id="reviewintro"></p>
+    <div id="queue"></div>
+    <div class="row">
+      <button type="button" class="ghost" id="skipreview">Skip</button>
+      <button type="button" class="primary wide" id="applyreview">Apply and update</button>
+    </div>
+  </section>
+
+  <!-- Result -->
+  <section class="step" id="result" hidden>
+    <div class="steptag">Result</div>
+    <div class="band" id="rband"></div>
+    <div class="scale" id="rscale"></div>
+    <p class="hint" id="rmeaning"></p>
+    <p id="rheadline" style="font-size:17px;margin:14px 0 0"></p>
+    <div id="rdomains"></div>
+    <div id="ractions"></div>
+    <div id="rinvasive"></div>
+    <dl class="kv" id="rnumbers"></dl>
+    <details>
+      <summary>What the animals you found tell us</summary>
+      <ul id="rsignals"></ul>
+    </details>
+    <details>
+      <summary id="rcertsummary">How sure is this?</summary>
+      <ul id="rpenalties"></ul>
+      <p class="hint" id="rcaveat"></p>
+    </details>
+    <div class="row">
+      <button type="button" class="ghost" id="reviewagain">Review the details</button>
+      <button type="button" class="ghost" id="fhirbtn">Export as FHIR</button>
+      <button type="button" class="primary" id="again">Check another spot</button>
+    </div>
+    <div id="rbadges"></div>
+    <p class="foot" id="rfoot"></p>
+  </section>
+</main>
+
+<div class="guide" id="guide" hidden>
+  <button class="ghost close" id="guideclose">Close</button>
+  <h2>What am I looking at?</h2>
+  <p class="hint">Sorted by how sensitive the animal is. Finding the ones at the top is good news.</p>
+  <div id="guidelist"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const api = (path, opts) => fetch(path, { headers: { "X-Riffle-Contributor": who(), ...(opts||{}).headers }, ...opts });
+
+function who() {
+  let id = localStorage.getItem("riffle-contributor");
+  if (!id) { id = "anon-" + Math.random().toString(36).slice(2, 12); localStorage.setItem("riffle-contributor", id); }
+  return id;
+}
+
+let state = { lat: null, lon: null, files: [], answers: {}, form: null, assessment: null, review: { answers: {}, confirmed_taxa: [], rejected_taxa: [] } };
+
+// ---- navigation
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show("step" + b.dataset.go)));
+function show(id) {
+  ["step1","step2","step3","step4","result"].forEach((s) => { $(s).hidden = s !== id; });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ---- health banner
+api("/api/health").then((r) => r.json()).then((h) => {
+  if (h.observer === "none") {
+    $("notice").hidden = false;
+    $("notice").textContent = "No vision model is configured on this server, so nothing is read from your photos automatically. " +
+      "Answer the questions in step 3 yourself and everything else works exactly the same.";
+  }
+}).catch(() => {});
+
+// ---- location
+$("locate").addEventListener("click", () => {
+  if (!navigator.geolocation) return ($("locstatus").textContent = "This browser will not share a location.");
+  $("locstatus").textContent = "Finding you…";
+  navigator.geolocation.getCurrentPosition(
+    (p) => { state.lat = p.coords.latitude; state.lon = p.coords.longitude;
+             $("locstatus").textContent = `Set: ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`; },
+    () => { $("locstatus").textContent = "Location refused. A photo with GPS still works."; },
+    { enableHighAccuracy: true, timeout: 10000 });
+});
+
+// ---- photos
+$("camerabtn").addEventListener("click", () => $("camera").click());
+$("librarybtn").addEventListener("click", () => $("library").click());
+["camera","library"].forEach((id) => $(id).addEventListener("change", (e) => addFiles(e.target.files)));
+
+function addFiles(list) {
+  for (const f of list) if (state.files.length < 4) state.files.push(f);
+  drawThumbs();
+}
+function drawThumbs() {
+  $("thumbs").innerHTML = "";
+  state.files.forEach((f, i) => {
+    const wrap = document.createElement("div"); wrap.className = "thumb";
+    const img = document.createElement("img"); img.alt = f.name;
+    try { img.src = URL.createObjectURL(f); } catch (_) {}
+    const x = document.createElement("button"); x.textContent = "×"; x.title = "Remove";
+    x.addEventListener("click", () => { state.files.splice(i, 1); drawThumbs(); });
+    wrap.append(img, x); $("thumbs").append(wrap);
+  });
+}
+
+// ---- the form, rendered from the server's vocabulary
+api("/api/form").then((r) => r.json()).then((form) => {
+  state.form = form;
+  form.indicators.filter((i) => !i.photo_visible || i.exposure).forEach((i) => $("personquestions").append(question(i)));
+  form.indicators.filter((i) => i.photo_visible && !i.exposure).forEach((i) => $("restquestions").append(question(i)));
+});
+
+function question(indicator, onPick) {
+  const box = document.createElement("div");
+  box.style.marginTop = "14px";
+  const h = document.createElement("label"); h.textContent = indicator.question; box.append(h);
+  const choices = document.createElement("div"); choices.className = "choices";
+  indicator.options.forEach((o) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = o.label; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      const already = b.getAttribute("aria-pressed") === "true";
+      choices.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      if (already) { delete state.answers[indicator.key]; if (onPick) onPick(null); return; }
+      b.setAttribute("aria-pressed", "true");
+      state.answers[indicator.key] = o.value;
+      if (onPick) onPick(o.value);
+    });
+    choices.append(b);
+  });
+  box.append(choices);
+  const why = document.createElement("p"); why.className = "why"; why.textContent = indicator.why; box.append(why);
+  return box;
+}
+
+// ---- submit
+$("submit").addEventListener("click", async () => {
+  const btn = $("submit"); $("error").hidden = true;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading your photos…';
+  const body = new FormData();
+  state.files.forEach((f) => body.append("photos", f, f.name));
+  if ($("description").value.trim()) body.append("description", $("description").value.trim());
+  if ($("sitename").value.trim()) body.append("site_name", $("sitename").value.trim());
+  if (state.lat !== null) { body.append("lat", state.lat); body.append("lon", state.lon); }
+  if (Object.keys(state.answers).length) body.append("answers", JSON.stringify(state.answers));
+  try {
+    const res = await api("/api/assess", { method: "POST", body });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    state.assessment = data;
+    data.needs_confirmation.length ? openReview() : render(data);
+  } catch (e) {
+    $("error").hidden = false; $("error").textContent = String(e.message || e);
+  } finally { btn.disabled = false; btn.textContent = "See the result"; }
+});
+
+// ---- step 4: the human loop
+function openReview() {
+  const d = state.assessment;
+  state.review = { answers: {}, confirmed_taxa: [], rejected_taxa: [] };
+  $("reviewintro").textContent = d.observer === "none"
+    ? "A few questions are still open. Answering them sharpens the reading."
+    : "The model proposed these. Confirming or correcting them changes the result — the ones at the top change it most.";
+  const q = $("queue"); q.innerHTML = "";
+  d.needs_confirmation.slice(0, 8).forEach((item) => q.append(item.kind === "taxon" ? taxonCard(item) : habitatCard(item)));
+  show("step4");
+}
+
+function habitatCard(item) {
+  const indicator = state.form.indicators.find((i) => i.key === item.key);
+  const card = document.createElement("div"); card.className = "taxon";
+  const name = document.createElement("div"); name.className = "name"; name.textContent = indicator.question;
+  const meta = document.createElement("div"); meta.className = "meta";
+  meta.textContent = item.model_said ? `The model said: ${item.model_said} (${Math.round(item.confidence * 100)}% sure)` : "Not answered yet.";
+  const why = document.createElement("p"); why.className = "why"; why.textContent = item.why_it_matters;
+  card.append(name, meta, why);
+  const choices = document.createElement("div"); choices.className = "choices";
+  indicator.options.forEach((o) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = o.label;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      choices.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      state.review.answers[item.key] = o.value;
+    });
+    choices.append(b);
+  });
+  card.append(choices);
+  return card;
+}
+
+function taxonCard(item) {
+  const card = document.createElement("div"); card.className = "taxon";
+  const name = document.createElement("div"); name.className = "name"; name.textContent = item.question;
+  const meta = document.createElement("div"); meta.className = "meta";
+  meta.textContent = `${Math.round(item.confidence * 100)}% sure. ${item.why_it_matters}`;
+  const row = document.createElement("div"); row.className = "row";
+  const yes = document.createElement("button"); yes.className = "ghost"; yes.textContent = "Yes, that's it";
+  const no = document.createElement("button"); no.className = "ghost"; no.textContent = "No, remove it";
+  yes.addEventListener("click", () => {
+    state.review.confirmed_taxa = [...new Set([...state.review.confirmed_taxa, item.key])];
+    state.review.rejected_taxa = state.review.rejected_taxa.filter((n) => n !== item.key);
+    yes.setAttribute("aria-pressed", "true"); no.setAttribute("aria-pressed", "false");
+  });
+  no.addEventListener("click", () => {
+    state.review.rejected_taxa = [...new Set([...state.review.rejected_taxa, item.key])];
+    state.review.confirmed_taxa = state.review.confirmed_taxa.filter((n) => n !== item.key);
+    no.setAttribute("aria-pressed", "true"); yes.setAttribute("aria-pressed", "false");
+  });
+  row.append(yes, no);
+  card.append(name, meta, row);
+  return card;
+}
+
+$("skipreview").addEventListener("click", () => render(state.assessment));
+$("reviewagain").addEventListener("click", openReview);
+$("applyreview").addEventListener("click", async () => {
+  const btn = $("applyreview");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Updating…';
+  try {
+    const res = await api(`/api/assess/${state.assessment.id}/review`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state.review),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    state.assessment = data; render(data);
+  } catch (e) { alert(String(e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = "Apply and update"; }
+});
+
+// ---- result
+const BANDS = ["High", "Good", "Moderate", "Poor", "Bad"];
+
+function render(d) {
+  $("rband").textContent = d.band;
+  $("rband").className = "band " + d.band;
+  $("rscale").innerHTML = "";
+  BANDS.forEach((b) => {
+    const i = document.createElement("i");
+    i.className = b === d.band ? "on " + b : "";
+    i.title = b; $("rscale").append(i);
+  });
+  $("rmeaning").textContent = d.ecology.meaning;
+  $("rheadline").textContent = d.one_health.headline;
+
+  const domains = $("rdomains"); domains.innerHTML = "";
+  d.one_health.domains.forEach((dom) => {
+    const box = document.createElement("div"); box.className = "domain";
+    const h = document.createElement("h3");
+    const pill = document.createElement("span"); pill.className = "pill " + dom.level; pill.textContent = dom.level;
+    h.append(document.createTextNode(dom.title), pill); box.append(h);
+    if (!dom.findings.length) {
+      const p = document.createElement("p"); p.className = "why"; p.textContent = "Nothing flagged.";
+      box.append(p);
+    }
+    dom.findings.forEach((f) => {
+      const item = document.createElement("div"); item.className = "finding";
+      const t = document.createElement("strong"); t.textContent = f.title; item.append(t);
+      const ul = document.createElement("ul");
+      f.because.forEach((b) => { const li = document.createElement("li"); li.textContent = b; ul.append(li); });
+      item.append(ul);
+      const act = document.createElement("p"); act.className = "do"; act.textContent = f.action; item.append(act);
+      box.append(item);
+    });
+    domains.append(box);
+  });
+
+  const actions = $("ractions"); actions.innerHTML = "";
+  const groups = [["What to do now", d.one_health.actions.you_now],
+                  ["With other people here", d.one_health.actions.your_community],
+                  ["What to ask your authority for", d.one_health.actions.the_authority]];
+  groups.forEach(([title, items]) => {
+    if (!items.length) return;
+    const det = document.createElement("details");
+    const sum = document.createElement("summary"); sum.textContent = `${title} (${items.length})`;
+    const ul = document.createElement("ul");
+    items.forEach((x) => { const li = document.createElement("li"); li.textContent = x; ul.append(li); });
+    det.append(sum, ul); actions.append(det);
+  });
+
+  const inv = $("rinvasive"); inv.innerHTML = "";
+  d.invasives.forEach((i) => {
+    const box = document.createElement("div"); box.className = "domain";
+    const h = document.createElement("h3"); h.textContent = "Invasive species: " + i.name; box.append(h);
+    const p = document.createElement("p"); p.className = "why"; p.textContent = i.why_it_matters; box.append(p);
+    const s = document.createElement("p"); s.className = "why";
+    s.textContent = `Listed by ${i.source} (${i.scope}).` + (i.note ? " " + i.note : "");
+    box.append(s); inv.append(box);
+  });
+
+  const kv = $("rnumbers"); kv.innerHTML = "";
+  const rows = [
+    ["Families found", `${d.ecology.families} (${d.ecology.ept_families} mayfly/stonefly/caddisfly)`],
+    ["Average sensitivity (ASPT)", d.ecology.aspt === null ? "not calculated" : `${d.ecology.aspt} out of 10`],
+    ["BMWP total", d.ecology.bmwp],
+    ["Visible pressure", `${d.pressures.pressure} / 100 (${d.pressures.band})`],
+    ["Confidence in this reading", `${d.certainty}%`],
+    ["Where", d.region.place ? d.region.place.display_name : "not resolved"],
+  ];
+  rows.forEach(([k, v]) => {
+    const dt = document.createElement("dt"); dt.textContent = k;
+    const dd = document.createElement("dd"); dd.textContent = v;
+    kv.append(dt, dd);
+  });
+
+  fill("rsignals", d.ecology.signals);
+  fill("rpenalties", d.penalties.length ? d.penalties : ["Nothing is holding this reading back."]);
+  $("rcertsummary").textContent = `How sure is this? (${d.certainty}%)`;
+  $("rcaveat").textContent = d.ecology.caveat + " " + d.one_health.disclaimer;
+  $("rfoot").textContent = `Assessment ${d.id} · ${d.version} · index ${d.ecology.catalogue_version} · form ${d.pressures.form_version} · read by ${d.observer}`;
+
+  $("fhirbtn").onclick = () => window.open(`/api/assess/${d.id}/fhir`, "_blank");
+  show("result");
+  loadBadges();
+}
+
+function fill(id, items) {
+  const ul = $(id); ul.innerHTML = "";
+  items.forEach((x) => { const li = document.createElement("li"); li.textContent = x; ul.append(li); });
+}
+
+function loadBadges() {
+  api("/api/me/progress").then((r) => r.json()).then((p) => {
+    const box = $("rbadges"); box.innerHTML = "";
+    if (!p.assessments) return;
+    const line = document.createElement("p");
+    line.style.marginTop = "14px";
+    line.textContent = `${p.assessments} assessment${p.assessments === 1 ? "" : "s"} at ${p.sites} site${p.sites === 1 ? "" : "s"}, ${p.confirmations} observation${p.confirmations === 1 ? "" : "s"} you checked yourself.`;
+    box.append(line);
+    (p.badges || []).forEach((b) => {
+      const s = document.createElement("span"); s.className = "badge"; s.textContent = b.name; s.title = b.why; box.append(s);
+    });
+    if (p.next) {
+      const n = document.createElement("p"); n.className = "why"; n.textContent = `Next: ${p.next.name} — ${p.next.why}`;
+      box.append(n);
+    }
+  }).catch(() => {});
+}
+
+$("again").addEventListener("click", () => {
+  state.files = []; state.answers = {}; state.assessment = null;
+  drawThumbs();
+  document.querySelectorAll(".choices button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  $("description").value = "";
+  show("step1");
+});
+
+// ---- ID guide
+$("guidebtn").addEventListener("click", (e) => {
+  e.preventDefault();
+  $("guide").hidden = false;
+  if ($("guidelist").childElementCount) return;
+  api("/api/guide").then((r) => r.json()).then((g) => {
+    g.families.forEach((f) => {
+      const d = document.createElement("div"); d.className = "gitem";
+      const s = document.createElement("div"); s.className = "s"; s.textContent = `${f.sensitivity} · score ${f.bmwp}/10 · ${f.group}`;
+      const b = document.createElement("b"); b.textContent = f.plain_name;
+      const look = document.createElement("div"); look.textContent = f.look_for;
+      const means = document.createElement("div"); means.className = "why"; means.textContent = f.means;
+      d.append(s, b, look, means); $("guidelist").append(d);
+    });
+  });
+});
+$("guideclose").addEventListener("click", () => ($("guide").hidden = true));
+</script>
+</body>
+</html>

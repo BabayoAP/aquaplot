@@ -559,12 +559,24 @@ def area_listed():
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    """The guided stream check. This is the product; everything else supports it."""
+    return FileResponse(STATIC_DIR / "check.html")
+
+
+@app.get("/dashboard", include_in_schema=False)
+def dashboard_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "dashboard.html")
 
 
 @app.get("/map", include_in_schema=False)
 def map_page() -> FileResponse:
     return FileResponse(STATIC_DIR / "map.html")
+
+
+@app.get("/classify", include_in_schema=False)
+def classify_page() -> FileResponse:
+    """The inherited single-organism classifier, kept working (see README, lineage)."""
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

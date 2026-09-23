@@ -230,15 +230,39 @@ def test_trend_reads_the_direction_of_the_last_two_visits():
 
 async def test_a_second_visit_turns_a_reading_into_a_trend():
     store = Store(":memory:")
-    first = await run(site_name="Ribeira da Fonte")
-    store.save(first, contributor="anon-1")
-    better = await reassess(first.as_dict(), Review(added_taxa=("Perlidae", "Heptageniidae", "Leptoceridae", "Goeridae")))
-    store.save(better, contributor="anon-1")
+    store.save(await run(site_name="Ribeira da Fonte"), contributor="anon-1")
+    assert store.sites()[0]["trend"]["direction"] == "new"
+
+    healthier = FakeObserver(
+        SCENE,
+        StreamObservation(
+            photo_kind="specimen",
+            taxa=[SeenTaxon(name=n, confidence=0.9) for n in ("Perlidae", "Heptageniidae", "Leptoceridae", "Goeridae", "Gammaridae")],
+        ),
+    )
+    store.save(await run(observer=healthier, site_name="Ribeira da Fonte"), contributor="anon-1")
 
     sites = store.sites()
     assert len(sites) == 1 and sites[0]["assessments"] == 2
     assert sites[0]["trend"]["direction"] == "improving"
     assert sites[0]["name"] == "Ribeira da Fonte"
+
+
+async def test_a_review_replaces_a_visit_rather_than_inventing_one():
+    """Otherwise the most careful volunteers would manufacture trends by checking the model's work."""
+    store = Store(":memory:")
+    first = await run(site_name="Ribeira da Fonte")
+    store.save(first, contributor="anon-1")
+    reviewed = await reassess(first.as_dict(), Review(confirmed_taxa=("Chironomidae",)))
+    assert reviewed.supersedes == first.id
+    store.save(reviewed, contributor="anon-1")
+
+    site = store.sites()[0]
+    assert site["assessments"] == 1 and site["trend"]["direction"] == "new"
+    assert store.history(site["site_key"])[0]["id"] == reviewed.id
+    # The superseded version stays fetchable: it is the record of what the model
+    # said before a person corrected it.
+    assert store.get(first.id)["id"] == first.id
 
 
 async def test_badges_reward_returning_and_reviewing_not_volume():
@@ -249,7 +273,7 @@ async def test_badges_reward_returning_and_reviewing_not_volume():
     assert {b["key"] for b in progress["badges"]} >= {"first-check", "sentinel"}
     assert progress["next"] is not None
 
-    store.save(await reassess(a.as_dict(), Review(confirmed_taxa=("Chironomidae",))), contributor="anon-1")
+    store.save(await run(), contributor="anon-1")  # a genuine second visit to the same spot
     assert "returner" in {b["key"] for b in store.progress("anon-1")["badges"]}
     assert store.progress("unknown-person")["assessments"] == 0
 

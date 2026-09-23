@@ -9,11 +9,17 @@ from conftest import make_image
 IRVINE = (33.6846, -117.8265)
 
 
-def test_index_serves_the_page(client):
+def test_the_root_page_is_the_guided_stream_check(client):
     res = client.get("/")
     assert res.status_code == 200
-    assert "SpeciesGuard" in res.text
-    assert 'capture="environment"' in res.text  # phone camera input (PRD §5.0)
+    assert "Check a stream" in res.text
+    assert 'capture="environment"' in res.text  # a phone camera, at the water's edge
+
+
+def test_every_page_is_served(client):
+    for path, marker in [("/dashboard", "Stream health dashboard"), ("/map", "<html"), ("/classify", "SpeciesGuard")]:
+        res = client.get(path)
+        assert res.status_code == 200 and marker in res.text
 
 
 def test_health(client):

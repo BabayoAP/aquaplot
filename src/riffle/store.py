@@ -21,6 +21,11 @@ Design notes:
   columns exist to be queried; the JSON exists so a stored assessment can always
   be shown exactly as it was produced, even after the rules change. Every row
   records the version that produced it.
+* **A review replaces a visit, it does not add one.** When a person confirms or
+  corrects what the model proposed, the new assessment carries ``supersedes`` and
+  the row it replaces is marked and drops out of every count, trend and feed
+  while staying fetchable by id. Without this, the most careful volunteers -
+  the ones who check the model's work - would manufacture trends by reviewing.
 * **Contributors are anonymous by construction.** A contributor is an opaque id
   the browser generates and keeps; there is no account, no email and no way back
   to a person. It is enough for a streak and a badge (Track 5) and not enough to
@@ -75,16 +80,23 @@ CREATE TABLE IF NOT EXISTS assessments (
     observer      TEXT,
     contributor   TEXT,
     version       TEXT,
+    superseded_by TEXT,
     payload       TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS ix_site ON assessments(site_key, created_at);
-CREATE INDEX IF NOT EXISTS ix_time ON assessments(created_at);
-CREATE INDEX IF NOT EXISTS ix_contributor ON assessments(contributor, created_at);
 CREATE TABLE IF NOT EXISTS site_names (
     site_key  TEXT PRIMARY KEY,
     name      TEXT NOT NULL,
     named_at  TEXT NOT NULL
 );
+"""
+
+# Indexes are created after the migration, because one of them names a column an
+# older database will not have until the migration has added it.
+INDEXES = """
+CREATE INDEX IF NOT EXISTS ix_site ON assessments(site_key, created_at);
+CREATE INDEX IF NOT EXISTS ix_live ON assessments(superseded_by, created_at);
+CREATE INDEX IF NOT EXISTS ix_time ON assessments(created_at);
+CREATE INDEX IF NOT EXISTS ix_contributor ON assessments(contributor, created_at);
 """
 
 
@@ -107,6 +119,19 @@ class Store:
         self._conn.row_factory = sqlite3.Row
         with self._write() as c:
             c.executescript(SCHEMA)
+            self._migrate(c)
+            c.executescript(INDEXES)
+
+    def _migrate(self, cursor: sqlite3.Cursor) -> None:
+        """Add columns a database written by an earlier version is missing.
+
+        Forward-only and additive: a running deployment must survive a schema
+        change without anyone deleting the data citizens contributed.
+        """
+        have = {row["name"] for row in cursor.execute("PRAGMA table_info(assessments)").fetchall()}
+        for column, ddl in (("superseded_by", "TEXT"),):
+            if column not in have:
+                cursor.execute(f"ALTER TABLE assessments ADD COLUMN {column} {ddl}")
 
     @contextmanager
     def _write(self) -> Iterator[sqlite3.Cursor]:
@@ -135,10 +160,14 @@ class Store:
         place = assessment.region.place
         with self._write() as c:
             c.execute(
-                """INSERT OR REPLACE INTO assessments VALUES
+                """INSERT OR REPLACE INTO assessments
+                   (id, created_at, site_key, site_name, lat, lon, place_id, place_name, band, band_ordinal,
+                    bmwp, aspt, families, ept_families, pressure, certainty, overall_level, level_ordinal,
+                    invasives, confirmations, observer, contributor, version, superseded_by, payload)
+                   VALUES
                    (:id,:created_at,:site_key,:site_name,:lat,:lon,:place_id,:place_name,:band,:band_ordinal,
                     :bmwp,:aspt,:families,:ept_families,:pressure,:certainty,:overall_level,:level_ordinal,
-                    :invasives,:confirmations,:observer,:contributor,:version,:payload)""",
+                    :invasives,:confirmations,:observer,:contributor,:version,NULL,:payload)""",
                 {
                     "id": assessment.id,
                     "created_at": assessment.created_at,
@@ -166,6 +195,14 @@ class Store:
                     "payload": json.dumps(d),
                 },
             )
+            if assessment.supersedes:
+                # The superseded row stays fetchable by id - an audit trail of what
+                # the model said before a person corrected it - but leaves every
+                # count, trend and feed.
+                c.execute(
+                    "UPDATE assessments SET superseded_by = ? WHERE id = ? AND superseded_by IS NULL",
+                    (assessment.id, assessment.supersedes),
+                )
             if assessment.site_name and key != "unlocated":
                 c.execute(
                     "INSERT OR REPLACE INTO site_names VALUES (?,?,?)",
@@ -185,7 +222,7 @@ class Store:
         This is what the map draws and the dashboard ranks: one row per place on
         the ground, not one per visit.
         """
-        where, params = "WHERE site_key != 'unlocated'", []
+        where, params = "WHERE superseded_by IS NULL AND site_key != 'unlocated'", []
         if bbox is not None:
             south, west, north, east = bbox
             where += " AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?"
@@ -225,7 +262,7 @@ class Store:
         rows = self._query(
             """SELECT id, created_at, site_name, place_name, lat, lon, band, band_ordinal, bmwp, aspt,
                       families, ept_families, pressure, certainty, overall_level, invasives, confirmations
-               FROM assessments WHERE site_key = ? ORDER BY created_at DESC LIMIT ?""",
+               FROM assessments WHERE site_key = ? AND superseded_by IS NULL ORDER BY created_at DESC LIMIT ?""",
             (key, limit),
         )
         return [dict(r) for r in rows]
@@ -243,7 +280,7 @@ class Store:
         rows = self._query(
             """SELECT id, created_at, site_key, site_name, place_name, lat, lon, band, pressure,
                       overall_level, certainty, invasives
-               FROM assessments WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?""",
+               FROM assessments WHERE created_at >= ? AND superseded_by IS NULL ORDER BY created_at DESC LIMIT ?""",
             (since, limit),
         )
         return [dict(r) for r in rows]
@@ -253,9 +290,10 @@ class Store:
         since = (datetime.now(UTC) - timedelta(days=days)).isoformat()
         rows = self._query(
             """SELECT a.* FROM assessments a
-               JOIN (SELECT site_key, MAX(created_at) m FROM assessments GROUP BY site_key) t
+               JOIN (SELECT site_key, MAX(created_at) m FROM assessments WHERE superseded_by IS NULL GROUP BY site_key) t
                  ON a.site_key = t.site_key AND a.created_at = t.m
-               WHERE a.level_ordinal >= 2 AND a.created_at >= ? ORDER BY a.level_ordinal DESC, a.created_at DESC""",
+               WHERE a.superseded_by IS NULL AND a.level_ordinal >= 2 AND a.created_at >= ?
+               ORDER BY a.level_ordinal DESC, a.created_at DESC""",
             (since,),
         )
         out = []
@@ -289,22 +327,22 @@ class Store:
             """SELECT COUNT(*) n, COUNT(DISTINCT site_key) sites, COUNT(DISTINCT contributor) people,
                       AVG(band_ordinal) mean_band, AVG(pressure) mean_pressure, SUM(invasives) invasives,
                       SUM(confirmations) confirmations
-               FROM assessments"""
+               FROM assessments WHERE superseded_by IS NULL"""
         )
         row = dict(rows[0]) if rows else {}
         bands = {
             r["band"]: r["n"]
-            for r in self._query("SELECT band, COUNT(*) n FROM assessments GROUP BY band")
+            for r in self._query("SELECT band, COUNT(*) n FROM assessments WHERE superseded_by IS NULL GROUP BY band")
         }
         levels = {
             r["overall_level"]: r["n"]
-            for r in self._query("SELECT overall_level, COUNT(*) n FROM assessments GROUP BY overall_level")
+            for r in self._query("SELECT overall_level, COUNT(*) n FROM assessments WHERE superseded_by IS NULL GROUP BY overall_level")
         }
         months = [
             {"month": r["m"], "assessments": r["n"], "mean_band": round(r["mb"], 2) if r["mb"] is not None else None}
             for r in self._query(
                 """SELECT substr(created_at,1,7) m, COUNT(*) n, AVG(band_ordinal) mb
-                   FROM assessments GROUP BY m ORDER BY m"""
+                   FROM assessments WHERE superseded_by IS NULL GROUP BY m ORDER BY m"""
             )
         ]
         return {
@@ -329,7 +367,7 @@ class Store:
         """
         rows = self._query(
             """SELECT created_at, site_key, band_ordinal, confirmations, invasives
-               FROM assessments WHERE contributor = ? ORDER BY created_at""",
+               FROM assessments WHERE contributor = ? AND superseded_by IS NULL ORDER BY created_at""",
             (contributor,),
         )
         if not rows:

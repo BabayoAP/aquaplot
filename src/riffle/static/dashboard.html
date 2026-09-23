@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riffle — stream health dashboard</title>
+<style>
+  :root {
+    --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
+    --accent: #0f6b7a; --soft: #e8f1f3;
+    --High: #1a7f5a; --Good: #4f9d46; --Moderate: #b8860b; --Poor: #c2662a; --Bad: #a5342b;
+    --ok: #1a7f5a; --watch: #8a6d1f; --concern: #c2662a; --alert: #a5342b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31;
+            --High: #56c596; --Good: #8ec96f; --Moderate: #d9b45a; --Poor: #e3925f; --Bad: #e8756a;
+            --ok: #56c596; --watch: #d9b45a; --concern: #e3925f; --alert: #e8756a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1040px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 14px; font-size: 14px; }
+  main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; max-width: 70ch; }
+  h2 { font-size: 16px; margin: 26px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .card .n { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .card .l { color: var(--muted); font-size: 13px; }
+  .stack { display: flex; height: 26px; border-radius: 7px; overflow: hidden; border: 1px solid var(--line); }
+  .stack div { display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card);
+          border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  tr:last-child td { border-bottom: 0; }
+  .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; color: #fff; }
+  .trend { font-size: 13px; color: var(--muted); }
+  .trend.declining { color: var(--Poor); font-weight: 600; }
+  .trend.improving { color: var(--Good); font-weight: 600; }
+  .alert-item { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--alert);
+                border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .alert-item.concern { border-left-color: var(--concern); }
+  .alert-item h3 { margin: 0 0 4px; font-size: 15px; }
+  .alert-item p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+  .alert-item ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+  .empty { color: var(--muted); font-size: 14px; background: var(--card); border: 1px dashed var(--line);
+           border-radius: 12px; padding: 20px; text-align: center; }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 70px; margin-top: 8px; }
+  .spark div { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .8; }
+  .spark span { display: block; }
+  .months { display: flex; gap: 3px; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .months div { flex: 1; text-align: center; overflow: hidden; }
+  a { color: var(--accent); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 30px; }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">Riffle<span>.</span></div>
+  <nav><a href="/">Check a stream</a><a href="/map">Map</a><a href="/docs">API</a></nav>
+</div></header>
+<main>
+  <h1>Stream health dashboard</h1>
+  <p class="sub">Every assessment citizens have recorded here, turned into the three things a decision needs:
+    where the water stands now, which sites are getting worse, and what needs someone with a budget.
+    Each row is a place on the ground, not a person's submission.</p>
+
+  <div class="cards" id="cards"></div>
+
+  <h2>Where the water stands</h2>
+  <div class="stack" id="bandstack"></div>
+  <div class="legend" id="bandlegend"></div>
+
+  <h2>Assessments over time</h2>
+  <div class="spark" id="spark"></div>
+  <div class="months" id="months"></div>
+
+  <h2>Needs attention now</h2>
+  <div id="alerts"></div>
+
+  <h2>Sites</h2>
+  <div id="sites"></div>
+
+  <p class="foot" id="foot"></p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const BANDS = ["High", "Good", "Moderate", "Poor", "Bad"];
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue("--" + name).trim();
+
+function card(n, label, hint) {
+  const d = document.createElement("div"); d.className = "card";
+  const a = document.createElement("div"); a.className = "n"; a.textContent = n;
+  const b = document.createElement("div"); b.className = "l"; b.textContent = label;
+  d.append(a, b);
+  if (hint) { const c = document.createElement("div"); c.className = "l"; c.style.marginTop = "6px"; c.textContent = hint; d.append(c); }
+  return d;
+}
+
+Promise.all([
+  fetch("/api/insights").then((r) => r.json()),
+  fetch("/api/sites").then((r) => r.json()),
+  fetch("/api/alerts").then((r) => r.json()),
+]).then(([insight, siteData, alertData]) => {
+  const sites = siteData.sites;
+
+  const cards = $("cards");
+  cards.append(card(insight.assessments, "assessments recorded"));
+  cards.append(card(insight.sites, "sites monitored"));
+  cards.append(card(insight.contributors, "contributors"));
+  cards.append(card(insight.human_confirmations, "observations a person checked",
+    "The model proposes; people confirm. This is how many were checked."));
+  const declining = sites.filter((s) => s.trend.direction === "declining").length;
+  cards.append(card(declining, "sites declining", "Their last visit scored worse than the one before."));
+  cards.append(card(insight.invasive_records, "invasive-species records"));
+
+  // band distribution
+  const stack = $("bandstack"), legend = $("bandlegend");
+  const total = BANDS.reduce((n, b) => n + (insight.by_band[b] || 0), 0);
+  if (!total) { stack.remove(); legend.remove(); }
+  BANDS.forEach((b) => {
+    const n = insight.by_band[b] || 0;
+    if (n) {
+      const d = document.createElement("div");
+      d.style.width = (100 * n / total) + "%"; d.style.background = css(b);
+      d.textContent = n > 0 && (100 * n / total) > 8 ? n : "";
+      d.title = `${b}: ${n}`;
+      stack.append(d);
+    }
+    const l = document.createElement("span");
+    l.innerHTML = `<i style="background:${css(b)}"></i>${b} ${n}`;
+    legend.append(l);
+  });
+
+  // monthly activity
+  const months = insight.by_month;
+  const peak = Math.max(1, ...months.map((m) => m.assessments));
+  months.slice(-18).forEach((m) => {
+    const bar = document.createElement("div");
+    bar.style.height = Math.round(100 * m.assessments / peak) + "%";
+    bar.title = `${m.month}: ${m.assessments} assessments, mean band ${m.mean_band}`;
+    $("spark").append(bar);
+    const lab = document.createElement("div"); lab.textContent = m.month.slice(5); $("months").append(lab);
+  });
+  if (!months.length) { $("spark").remove(); $("months").remove(); }
+
+  // alerts
+  const alerts = $("alerts");
+  if (!alertData.alerts.length) {
+    alerts.innerHTML = '<div class="empty">Nothing at concern or alert level in the last 30 days.</div>';
+  }
+  alertData.alerts.forEach((a) => {
+    const box = document.createElement("div"); box.className = "alert-item " + a.level;
+    const h = document.createElement("h3"); h.textContent = `${a.name} — ${a.level}`;
+    const p = document.createElement("p"); p.textContent = a.headline;
+    const ul = document.createElement("ul");
+    a.findings.forEach((f) => { const li = document.createElement("li"); li.textContent = f.title; ul.append(li); });
+    const when = document.createElement("p"); when.textContent = `Recorded ${a.created_at.slice(0, 10)} · band ${a.band}`;
+    box.append(h, p, ul, when); alerts.append(box);
+  });
+
+  // sites
+  if (!sites.length) {
+    $("sites").innerHTML = '<div class="empty">No assessments yet. <a href="/">Record the first one.</a></div>';
+  } else {
+    const table = document.createElement("table");
+    table.innerHTML = "<tr><th>Site</th><th>Band</th><th>Pressure</th><th>Visits</th><th>Trend</th><th>Last seen</th></tr>";
+    sites.forEach((s) => {
+      const tr = document.createElement("tr");
+      const name = document.createElement("td");
+      name.innerHTML = `<b>${escape(s.name)}</b><br><span class="trend">${escape(s.place || "")}</span>`;
+      const band = document.createElement("td");
+      band.innerHTML = `<span class="tag" style="background:${css(s.band)}">${s.band}</span>`;
+      const pressure = document.createElement("td"); pressure.textContent = Math.round(s.pressure) + " / 100";
+      const visits = document.createElement("td"); visits.textContent = s.assessments;
+      const trend = document.createElement("td");
+      trend.innerHTML = `<span class="trend ${s.trend.direction}">${s.trend.direction}</span><br><span class="trend">${escape(s.trend.detail)}</span>`;
+      const seen = document.createElement("td"); seen.textContent = s.last_seen.slice(0, 10);
+      tr.append(name, band, pressure, visits, trend, seen);
+      table.append(tr);
+    });
+    $("sites").append(table);
+  }
+
+  $("foot").textContent = "Screening data from citizen assessments. Not a Water Framework Directive classification: "
+    + "a formal classification needs a standardised kick sample, laboratory identification and a reference-site comparison.";
+});
+
+function escape(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+</script>
+</body>
+</html>

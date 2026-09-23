@@ -33,7 +33,7 @@ from typing import Any
 
 from .area import ListedTaxon, load_seed, match_listed_any
 from .inat import InatClient, InatError
-from .places import CONFIDENCE_BY_ADMIN_LEVEL, EU_MEMBER_CODES, Locality, Place
+from .places import CONFIDENCE_BY_ADMIN_LEVEL, Locality, Place, in_european_union
 from .schema import Label
 
 # How much to trust a status answer, by where it came from. These are priors,
@@ -81,7 +81,7 @@ def _scope_covers(scope: str, locality: Locality) -> bool:
         if not part:
             continue
         if part.lower() == "european union":
-            if country is not None and country.name.upper() in EU_MEMBER_CODES:
+            if in_european_union(country):
                 return True
             continue
         # "California, US" matches a chain containing either word. Loose on purpose:

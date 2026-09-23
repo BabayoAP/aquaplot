@@ -161,9 +161,26 @@ def pilot_sites() -> dict[str, Any]:
     return json.loads(resources.files("riffle.data").joinpath("pilot_sites.json").read_text())
 
 
-# ISO 3166-1 alpha-2 codes of EU member states. iNaturalist names its country
-# places by code, and no place is called "European Union", so a list whose scope
-# is the Union is resolved through membership rather than string matching.
+# EU member states. No iNaturalist place is called "European Union", so a seed
+# entry whose scope is the Union is resolved through membership. iNaturalist
+# returns country places sometimes by ISO code and sometimes by name, so both
+# spellings are held here and matching checks either.
 EU_MEMBER_CODES = frozenset(
-    "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE".split()
+    "AT BE BG HR CY CZ DK EE FI FR DE GR EL HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE".split()
 )
+EU_MEMBER_NAMES = frozenset(
+    name.lower()
+    for name in (
+        "Austria Belgium Bulgaria Croatia Cyprus Czechia Denmark Estonia Finland France Germany Greece Hungary "
+        "Ireland Italy Latvia Lithuania Luxembourg Malta Netherlands Poland Portugal Romania Slovakia Slovenia "
+        "Spain Sweden"
+    ).split()
+) | {"czech republic", "the netherlands"}
+
+
+def in_european_union(country: Place | None) -> bool:
+    if country is None:
+        return False
+    return country.name.strip().upper() in EU_MEMBER_CODES or country.name.strip().lower() in EU_MEMBER_NAMES or (
+        country.display_name.strip().lower() in EU_MEMBER_NAMES
+    )
