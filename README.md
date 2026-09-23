@@ -100,6 +100,15 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 Open `/` to check a stream, `/dashboard` for the insights, `/map` for the map, `/docs` for
 the OpenAPI reference.
 
+A fresh install has an empty dashboard, which is the worst first impression of a tool whose
+argument is that a *series* is worth more than one reading. `scripts/seed_demo.py` posts a
+small, clearly-labelled demo dataset across the five research cities — including a site that
+declines between visits — through the public API:
+
+```sh
+.venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000
+```
+
 ### Choosing a vision model
 
 | `ANTHROPIC_API_KEY` set | Ollama running with a vision model | Backend |

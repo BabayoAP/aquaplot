@@ -1,5 +1,12 @@
 # Area viewer — feature spec
 
+> **Inherited feature.** This is SpeciesGuard's area viewer, kept working in Riffle and
+> served at `/map`, where it now also draws Riffle's own stream assessments coloured by
+> ecological band. What changed: the Orange County scope switch became a `place_id` filter
+> that accepts any iNaturalist place, the default view is the world rather than one county,
+> and a selector jumps to the five OneAquaHealth research cities. Read "Orange County" below
+> as "the place in view".
+
 **Status:** v1 shipped 2026-09-16. Addendum to [PRD.md](../PRD.md) (SpeciesGuard v1.1);
 this document is the PRD for the feature and uses the same conventions
 (numbered requirements, explicit non-goals, decisions with reasons).

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SpeciesGuard</title>
+<title>Riffle — identify one organism</title>
 <style>
   :root {
     --bg: #f6f7f4; --card: #ffffff; --ink: #1d221c; --muted: #66705f; --line: #dfe3da;
@@ -56,8 +56,10 @@
 </head>
 <body>
 <main>
-  <h1>SpeciesGuard</h1>
-  <p class="sub">Photo in, native / invasive call out, with a certainty score. Orange County, CA. <a href="/map" id="maplink">Open the area viewer</a></p>
+  <h1>Identify one organism</h1>
+  <p class="sub">Photo in, native / invasive / naturalized out, with a certainty score and an evidence trail,
+    for wherever the photo was taken. Inherited from SpeciesGuard, the project Riffle grew out of.
+    For a whole stream, use the <a href="/">guided check</a>. <a href="/map" id="maplink">Open the map</a></p>
 
   <div class="notice" id="notice" hidden></div>
 
@@ -106,7 +108,7 @@
       <dt>Species model</dt><dd id="rmodel"></dd>
     </dl>
     <p><a id="rmap" href="/map">See sightings around this location on the area viewer</a></p>
-    <p class="caveat">Decision support, not a regulatory finding. "Invasive" here means the species is on a Cal-IPC, CDFW, USGS or UC IPM list; "Naturalized/Non-native" means iNaturalist records it as introduced but no list in the seed names it. Verify before removing anything.</p>
+    <p class="caveat">Decision support, not a regulatory finding. "Invasive" here means the species is on an invasive list for some jurisdiction — the EU Union list under Regulation 1143/2014, or Cal-IPC, CDFW, USGS or UC IPM — and the result says which. "Naturalized/Non-native" means iNaturalist records it as introduced where you are, but no list in the seed names it. Verify before removing anything.</p>
     <p class="foot" id="rver"></p>
   </section>
 </main>
@@ -229,7 +231,7 @@
     $("rregion").textContent = g.source === "none"
       ? "unknown"
       : `${g.lat.toFixed(4)}, ${g.lon.toFixed(4)} from ${g.source === "exif" ? "photo GPS" : "device"} · ` +
-        (g.in_orange_county ? "in Orange County" : "outside Orange County");
+        (g.place ? g.place.display_name : "no administrative place resolved");
     $("rregime").textContent = r.regime.replace("_", " ");
     const pens = r.evidence.certainty_penalties.length ? r.evidence.certainty_penalties : ["nothing: every factor was at full weight"];
     $("rpen").replaceChildren(...pens.map(li));

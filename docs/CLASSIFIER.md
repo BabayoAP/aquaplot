@@ -1,5 +1,13 @@
 # Classifier — how a photo becomes "Invasive, 72 %"
 
+> **Inherited feature.** This is SpeciesGuard's single-organism classifier, kept working in
+> Riffle and served at `/classify`. Riffle's own product is the guided stream check at `/`,
+> specified in [ASSESSMENT.md](ASSESSMENT.md). What changed here: the region is no longer
+> Orange County but whatever administrative place the coordinates resolve to
+> ([places.py](../src/riffle/places.py)), and the seed list now carries the EU Union list
+> alongside the Californian entries, with each result naming the jurisdiction that lists a
+> species. Read "Orange County" below as "the place the observation was made".
+
 Implements PRD §6 (the four-stage pipeline), FR-8 (always answer, with a
 certainty) and §9 (the certainty carries the honesty). This page is the
 reader's guide; the rule itself lives in `src/riffle/pipeline.py`.
