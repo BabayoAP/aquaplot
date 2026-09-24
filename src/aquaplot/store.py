@@ -35,6 +35,7 @@ Design notes:
 from __future__ import annotations
 
 import json
+import math
 import os
 import sqlite3
 import threading
@@ -98,6 +99,15 @@ CREATE INDEX IF NOT EXISTS ix_live ON assessments(superseded_by, created_at);
 CREATE INDEX IF NOT EXISTS ix_time ON assessments(created_at);
 CREATE INDEX IF NOT EXISTS ix_contributor ON assessments(contributor, created_at);
 """
+
+
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in metres."""
+    r = 6_371_000
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(min(1.0, math.sqrt(a)))
 
 
 def site_key(lat: float | None, lon: float | None) -> str | None:
@@ -274,6 +284,65 @@ class Store:
     def rename(self, key: str, name: str) -> None:
         with self._write() as c:
             c.execute("INSERT OR REPLACE INTO site_names VALUES (?,?,?)", (key, name, datetime.now(UTC).isoformat()))
+
+    def nearby(self, lat: float, lon: float, radius_m: float = 250.0, limit: int = 5) -> list[dict[str, Any]]:
+        """Sites within ``radius_m`` of a point, nearest first.
+
+        This is what lets the app ask "is this the stretch you checked in June?"
+        instead of silently starting a new series because someone stood four
+        metres further along the bank. The site grid already merges anything
+        within ~100 m; this catches the wider case and puts the decision to the
+        person, which is the only one who actually knows.
+        """
+        # A degree of latitude is ~111 km everywhere; longitude shrinks with
+        # latitude. Good enough over a few hundred metres, and it avoids a
+        # geospatial dependency for one query.
+        dlat = radius_m / 111_320
+        dlon = radius_m / max(1.0, 111_320 * math.cos(math.radians(lat)))
+        rows = self._query(
+            """SELECT site_key, lat, lon, MAX(created_at) last_seen, COUNT(*) n
+               FROM assessments
+               WHERE superseded_by IS NULL AND site_key != 'unlocated'
+                 AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?
+               GROUP BY site_key""",
+            (lat - dlat, lat + dlat, lon - dlon, lon + dlon),
+        )
+        out = []
+        for row in rows:
+            metres = haversine_m(lat, lon, row["lat"], row["lon"])
+            if metres > radius_m:
+                continue
+            history = self.history(row["site_key"], limit=2)
+            out.append(
+                {
+                    "site_key": row["site_key"],
+                    "name": self.name_of(row["site_key"]) or history[0].get("site_name") or history[0].get("place_name") or "Unnamed site",
+                    "lat": row["lat"],
+                    "lon": row["lon"],
+                    "metres_away": round(metres),
+                    "assessments": row["n"],
+                    "last_seen": row["last_seen"],
+                    "band": history[0]["band"],
+                }
+            )
+        return sorted(out, key=lambda s: s["metres_away"])[:limit]
+
+    def export_rows(self, limit: int = 10000) -> list[dict[str, Any]]:
+        """Every live assessment, flattened, for the CSV export."""
+        rows = self._query(
+            """SELECT id, created_at, site_key, site_name, place_name, lat, lon, band, band_ordinal,
+                      bmwp, aspt, families, ept_families, pressure, certainty, overall_level,
+                      invasives, confirmations, observer, version
+               FROM assessments WHERE superseded_by IS NULL ORDER BY created_at LIMIT ?""",
+            (limit,),
+        )
+        # Full float precision on a derived index is noise in a spreadsheet, and
+        # invites a reader to believe the number is more exact than it is.
+        rounding = {"bmwp": 1, "aspt": 2, "pressure": 1, "certainty": 1, "lat": 6, "lon": 6}
+        return [
+            {k: (round(v, rounding[k]) if k in rounding and isinstance(v, float) else v) for k, v in dict(r).items()}
+            for r in rows
+        ]
 
     def recent(self, days: int = RECENT_DAYS, limit: int = 200) -> list[dict[str, Any]]:
         since = (datetime.now(UTC) - timedelta(days=days)).isoformat()

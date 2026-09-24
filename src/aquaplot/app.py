@@ -34,6 +34,8 @@ and cheap for a script to hit; ``AQUAPLOT_CLASSIFY_LIMIT=0`` disables it.
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 import time
@@ -43,12 +45,12 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
 
-from . import bioindex, fhir, habitat, onehealth
+from . import bioindex, fhir, habitat, onehealth, report
 from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
@@ -58,7 +60,7 @@ from .pipeline import PIPELINE_VERSION, Pipeline
 from .places import PlaceResolver, pilot_sites
 from .schema import Classification
 from .status import StatusResolver
-from .store import Store
+from .store import Store, site_key
 
 STATIC_DIR = Path(__file__).parent / "static"
 CLASSIFY_LIMIT = int(os.environ.get("AQUAPLOT_CLASSIFY_LIMIT", "20"))  # requests per client per window
@@ -330,6 +332,38 @@ def assessment_as_fhir(assessment_id: str):
     return fhir.bundle(_rehydrate(stored))
 
 
+@app.get("/api/assess/{assessment_id}/report", response_class=HTMLResponse, tags=["assessment"], include_in_schema=True)
+def assessment_report(assessment_id: str):
+    """A printable incident report for a water authority or environmental regulator.
+
+    Every serious finding tells the observer to report it. This is the thing they
+    report *with*: self-contained, forwardable without editing, and readable by
+    someone who has never heard of AquaPlot.
+    """
+    a, history = _stored_assessment(assessment_id)
+    return HTMLResponse(report.printable(a, history))
+
+
+@app.get("/api/assess/{assessment_id}/report.md", response_class=PlainTextResponse, tags=["assessment"])
+def assessment_report_markdown(assessment_id: str):
+    """The same report as Markdown, for pasting into a contact form or an email."""
+    a, history = _stored_assessment(assessment_id)
+    return PlainTextResponse(
+        report.markdown(a, history),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="aquaplot-report-{a.id}.md"'},
+    )
+
+
+def _stored_assessment(assessment_id: str):
+    stored = app.state.store.get(assessment_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="no assessment with that id")
+    a = _rehydrate(stored)
+    key = site_key(a.region.lat, a.region.lon)
+    return a, (app.state.store.history(key) if key else [])
+
+
 # ---- Sites, insights and early warning ---------------------------------------
 
 
@@ -348,6 +382,20 @@ def sites(
             raise HTTPException(status_code=422, detail="south, west, north and east must all be given")
         bbox = (south, west, north, east)
     return {"sites": app.state.store.sites(bbox, limit)}
+
+
+@app.get("/api/sites/nearby", tags=["insight"])
+def sites_nearby(
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
+    radius_m: float = Query(default=250, ge=10, le=5000),
+):
+    """Sites already monitored near a point, so a returning volunteer can say "same spot".
+
+    The decision is put to the person rather than taken from them: only they know
+    whether they are standing where they stood in June.
+    """
+    return {"nearby": app.state.store.nearby(lat, lon, radius_m)}
 
 
 @app.get("/api/sites/{site_key}", tags=["insight"])
@@ -384,6 +432,55 @@ def insights():
 def alerts(days: int = Query(default=30, ge=1, le=365)):
     """Sites whose most recent assessment reached concern or alert: the early-warning feed."""
     return {"days": days, "alerts": app.state.store.alerts(days)}
+
+
+@app.get("/api/export.csv", tags=["insight", "interoperability"])
+def export_csv():
+    """Every live assessment as CSV, for a spreadsheet or an R session.
+
+    One row per assessment, superseded revisions excluded. This is the format a
+    council officer or a university group will actually open, and refusing to
+    provide it is how citizen-science data ends up stranded in someone's app.
+    """
+    rows = app.state.store.export_rows()
+    columns = [
+        "id", "created_at", "site_key", "site_name", "place_name", "lat", "lon", "band", "band_ordinal",
+        "bmwp", "aspt", "families", "ept_families", "pressure", "certainty", "overall_level",
+        "invasives", "confirmations", "observer", "version",
+    ]
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    return Response(
+        buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="aquaplot-assessments.csv"'},
+    )
+
+
+@app.get("/api/export.geojson", tags=["insight", "interoperability"])
+def export_geojson():
+    """Monitored sites as GeoJSON, for QGIS or any web map."""
+    sites = app.state.store.sites()
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [s["lon"], s["lat"]]},
+                "properties": {
+                    k: v for k, v in s.items() if k not in ("lat", "lon")
+                } | {"trend": s["trend"]["direction"], "trend_detail": s["trend"]["detail"]},
+            }
+            for s in sites
+            if s["lat"] is not None and s["lon"] is not None
+        ],
+        "properties": {
+            "source": "AquaPlot citizen stream assessments",
+            "caveat": "Screening estimates, not Water Framework Directive classifications.",
+        },
+    }
 
 
 @app.get("/api/me/progress", tags=["engagement"])
