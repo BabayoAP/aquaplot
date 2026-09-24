@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AquaPlot — check a stream</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0f6b7a">
 <style>
   :root {
     --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
@@ -97,6 +100,22 @@
   .gitem .s { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .badge { display: inline-block; background: var(--soft); color: var(--accent); border-radius: 20px;
            padding: 4px 11px; font-size: 13px; font-weight: 600; margin: 4px 4px 0 0; }
+  .steps { display: flex; gap: 4px; margin: 0 0 16px; list-style: none; padding: 0; font-size: 12px; }
+  .steps li { flex: 1; color: var(--muted); }
+  .steps b { display: block; height: 4px; border-radius: 3px; background: var(--line); margin-bottom: 6px; }
+  .steps li[data-state=done] b { background: var(--accent); }
+  .steps li[data-state=now] b { background: var(--accent); }
+  .steps li[data-state=now] { color: var(--accent); font-weight: 700; }
+  .outbox { background: var(--soft); border: 1px solid var(--accent); border-radius: 10px;
+            padding: 10px 12px; font-size: 14px; margin-bottom: 12px; display: flex; gap: 10px;
+            align-items: center; flex-wrap: wrap; }
+  .outbox button { padding: 6px 12px; font-size: 14px; }
+  .nearby { border: 1px solid var(--accent); background: var(--soft); border-radius: 11px; padding: 12px; margin-top: 12px; }
+  .nearby b { display: block; }
+  .nearby .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+  .search { width: 100%; margin: 8px 0 4px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent;
              border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -119,7 +138,17 @@
   <p class="sub">Four short steps at the water's edge. You get a health reading for the stream and what it means for the
     people and animals around it. No account, and it works with or without a signal.</p>
 
+  <ol class="steps" id="steps" aria-label="Progress">
+    <li data-step="1"><b></b>Where</li>
+    <li data-step="2"><b></b>Photos</li>
+    <li data-step="3"><b></b>Your senses</li>
+    <li data-step="4"><b></b>Check</li>
+    <li data-step="5"><b></b>Result</li>
+  </ol>
+
+  <div class="outbox" id="outbox" hidden></div>
   <div class="notice" id="notice" hidden></div>
+  <p class="sr" id="announce" role="status" aria-live="polite"></p>
 
   <!-- Step 1 -->
   <section class="step" id="step1">
@@ -131,6 +160,8 @@
       <button type="button" class="ghost" id="locate">Use my location</button>
       <span class="hint" id="locstatus">Not set yet. A photo with GPS also works.</span>
     </div>
+    <div id="nearby"></div>
+
     <label for="sitename">What do people call this spot? (optional)</label>
     <input type="text" id="sitename" placeholder="e.g. the brook behind the station" maxlength="120">
     <div class="row"><button type="button" class="primary wide" data-go="2">Next</button></div>
@@ -210,9 +241,11 @@
       <p class="hint" id="rcaveat"></p>
     </details>
     <div class="row">
+      <button type="button" class="primary" id="reportbtn">Report this to your authority</button>
       <button type="button" class="ghost" id="reviewagain">Review the details</button>
+      <button type="button" class="ghost" id="historybtn" hidden>See this site's history</button>
       <button type="button" class="ghost" id="fhirbtn">Export as FHIR</button>
-      <button type="button" class="primary" id="again">Check another spot</button>
+      <button type="button" class="ghost" id="again">Check another spot</button>
     </div>
     <div id="rbadges"></div>
     <p class="foot" id="rfoot"></p>
@@ -223,6 +256,8 @@
   <button class="ghost close" id="guideclose">Close</button>
   <h2>What am I looking at?</h2>
   <p class="hint">Sorted by how sensitive the animal is. Finding the ones at the top is good news.</p>
+  <input type="text" class="search" id="guidesearch" placeholder="Search — try 'three tails', 'case', 'red worm'" aria-label="Search the identification guide">
+  <p class="hint" id="guidecount"></p>
   <div id="guidelist"></div>
 </div>
 
@@ -240,10 +275,24 @@ let state = { lat: null, lon: null, files: [], answers: {}, form: null, assessme
 
 // ---- navigation
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show("step" + b.dataset.go)));
+
+const PANELS = ["step1", "step2", "step3", "step4", "result"];
 function show(id) {
-  ["step1","step2","step3","step4","result"].forEach((s) => { $(s).hidden = s !== id; });
+  PANELS.forEach((s) => { $(s).hidden = s !== id; });
+  const index = PANELS.indexOf(id) + 1;
+  document.querySelectorAll("#steps li").forEach((li) => {
+    const n = Number(li.dataset.step);
+    li.dataset.state = n < index ? "done" : n === index ? "now" : "todo";
+    if (n === index) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+  });
   window.scrollTo({ top: 0, behavior: "smooth" });
+  // Move focus to the panel heading so a screen reader and a keyboard user both
+  // land where the sighted user is looking, instead of at the top of the form.
+  const heading = $(id).querySelector("h2, .band");
+  if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+  $("announce").textContent = `Step ${index} of ${PANELS.length}`;
 }
+show("step1");
 
 // ---- health banner
 api("/api/health").then((r) => r.json()).then((h) => {
@@ -260,10 +309,142 @@ $("locate").addEventListener("click", () => {
   $("locstatus").textContent = "Finding you…";
   navigator.geolocation.getCurrentPosition(
     (p) => { state.lat = p.coords.latitude; state.lon = p.coords.longitude;
-             $("locstatus").textContent = `Set: ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`; },
+             $("locstatus").textContent = `Set: ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`;
+             checkNearby(); },
     () => { $("locstatus").textContent = "Location refused. A photo with GPS still works."; },
     { enableHighAccuracy: true, timeout: 10000 });
 });
+
+// ---- the outbox: assessments recorded where there is no signal
+//
+// A riverbank is exactly where mobile coverage fails, so a submission that cannot
+// reach the server is kept on the phone rather than lost, and the person is told
+// it is queued rather than told it failed. The queue is visible and manually
+// flushable on purpose: this is data somebody walked to a stream to collect, and
+// it should never disappear into an invisible background sync.
+
+const DB_NAME = "aquaplot", STORE = "outbox";
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function tx(db, mode, fn) {
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(STORE, mode);
+    const out = fn(t.objectStore(STORE));
+    t.oncomplete = () => resolve(out && out.result !== undefined ? out.result : out);
+    t.onerror = () => reject(t.error);
+  });
+}
+
+async function queueSubmission(fields, photos) {
+  // Blobs survive structured cloning, so the photos are kept, not just the answers.
+  const db = await openDB();
+  await tx(db, "readwrite", (store) => store.add({ created: new Date().toISOString(), fields, photos }));
+  await drawOutbox();
+}
+
+async function outboxItems() {
+  try {
+    const db = await openDB();
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) { return []; }
+}
+
+async function drawOutbox() {
+  const items = await outboxItems();
+  const box = $("outbox");
+  box.hidden = items.length === 0;
+  if (!items.length) return;
+  box.innerHTML = "";
+  const text = document.createElement("span");
+  text.textContent = `${items.length} assessment${items.length === 1 ? "" : "s"} saved on this phone, waiting for a connection.`;
+  const send = document.createElement("button"); send.className = "primary"; send.textContent = "Send now";
+  send.addEventListener("click", () => flushOutbox(true));
+  box.append(text, send);
+}
+
+let flushing = false;
+async function flushOutbox(manual) {
+  if (flushing) return;
+  flushing = true;
+  try {
+    const items = await outboxItems();
+    if (!items.length) return;
+    const db = await openDB();
+    let sent = 0;
+    for (const item of items) {
+      const body = new FormData();
+      for (const [k, v] of Object.entries(item.fields)) body.append(k, v);
+      (item.photos || []).forEach((f, i) => body.append("photos", f, f.name || `photo-${i}.jpg`));
+      let res;
+      try {
+        res = await api("/api/assess", { method: "POST", body });
+      } catch (e) {
+        break;  // still offline; keep everything and try again later
+      }
+      // A 4xx means this submission will never succeed, so drop it rather than
+      // retry it forever; anything else is kept for the next attempt.
+      if (res.ok || (res.status >= 400 && res.status < 500)) {
+        await tx(db, "readwrite", (store) => store.delete(item.id));
+        if (res.ok) sent += 1;
+      } else {
+        break;
+      }
+    }
+    await drawOutbox();
+    if (manual) {
+      $("announce").textContent = sent ? `${sent} assessment(s) sent.` : "Still no connection.";
+      if (!sent) alert("Still no connection. Your assessments are safe on this phone and will send automatically.");
+    }
+  } finally { flushing = false; }
+}
+
+window.addEventListener("online", () => flushOutbox(false));
+drawOutbox().then(() => flushOutbox(false));
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
+// ---- returning to a spot you already monitor
+async function checkNearby() {
+  const box = $("nearby"); box.innerHTML = "";
+  if (state.lat === null) return;
+  try {
+    const params = new URLSearchParams({ lat: state.lat, lon: state.lon, radius_m: 250 });
+    const { nearby } = await (await api(`/api/sites/nearby?${params}`)).json();
+    if (!nearby.length) return;
+    const site = nearby[0];
+    const card = document.createElement("div"); card.className = "nearby";
+    const b = document.createElement("b"); b.textContent = `You have checked ${site.name} before.`;
+    const sub = document.createElement("p"); sub.className = "sub";
+    sub.textContent = `${site.metres_away} m from here · ${site.assessments} assessment${site.assessments === 1 ? "" : "s"}`
+      + ` · last was ${site.band} on ${site.last_seen.slice(0, 10)}. A repeat visit is what turns a reading into a trend.`;
+    const row = document.createElement("div"); row.className = "row";
+    const same = document.createElement("button"); same.type = "button"; same.className = "primary"; same.textContent = "Same spot";
+    const other = document.createElement("button"); other.type = "button"; other.className = "ghost"; other.textContent = "A different spot";
+    same.addEventListener("click", () => {
+      $("sitename").value = site.name;
+      state.lat = site.lat; state.lon = site.lon;   // snap to the series, not to GPS drift
+      $("locstatus").textContent = `Set: ${site.name}`;
+      box.innerHTML = ""; $("announce").textContent = `Continuing the series at ${site.name}.`;
+    });
+    other.addEventListener("click", () => { box.innerHTML = ""; });
+    row.append(same, other);
+    card.append(b, sub, row); box.append(card);
+  } catch (e) { /* a missing suggestion must never block the check */ }
+}
 
 // ---- photos
 $("camerabtn").addEventListener("click", () => $("camera").click());
@@ -320,14 +501,37 @@ function question(indicator, onPick) {
 $("submit").addEventListener("click", async () => {
   const btn = $("submit"); $("error").hidden = true;
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Reading your photos…';
+  const fields = {};
+  if ($("description").value.trim()) fields.description = $("description").value.trim();
+  if ($("sitename").value.trim()) fields.site_name = $("sitename").value.trim();
+  if (state.lat !== null) { fields.lat = String(state.lat); fields.lon = String(state.lon); }
+  if (Object.keys(state.answers).length) fields.answers = JSON.stringify(state.answers);
+
   const body = new FormData();
+  for (const [k, v] of Object.entries(fields)) body.append(k, v);
   state.files.forEach((f) => body.append("photos", f, f.name));
-  if ($("description").value.trim()) body.append("description", $("description").value.trim());
-  if ($("sitename").value.trim()) body.append("site_name", $("sitename").value.trim());
-  if (state.lat !== null) { body.append("lat", state.lat); body.append("lon", state.lon); }
-  if (Object.keys(state.answers).length) body.append("answers", JSON.stringify(state.answers));
+  let res;
   try {
-    const res = await api("/api/assess", { method: "POST", body });
+    res = await api("/api/assess", { method: "POST", body });
+  } catch (networkFailure) {
+    // No connection. Keep the whole submission, photos included, and say so
+    // plainly: the observation is not lost, it is waiting.
+    try {
+      await queueSubmission(fields, state.files);
+      $("error").hidden = true;
+      $("announce").textContent = "Saved on this phone.";
+      alert("No connection here.\n\nYour assessment - answers and photos - is saved on this phone and will "
+          + "send itself as soon as you have a signal. You can carry on and check another spot.");
+      resetForm();
+    } catch (storageFailure) {
+      $("error").hidden = false;
+      $("error").textContent = "No connection, and this browser would not let us save the assessment locally. "
+        + "Keep this page open and try again once you have a signal.";
+    }
+    btn.disabled = false; btn.textContent = "See the result";
+    return;
+  }
+  try {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.statusText);
     state.assessment = data;
@@ -493,8 +697,19 @@ function render(d) {
   $("rfoot").textContent = `Assessment ${d.id} · ${d.version} · index ${d.ecology.catalogue_version} · form ${d.pressures.form_version} · read by ${d.observer}`;
 
   $("fhirbtn").onclick = () => window.open(`/api/assess/${d.id}/fhir`, "_blank");
+  $("reportbtn").onclick = () => window.open(`/api/assess/${d.id}/report`, "_blank");
+  const key = siteKeyOf(d);
+  $("historybtn").hidden = !key;
+  if (key) $("historybtn").onclick = () => (window.location.href = `/site/${encodeURIComponent(key)}`);
   show("result");
   loadBadges();
+}
+
+// Mirrors store.site_key: coordinates rounded to ~100 m are what group visits.
+function siteKeyOf(d) {
+  const g = d.region;
+  if (g.lat === null || g.lon === null) return null;
+  return `${g.lat.toFixed(3)},${g.lon.toFixed(3)}`;
 }
 
 function fill(id, items) {
@@ -520,31 +735,53 @@ function loadBadges() {
   }).catch(() => {});
 }
 
-$("again").addEventListener("click", () => {
+function resetForm() {
   state.files = []; state.answers = {}; state.assessment = null;
   drawThumbs();
   document.querySelectorAll(".choices button").forEach((b) => b.setAttribute("aria-pressed", "false"));
   $("description").value = "";
   show("step1");
-});
+  checkNearby();
+}
+
+$("again").addEventListener("click", resetForm);
 
 // ---- ID guide
+let guideFamilies = [];
+
 $("guidebtn").addEventListener("click", (e) => {
   e.preventDefault();
   $("guide").hidden = false;
-  if ($("guidelist").childElementCount) return;
-  api("/api/guide").then((r) => r.json()).then((g) => {
-    g.families.forEach((f) => {
-      const d = document.createElement("div"); d.className = "gitem";
-      const s = document.createElement("div"); s.className = "s"; s.textContent = `${f.sensitivity} · score ${f.bmwp}/10 · ${f.group}`;
-      const b = document.createElement("b"); b.textContent = f.plain_name;
-      const look = document.createElement("div"); look.textContent = f.look_for;
-      const means = document.createElement("div"); means.className = "why"; means.textContent = f.means;
-      d.append(s, b, look, means); $("guidelist").append(d);
-    });
-  });
+  $("guidesearch").focus();
+  if (guideFamilies.length) return;
+  api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawGuide(""); });
 });
-$("guideclose").addEventListener("click", () => ($("guide").hidden = true));
+
+function drawGuide(query) {
+  // Search the description too, not just the name: a citizen holding a tray knows
+  // "three tails" and "a case made of sand", and does not know "Leptoceridae".
+  const q = query.trim().toLowerCase();
+  const shown = !q ? guideFamilies : guideFamilies.filter((f) =>
+    [f.plain_name, f.common_name, f.family, f.group, f.look_for, f.means, f.sensitivity]
+      .some((v) => (v || "").toLowerCase().includes(q)));
+  const list = $("guidelist"); list.innerHTML = "";
+  shown.forEach((f) => {
+    const d = document.createElement("div"); d.className = "gitem";
+    const s = document.createElement("div"); s.className = "s";
+    s.textContent = `${f.sensitivity} · score ${f.bmwp}/10 · ${f.group}${f.ept ? " · EPT" : ""}${f.vector ? " · health-relevant" : ""}`;
+    const b = document.createElement("b"); b.textContent = f.plain_name;
+    const look = document.createElement("div"); look.textContent = f.look_for;
+    const means = document.createElement("div"); means.className = "why"; means.textContent = f.means;
+    d.append(s, b, look, means); list.append(d);
+  });
+  $("guidecount").textContent = q
+    ? `${shown.length} of ${guideFamilies.length} match "${query.trim()}"` + (shown.length ? "" : " — try a shape or a colour instead of a name.")
+    : `${guideFamilies.length} families.`;
+}
+
+$("guidesearch").addEventListener("input", (e) => drawGuide(e.target.value));
+$("guideclose").addEventListener("click", () => { $("guide").hidden = true; $("guidebtn").focus(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("guide").hidden) { $("guide").hidden = true; $("guidebtn").focus(); } });
 </script>
 </body>
 </html>

@@ -187,3 +187,46 @@ def test_distance_is_measured_on_a_sphere_not_a_grid():
     assert 95 < haversine_m(40.2111, -8.4291, 40.2120, -8.4291) < 105
     # A degree of longitude is much shorter near the pole than at the equator.
     assert haversine_m(0, 0, 0, 1) > haversine_m(60, 0, 60, 1) * 1.9
+
+
+# ---- the field-app surfaces -----------------------------------------------
+
+
+def test_the_service_worker_is_served_from_the_root_with_a_root_scope(api):
+    """A worker served from /static could only ever control /static."""
+    res = api.get("/sw.js")
+    assert res.status_code == 200
+    assert res.headers["service-worker-allowed"] == "/"
+    assert "javascript" in res.headers["content-type"]
+    assert "no-cache" in res.headers["cache-control"]  # a stale worker is very hard to dislodge
+
+
+def test_the_worker_caches_what_a_whole_assessment_needs_offline(api):
+    js = api.get("/sw.js").text
+    for path in ("/api/form", "/api/guide"):
+        assert path in js  # the questions and the identification guide
+    assert 'request.method !== "GET"' in js  # writes belong to the outbox, not the worker
+
+
+def test_the_app_is_installable(api):
+    manifest = api.get("/manifest.webmanifest")
+    assert manifest.status_code == 200
+    body = manifest.json()
+    assert body["start_url"] == "/" and body["display"] == "standalone" and body["icons"]
+    assert api.get("/icon.svg").status_code == 200
+    assert "<svg" in api.get("/icon.svg").text
+
+
+def test_the_check_page_registers_the_worker_and_owns_an_outbox(api):
+    page = api.get("/").text
+    assert 'navigator.serviceWorker.register("/sw.js")' in page
+    assert 'rel="manifest"' in page
+    assert "queueSubmission" in page and "flushOutbox" in page
+    assert 'window.addEventListener("online"' in page
+
+
+def test_the_site_history_page_is_served_for_any_key(api):
+    page = api.get("/site/40.211,-8.429")
+    assert page.status_code == 200
+    assert "Ecological class over time" in page.text
+    assert "Every visit" in page.text

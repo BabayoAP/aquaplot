@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AquaPlot">
+  <rect width="512" height="512" rx="96" fill="#0f6b7a"/>
+  <!-- A riffle: water breaking over stones, drawn as the three bands of a reading. -->
+  <g fill="none" stroke="#e8f1f3" stroke-width="26" stroke-linecap="round">
+    <path d="M96 190c32-28 64-28 96 0s64 28 96 0 64-28 96 0"/>
+    <path d="M96 268c32-28 64-28 96 0s64 28 96 0 64-28 96 0" opacity=".72"/>
+    <path d="M96 346c32-28 64-28 96 0s64 28 96 0 64-28 96 0" opacity=".44"/>
+  </g>
+  <circle cx="366" cy="150" r="34" fill="#9fe6c4"/>
+</svg>

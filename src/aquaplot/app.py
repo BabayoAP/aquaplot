@@ -657,6 +657,32 @@ def map_page() -> FileResponse:
     return FileResponse(STATIC_DIR / "map.html")
 
 
+@app.get("/sw.js", include_in_schema=False)
+def service_worker() -> FileResponse:
+    """Served from the root so its scope covers the whole app, not just /static."""
+    return FileResponse(
+        STATIC_DIR / "sw.js",
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifest() -> FileResponse:
+    return FileResponse(STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/icon.svg", include_in_schema=False)
+def icon() -> FileResponse:
+    return FileResponse(STATIC_DIR / "icon.svg", media_type="image/svg+xml")
+
+
+@app.get("/site/{site_key}", include_in_schema=False)
+def site_page(site_key: str) -> FileResponse:
+    """One monitored spot, its series and every visit's report. The key is read client-side."""
+    return FileResponse(STATIC_DIR / "site.html")
+
+
 @app.get("/classify", include_in_schema=False)
 def classify_page() -> FileResponse:
     """The inherited single-organism classifier, kept working (see README, lineage)."""

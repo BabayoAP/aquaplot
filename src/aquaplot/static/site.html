@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AquaPlot — site history</title>
+<style>
+  :root {
+    --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
+    --accent: #0f6b7a; --soft: #e8f1f3;
+    --High: #1a7f5a; --Good: #4f9d46; --Moderate: #b8860b; --Poor: #c2662a; --Bad: #a5342b;
+    --ok: #1a7f5a; --watch: #8a6d1f; --concern: #c2662a; --alert: #a5342b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31;
+            --High: #56c596; --Good: #8ec96f; --Moderate: #d9b45a; --Poor: #e3925f; --Bad: #e8756a;
+            --ok: #56c596; --watch: #d9b45a; --concern: #e3925f; --alert: #e8756a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 860px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 14px; font-size: 14px; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  h2 { font-size: 16px; margin: 26px 0 8px; }
+  .place { color: var(--muted); font-size: 14px; margin: 0 0 4px; }
+  .trendline { font-size: 15px; margin: 10px 0 0; }
+  .trendline.declining { color: var(--Poor); font-weight: 600; }
+  .trendline.improving { color: var(--Good); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+  .cards .n { font-size: 24px; font-weight: 700; }
+  .cards .l { color: var(--muted); font-size: 13px; }
+  .chart { position: relative; margin-top: 10px; }
+  .chart svg { width: 100%; height: 220px; display: block; overflow: visible; }
+  .ylab { font-size: 11px; fill: var(--muted); }
+  .grid { stroke: var(--line); stroke-width: 1; }
+  .dot { stroke: var(--card); stroke-width: 2.5; cursor: pointer; }
+  .step { fill: none; stroke: var(--accent); stroke-width: 2; opacity: .55; }
+  .press { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+  .legend i.dash { width: 16px; height: 0; border-top: 2px dashed var(--muted); border-radius: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card);
+          border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  tr:last-child td { border-bottom: 0; }
+  .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; color: #fff; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  button { border: 0; border-radius: 9px; padding: 10px 15px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  input[type=text] { border: 1px solid var(--line); border-radius: 9px; padding: 9px; background: transparent;
+                     color: inherit; font: inherit; min-width: 220px; }
+  .empty { color: var(--muted); font-size: 14px; background: var(--card); border: 1px dashed var(--line);
+           border-radius: 12px; padding: 24px; text-align: center; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 28px; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">AquaPlot<span>.</span></div>
+  <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a></nav>
+</div></header>
+<main>
+  <div id="content"><p class="place">Loading…</p></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const BANDS = ["Bad", "Poor", "Moderate", "Good", "High"];   // worst first: the y axis reads upward
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue("--" + n).trim();
+const esc = (s) => { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; };
+const KEY = decodeURIComponent(location.pathname.replace(/^\/site\//, ""));
+
+fetch(`/api/sites/${encodeURIComponent(KEY)}`).then(async (r) => {
+  if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+  return r.json();
+}).then(render).catch((e) => {
+  $("content").innerHTML = `<div class="empty">No assessments at this site yet. ${esc(e.message)}<br><a href="/">Record one</a></div>`;
+});
+
+function render(site) {
+  // The API returns newest first; a chart reads left to right through time.
+  const visits = [...site.assessments].reverse();
+  const latest = visits[visits.length - 1];
+
+  $("content").innerHTML = `
+    <h1 id="name">${esc(site.name || "Unnamed site")}</h1>
+    <p class="place">${esc(latest.place_name || "")} · ${esc(KEY)}</p>
+    <p class="trendline ${esc(site.trend.direction)}">${esc(site.trend.detail)}</p>
+    <div class="cards" id="cards"></div>
+    <h2>Ecological class over time</h2>
+    <div class="chart" id="chart"></div>
+    <div class="legend">
+      <span><i style="background:${css("accent")}"></i>ecological class</span>
+      <span><i class="dash"></i>visible pressure (0 at the top, 100 at the bottom)</span>
+    </div>
+    <h2>Every visit</h2>
+    <div id="table"></div>
+    <div class="row">
+      <input type="text" id="rename" placeholder="Rename this site" value="${esc(site.name || "")}" aria-label="Site name">
+      <button class="ghost" id="save">Save name</button>
+      <button class="primary" id="recheck">Check it again</button>
+    </div>
+    <p class="foot">Screening estimates from citizen assessments, not Water Framework Directive classifications.
+      A series at one spot is stronger evidence than any single visit.</p>`;
+
+  const tiles = [
+    [visits.length, "assessments"],
+    [latest.band, "latest class"],
+    [Math.round(latest.pressure) + "/100", "latest pressure"],
+    [visits.reduce((n, v) => n + v.confirmations, 0), "observations checked by a person"],
+  ];
+  $("cards").innerHTML = tiles.map(([n, l]) =>
+    `<div class="card"><div class="n">${esc(String(n))}</div><div class="l">${esc(l)}</div></div>`).join("");
+
+  drawChart(visits);
+  drawTable(visits);
+
+  $("save").addEventListener("click", async () => {
+    const name = $("rename").value.trim();
+    if (!name) return;
+    const res = await fetch(`/api/sites/${encodeURIComponent(KEY)}/name`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }),
+    });
+    if (res.ok) $("name").textContent = name;
+  });
+  $("recheck").addEventListener("click", () => (window.location.href = "/"));
+}
+
+function drawChart(visits) {
+  const W = 800, H = 220, PAD_L = 74, PAD_R = 14, PAD_T = 14, PAD_B = 28;
+  const x = (i) => PAD_L + (visits.length === 1 ? (W - PAD_L - PAD_R) / 2
+                                                : i * (W - PAD_L - PAD_R) / (visits.length - 1));
+  const yBand = (ordinal) => PAD_T + (5 - ordinal) * (H - PAD_T - PAD_B) / 4;
+  const yPress = (p) => PAD_T + (p / 100) * (H - PAD_T - PAD_B);
+
+  const parts = [`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ecological class at each visit">`];
+  BANDS.forEach((b, i) => {
+    const ordinal = i + 1, y = yBand(ordinal);
+    parts.push(`<line class="grid" x1="${PAD_L}" y1="${y}" x2="${W - PAD_R}" y2="${y}"></line>`);
+    parts.push(`<text class="ylab" x="${PAD_L - 8}" y="${y + 4}" text-anchor="end">${b}</text>`);
+  });
+  if (visits.length > 1) {
+    parts.push(`<path class="step" d="${visits.map((v, i) => `${i ? "L" : "M"}${x(i)},${yBand(v.band_ordinal)}`).join(" ")}"></path>`);
+    parts.push(`<path class="press" d="${visits.map((v, i) => `${i ? "L" : "M"}${x(i)},${yPress(v.pressure)}`).join(" ")}"></path>`);
+  }
+  visits.forEach((v, i) => {
+    parts.push(`<circle class="dot" cx="${x(i)}" cy="${yBand(v.band_ordinal)}" r="7" fill="${css(v.band)}">`
+      + `<title>${esc(v.created_at.slice(0, 10))} — ${esc(v.band)}, pressure ${Math.round(v.pressure)}/100, `
+      + `${esc(v.overall_level)}</title></circle>`);
+    if (visits.length <= 12) {
+      parts.push(`<text class="ylab" x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(v.created_at.slice(5, 10))}</text>`);
+    }
+  });
+  parts.push("</svg>");
+  $("chart").innerHTML = parts.join("");
+}
+
+function drawTable(visits) {
+  const rows = [...visits].reverse().map((v) => `<tr>
+    <td>${esc(v.created_at.slice(0, 10))}</td>
+    <td><span class="tag" style="background:${css(v.band)}">${esc(v.band)}</span></td>
+    <td>${v.aspt === null ? "—" : v.aspt.toFixed(1)}</td>
+    <td>${v.families} <span style="color:var(--muted)">(${v.ept_families} EPT)</span></td>
+    <td>${Math.round(v.pressure)}/100</td>
+    <td>${esc(v.overall_level)}</td>
+    <td>${Math.round(v.certainty)}%</td>
+    <td><a href="/api/assess/${esc(v.id)}/report" target="_blank" rel="noopener">report</a></td>
+  </tr>`).join("");
+  $("table").innerHTML = `<table><thead><tr>
+    <th>Date</th><th>Class</th><th>ASPT</th><th>Families</th><th>Pressure</th><th>One Health</th><th>Certainty</th><th></th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+</script>
+</body>
+</html>

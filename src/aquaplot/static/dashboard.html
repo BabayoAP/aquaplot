@@ -64,7 +64,7 @@
 <body>
 <header><div class="bar">
   <div class="brand">AquaPlot<span>.</span></div>
-  <nav><a href="/">Check a stream</a><a href="/map">Map</a><a href="/docs">API</a></nav>
+  <nav><a href="/">Check a stream</a><a href="/map">Map</a><a href="/api/export.csv">CSV</a><a href="/docs">API</a></nav>
 </div></header>
 <main>
   <h1>Stream health dashboard</h1>
@@ -176,7 +176,8 @@ Promise.all([
     sites.forEach((s) => {
       const tr = document.createElement("tr");
       const name = document.createElement("td");
-      name.innerHTML = `<b>${escape(s.name)}</b><br><span class="trend">${escape(s.place || "")}</span>`;
+      name.innerHTML = `<a href="/site/${encodeURIComponent(s.site_key)}"><b>${escape(s.name)}</b></a>`
+        + `<br><span class="trend">${escape(s.place || "")}</span>`;
       const band = document.createElement("td");
       band.innerHTML = `<span class="tag" style="background:${css(s.band)}">${s.band}</span>`;
       const pressure = document.createElement("td"); pressure.textContent = Math.round(s.pressure) + " / 100";
@@ -190,8 +191,9 @@ Promise.all([
     $("sites").append(table);
   }
 
-  $("foot").textContent = "Screening data from citizen assessments. Not a Water Framework Directive classification: "
-    + "a formal classification needs a standardised kick sample, laboratory identification and a reference-site comparison.";
+  $("foot").innerHTML = "Screening data from citizen assessments. Not a Water Framework Directive classification: "
+    + "a formal classification needs a standardised kick sample, laboratory identification and a reference-site comparison. "
+    + 'Download everything as <a href="/api/export.csv">CSV</a> or <a href="/api/export.geojson">GeoJSON</a>.';
 });
 
 function escape(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }

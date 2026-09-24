@@ -195,7 +195,7 @@
       + ` · pressure ${Math.round(site.pressure)}/100 · <span style="text-transform:uppercase;font-size:11px;letter-spacing:.06em">${esc(site.level)}</span><br>`
       + `<small>${site.assessments} assessment${site.assessments === 1 ? "" : "s"}, last ${esc(site.last_seen.slice(0, 10))}</small><br>`
       + `<small>${esc(site.trend.detail)}</small>${invasive}<br>`
-      + `<a href="/dashboard">See the dashboard</a>`;
+      + `<a href="/site/${encodeURIComponent(site.site_key)}">See this site's history</a>`;
   }
 
   async function loadSites(params) {
@@ -213,7 +213,8 @@
       }).bindPopup(sitePopup(site), { maxWidth: 280 }).addTo(aquaplotLayer);
       const li = document.createElement("li");
       li.innerHTML = `<b>${esc(site.name)}</b> <span class="tag" style="background:${BAND_COLORS[site.band]}">${esc(site.band)}</span>`
-        + `<br><span class="sub">${esc(site.trend.detail)}</span>`;
+        + `<br><span class="sub">${esc(site.trend.detail)}</span>`
+        + `<br><a href="/site/${encodeURIComponent(site.site_key)}">history</a>`;
       li.style.cursor = "pointer";
       li.addEventListener("click", () => map.setView([site.lat, site.lon], Math.max(map.getZoom(), 15)));
       list.append(li);
