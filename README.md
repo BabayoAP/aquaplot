@@ -21,7 +21,10 @@ photos ─▶ observe.py     the vision model reports structured observations, n
 coords ─▶ places.py      which municipality is this? (anywhere on Earth)
 taxa   ─▶ status.py      is any of this on an invasive list, here?
                   └────▶ onehealth.py  rules → ecosystem / human / animal findings + actions
-                                 └───▶ assessment ─▶ store.py (trends) · fhir.py (interop)
+                                 └───▶ assessment ─▶ store.py    trends, sites, early warning
+                                                  ├▶ report.py   what you send your water authority
+                                                  ├▶ fhir.py     FHIR R4, for health systems
+                                                  └▶ csv/geojson for everyone else
 ```
 
 ## Why this shape
@@ -70,11 +73,35 @@ breeding, parasite-host snails, invasive biosecurity, habitat degradation, therm
 drought resilience, sedimentation, and the wellbeing a stream in good condition provides.
 Exposure escalates: the same water quality is a different finding where children paddle.
 
-**Trends and early warning** (`/dashboard`, `/map`). Assessments are keyed to a ~100 m site
-grid, so a second visit to roughly the same spot extends a series instead of dropping a new
-pin. The dashboard leads with where the water stands, which sites declined since their last
-visit, and what needs a budget. A review *replaces* a visit rather than adding one, so the
-volunteers who check the model's work most carefully cannot manufacture trends by doing so.
+**Trends and early warning** (`/dashboard`, `/map`, `/site/{key}`). Assessments are keyed to a
+~100 m site grid, so a second visit to roughly the same spot extends a series instead of
+dropping a new pin — and when you locate yourself near somewhere you have been, the app asks
+whether it is the same spot rather than deciding for you. Each site has its own page with the
+ecological class plotted over every visit. The dashboard leads with where the water stands,
+which sites declined since their last visit, and what needs a budget. A review *replaces* a
+visit rather than adding one, so the volunteers who check the model's work most carefully
+cannot manufacture trends by doing so.
+
+**Something to actually send** (`/api/assess/{id}/report`). Every serious finding tells the
+observer to report it; this is the thing they report *with*. A self-contained incident report
+— printable, or Markdown for pasting into a contact form — that leads with what is being
+asked for, attributes every observation to a person or to the model, carries the site's
+series when it has one, and states its own limits in the body rather than in a footnote
+nobody forwards. Plus `/api/export.csv` for the spreadsheet a council officer will actually
+open and `/api/export.geojson` for QGIS.
+
+**It works with no signal.** A riverbank under tree cover is where mobile coverage fails, and
+a tool that needs connectivity at the moment of observation gets used from the car park
+afterwards, from memory. A service worker caches the page and the vocabularies a whole
+assessment needs; a submission that cannot reach the server is kept on the phone — answers
+and photographs — and sends itself when coverage returns. The queue is visible and can be
+flushed by hand, because this is data somebody walked to a stream to collect. It installs to
+a home screen.
+
+**A protocol people can hold** (`/field-guide`). What to bring, safety first, how to choose a
+riffle and why it is the fair place to judge a stream, how to kick-sample without a net, how
+to photograph a tray so the animals are visible, a best-news-first identification table, and
+check-clean-dry. Printable, because a river-day group needs paper.
 
 **FHIR R4 export** (`/api/assess/{id}/fhir`). The assessment as a Bundle: a `Location`, an
 `Observation` panel carrying BMWP, ASPT, EPT richness and the band, the raw survey and the
@@ -95,12 +122,13 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 141 tests, no network, no model
+.venv/bin/python -m pytest                       # 167 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
-Open `/` to check a stream, `/dashboard` for the insights, `/map` for the map, `/docs` for
-the OpenAPI reference.
+Open `/` to check a stream, `/site/{key}` for one spot's history, `/dashboard` for the
+insights, `/map` for the map, `/field-guide` for the sampling protocol, `/docs` for the
+interactive API reference.
 
 A fresh install has an empty dashboard, which is the worst first impression of a tool whose
 argument is that a *series* is worth more than one reading. `scripts/seed_demo.py` posts a
@@ -137,21 +165,28 @@ demo cannot drain an API key.
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
 | `src/aquaplot/fhir.py` | FHIR R4 Bundle export. |
+| `src/aquaplot/report.py` | The incident report a citizen sends an authority, as Markdown and as a printable page. |
 | `src/aquaplot/data/bioindicators.json` | 53 families: BMWP score, what to look for, what finding it means. |
 | `src/aquaplot/data/habitat_indicators.json` | The field form. Drives the prompt, the validator, the UI and the scoring. |
 | `src/aquaplot/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
+| `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow. |
+| `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
+| `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
 | `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites over iNaturalist layers. No build step. |
 | `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |
 
 ## Documentation
 
+- [docs/FIELD-GUIDE.md](docs/FIELD-GUIDE.md) — how to check a stream: what to bring, safety, sampling, photographing a tray. Also served at `/field-guide`.
+- [docs/API.md](docs/API.md) — every endpoint, with examples. Interactive version at `/docs`.
 - [docs/ASSESSMENT.md](docs/ASSESSMENT.md) — how a photo becomes a band, stage by stage, and what the certainty number means.
 - [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md) — every rule, its trigger, its evidence and its action.
 - [docs/FHIR.md](docs/FHIR.md) — the resources, the codes, and what would have to happen to make them standard.
 - [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, and the build timeline.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to correct a rule, add a family, or swap in a country-specific index.
 - [docs/AREA-VIEWER.md](docs/AREA-VIEWER.md), [docs/CLASSIFIER.md](docs/CLASSIFIER.md) — the inherited features.
 
 ## Lineage
@@ -162,8 +197,9 @@ What carried over: the pipeline shape, the certainty rule and its insistence on 
 trail, the cached iNaturalist client, the pluggable model backends, and the area viewer.
 What is new here: the freshwater domain entirely — the biotic index, the field form, the
 One Health rule engine, the assessment pipeline and its review loop, persistence and trends,
-FHIR export, the generalised geography, and the citizen workflow. Roughly 2,600 lines of new
-Python and 1,400 of new interface, with 73 new tests. The original project's PRD is kept at
+the authority report, FHIR and tabular export, the generalised geography, the offline field
+app, and every page except the classifier. Roughly 3,300 lines of new Python and 2,400 of new
+interface, with 99 new tests. The original project's PRD is kept at
 [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
 [docs/HACKATHON-NEXTSTEP.md](docs/HACKATHON-NEXTSTEP.md), so the boundary between the two is
 on the record rather than implied.
@@ -183,7 +219,10 @@ on the record rather than implied.
   it is used for anything beyond screening.
 - **BMWP is a British index applied across Europe.** Family sensitivity scores vary by
   ecoregion; a country-specific index (IBMWP, IBE, ASPT variants) would be more accurate and
-  is the obvious next step, one adapter away in `bioindex.py`.
+  is the obvious next step, one adapter away in `bioindex.py`. See
+  [CONTRIBUTING.md](CONTRIBUTING.md).
+- **The FHIR CodeSystem is provisional.** No code here pretends to be LOINC, and
+  [docs/FHIR.md](docs/FHIR.md) states exactly what would have to happen to make it standard.
 
 ## Data sources
 

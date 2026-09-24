@@ -309,6 +309,28 @@ a { color: #0f6b7a; }
 """
 
 
+def as_page(title: str, md: str, toolbar: str = "") -> str:
+    """Wrap any of our own Markdown in the same self-contained printable page.
+
+    Used for the field guide as well as the report, so a community group printing
+    the sampling protocol gets the same typography as the document they will later
+    send to their water authority.
+    """
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{html.escape(title)}</title>
+<style>{PRINT_CSS}</style></head>
+<body>
+<div class="toolbar">
+  <button onclick="window.print()">Print or save as PDF</button>
+  {toolbar}
+  <a href="/">Back to AquaPlot</a>
+</div>
+{_render_blocks(md)}
+</body></html>"""
+
+
 def printable(a: Assessment, site_history: list[dict[str, Any]] | None = None) -> str:
     """The same report as a self-contained page: print it, or save it as a PDF."""
     md = markdown(a, site_history)

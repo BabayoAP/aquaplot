@@ -1,0 +1,148 @@
+# API reference
+
+Everything the interface does, it does through this API, and nothing is reserved
+for the first-party pages. Interactive reference with request bodies and response
+schemas: **`/docs`** on a running instance.
+
+Base URL is the deployment root. There is no authentication and there are no
+accounts; a contributor is an opaque id the browser generates and keeps.
+
+## Recording an assessment
+
+### `POST /api/assess`
+
+`multipart/form-data`. Everything is optional individually, but at least one of a
+photo, a habitat answer, a species name or a description must be present.
+
+| Field | Type | Notes |
+|---|---|---|
+| `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each. Send the reach and the sample tray. |
+| `description` | string | Free text from the observer. |
+| `lat`, `lon` | float | Used only if no photo carries EXIF GPS — EXIF wins, because it records where the *photo* was taken. |
+| `site_name` | string | What people call the spot. |
+| `answers` | JSON object | `{"odour": "sewage", "algae": "bloom"}`. Keys and values must come from `/api/form`; an unknown key is a 422, not a silent drop. |
+| `taxa` | JSON array | `["Gammaridae", "Chironomidae"]`. Anything sent here is recorded as citizen-confirmed. |
+
+Send `X-AquaPlot-Contributor: <opaque id>` to have the assessment counted towards
+a contributor's record. Omit it and the assessment is still stored, anonymously.
+
+Rate limited per client address (default 20 per 10 minutes, `AQUAPLOT_CLASSIFY_LIMIT`).
+
+```sh
+curl -X POST http://localhost:8000/api/assess \
+  -F photos=@reach.jpg -F photos=@tray.jpg \
+  -F lat=40.2111 -F lon=-8.4291 -F 'site_name=Ribeira da Fonte' \
+  -F 'answers={"odour":"sewage","access":"play_or_drinking"}' \
+  -F 'taxa=["Gammaridae"]'
+```
+
+The response is the full assessment: `band`, `ecology`, `pressures`, `one_health`,
+`invasives`, `certainty`, `penalties`, `needs_confirmation`, `region`. See
+[ASSESSMENT.md](ASSESSMENT.md) for what each number means.
+
+### `POST /api/assess/{id}/review`
+
+Fold a person's confirmations and corrections in. **The vision model is not called
+again** — re-running it could overwrite the correction just made.
+
+```json
+{
+  "answers": {"algae": "bloom"},
+  "confirmed_taxa": ["Chironomidae"],
+  "rejected_taxa": ["Asellidae"],
+  "added_taxa": ["Perlidae"],
+  "site_name": "Ribeira da Fonte"
+}
+```
+
+Returns a **new** assessment carrying `supersedes`. The row it replaces drops out
+of every count, trend and feed but stays fetchable by id, as the record of what
+the model said before a person corrected it.
+
+### `GET /api/assess/{id}`
+
+The stored assessment, exactly as produced.
+
+## Getting an assessment out
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/assess/{id}/report` | A printable incident report for a water authority. |
+| `GET /api/assess/{id}/report.md` | The same report as Markdown, for pasting into a contact form. |
+| `GET /api/assess/{id}/fhir` | A FHIR R4 collection Bundle. See [FHIR.md](FHIR.md). |
+| `GET /api/export.csv` | Every live assessment, one row each. Superseded revisions excluded. |
+| `GET /api/export.geojson` | Monitored sites as points, with their trend. |
+
+## Sites and insight
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/sites` | One row per monitored spot with its latest band and trend. Optional `south`/`west`/`north`/`east` viewport (all four or none). |
+| `GET /api/sites/nearby?lat=&lon=&radius_m=` | Sites near a point, nearest first, so a returning volunteer can say "same spot". Default radius 250 m, max 5 km. |
+| `GET /api/sites/{site_key}` | Every visit at one spot, newest first, plus the trend. |
+| `POST /api/sites/{site_key}/name` | `{"name": "..."}` — let people call a stretch what they call it. |
+| `GET /api/insights` | The dashboard's headline numbers, band and level distributions, monthly activity. |
+| `GET /api/alerts?days=30` | Sites whose **latest** assessment reached concern or alert. The early-warning feed. |
+| `GET /api/me/progress` | One contributor's record and badges. Requires `X-AquaPlot-Contributor`; returns an empty record without it. |
+
+A `site_key` is `lat,lon` rounded to three decimals — roughly a hundred metres,
+which is what groups repeat visits to "the same spot".
+
+## Reference data
+
+These exist so the interface is *generated* rather than hand-maintained, and so
+anyone else can build against the same vocabulary.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/form` | The visual field form: every indicator, its question, its options, its `why`, and whether a photograph can answer it. |
+| `GET /api/guide` | The bioindicator catalogue: 53 families with BMWP score, sensitivity, what to look for and what finding it means. |
+| `GET /api/field-guide.md` | The sampling protocol as Markdown. Rendered for printing at `/field-guide`. |
+| `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
+| `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |
+
+## Inherited from SpeciesGuard
+
+Still supported; see [CLASSIFIER.md](CLASSIFIER.md) and [AREA-VIEWER.md](AREA-VIEWER.md).
+
+| Endpoint | Returns |
+|---|---|
+| `POST /api/classify` | One organism from one photo: native / invasive / naturalized, with an evidence trail. |
+| `GET /api/area/observations` | iNaturalist research-grade sightings in a viewport as GeoJSON. |
+| `GET /api/area/species` | Most-observed species in a viewport. |
+| `GET /api/area/trend` | Sightings per year by establishment status. |
+| `GET /api/area/listed` | The invasive seed list. |
+
+## Errors
+
+| Status | Means |
+|---|---|
+| 400 | An image could not be decoded. |
+| 404 | No assessment or site with that id. |
+| 422 | A field is outside the accepted vocabulary — the message names it. |
+| 429 | Rate limited; `Retry-After` is set. |
+| 502 | An upstream source (iNaturalist) failed in a place the request could not degrade around. |
+
+Assessment endpoints are built to degrade rather than fail: a model outage, an
+unresolvable place, a missing photo and a dead iNaturalist each cost a named
+certainty penalty, not an error.
+
+## Pages
+
+| Path | What |
+|---|---|
+| `/` | The guided stream check. |
+| `/site/{site_key}` | One spot's history, with the class-over-time chart. |
+| `/dashboard` | Insights across every site. |
+| `/map` | Assessments over satellite imagery and iNaturalist layers. |
+| `/field-guide` | The printable sampling protocol. |
+| `/classify` | The inherited single-organism classifier. |
+| `/docs` | Interactive OpenAPI reference. |
+
+## Offline
+
+`/sw.js` is a service worker with root scope. It caches the check page, `/api/form`
+and `/api/guide`, so a whole assessment can be completed with no connection; the
+page keeps unsent assessments in IndexedDB and flushes them when the browser comes
+back online. Writes are never queued by the worker — the outbox is in the page,
+where it is visible and can be flushed by hand.

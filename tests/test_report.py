@@ -230,3 +230,23 @@ def test_the_site_history_page_is_served_for_any_key(api):
     assert page.status_code == 200
     assert "Ecological class over time" in page.text
     assert "Every visit" in page.text
+
+
+def test_the_field_guide_is_served_as_a_printable_page_and_as_markdown(api):
+    """It is product, not only documentation: a river-day group needs paper."""
+    page = api.get("/field-guide")
+    assert page.status_code == 200
+    assert "<h1>How to check a stream</h1>" in page.text
+    assert "window.print()" in page.text
+    for section in ("Safety", "Choosing a spot", "Take a sample", "Put everything back"):
+        assert section in page.text
+
+    raw = api.get("/api/field-guide.md")
+    assert raw.status_code == 200 and "markdown" in raw.headers["content-type"]
+    assert raw.text.startswith("# How to check a stream")
+    assert len(raw.text.split()) > 800  # a stub would pass every other assertion here
+
+
+def test_the_field_guide_is_reachable_from_the_step_that_needs_it(api):
+    page = api.get("/").text
+    assert page.count('href="/field-guide"') >= 2  # the nav, and the photograph step

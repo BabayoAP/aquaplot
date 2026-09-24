@@ -40,6 +40,7 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from importlib import resources
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any
@@ -655,6 +656,27 @@ def dashboard_page() -> FileResponse:
 @app.get("/map", include_in_schema=False)
 def map_page() -> FileResponse:
     return FileResponse(STATIC_DIR / "map.html")
+
+
+@app.get("/field-guide", response_class=HTMLResponse, tags=["reference"])
+def field_guide_page():
+    """The sampling protocol, formatted for printing.
+
+    It is served rather than only shipped as documentation because a community
+    group running a river day needs paper, and because a protocol that lives only
+    in a repository is a protocol nobody at the water's edge has read.
+    """
+    return HTMLResponse(report.as_page("How to check a stream", field_guide_markdown()))
+
+
+@app.get("/api/field-guide.md", response_class=PlainTextResponse, tags=["reference"])
+def field_guide_markdown_endpoint():
+    """The raw Markdown, for anyone who wants to reuse or translate it."""
+    return PlainTextResponse(field_guide_markdown(), media_type="text/markdown; charset=utf-8")
+
+
+def field_guide_markdown() -> str:
+    return resources.files("aquaplot.data").joinpath("field_guide.md").read_text()
 
 
 @app.get("/sw.js", include_in_schema=False)

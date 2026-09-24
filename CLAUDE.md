@@ -31,3 +31,15 @@ docstring, and name tests after the behaviour they protect, not the function the
 - Geography is resolved from coordinates, never assumed. Nothing may hard-code a place.
 - `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` and the `/classify` page are
   inherited from SpeciesGuard and still work; keep them working.
+- **Never blind search-and-replace the word "riffle".** "Riffle beetle" is the Elmidae family
+  and a riffle is the stretch a kick sample is taken from; both appear in
+  `data/bioindicators.json` and in the `ALIASES` table in `bioindex.py`, whose keys must stay
+  lower case because lookup lower-cases its input.
+- The field guide at `src/aquaplot/data/field_guide.md` is product, not documentation: the app
+  serves it at `/field-guide`. `docs/FIELD-GUIDE.md` points at it; do not fork a second copy.
+- Anything that can be sent must be sendable by a person: `report.py` (authority report),
+  `fhir.py` (health systems), CSV and GeoJSON (everyone else). A finding that says "report
+  this" and gives the user nothing to send is a bug.
+- The outbox in `check.html` owns offline writes, not the service worker. Data somebody walked
+  to a stream to collect must be visible and manually flushable, never an invisible sync.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a family, an indicator, a rule or an index.
