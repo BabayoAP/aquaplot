@@ -82,7 +82,7 @@ not have signal) and it works **with no AI at all**.
 - **The OneAquaHealth public API** (`api.enora-oah.eu`) for the 106 research sites and the
   app's answer codes, snapshotted so the app never depends on it at run time.
 - **Open-Meteo** for weather, **iNaturalist** for taxonomy and places, Leaflet for the map.
-- **247 automated tests**, none of which touch the network or a model: every network call goes
+- **255 automated tests**, none of which touch the network or a model: every network call goes
   through an injectable function.
 
 ## Challenges we ran into

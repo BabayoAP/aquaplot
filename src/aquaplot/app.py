@@ -504,6 +504,7 @@ def insights():
 
 OUTLOOK_RULES = ("human.rain_ahead", "ecosystem.heat_ahead")
 OUTLOOK_TTL_SECONDS = 1800
+OUTLOOK_FAILURE_TTL_SECONDS = 120  # a forecast outage must not be remembered for half an hour
 OUTLOOK_SITES = 50
 
 
@@ -525,10 +526,22 @@ async def outlook():
         return cached[1]
     sites = app.state.store.sites(limit=OUTLOOK_SITES)
     ahead = await resolver.ahead([(s["lat"], s["lon"]) for s in sites])
+    forecast: list[dict[str, Any]] = []
     out = []
     for site, weather in zip(sites, ahead):
         if weather is None:
             continue
+        # What the forecast actually says, for every site that has one. Without
+        # this the panel can only ever show sites over a threshold, so on a calm
+        # week a working feature is indistinguishable from a broken one.
+        forecast.append(
+            {
+                "site_key": site["site_key"],
+                "name": site["name"],
+                "rain_next_48h_mm": weather.rain_next_48h_mm,
+                "max_temp_next_48h_c": weather.max_temp_next_48h_c,
+            }
+        )
         latest = app.state.store.history(site["site_key"], limit=1)[0]
         stored = app.state.store.get(latest["id"])
         findings = [f for f in onehealth.evaluate(_rules_context(stored, weather)).findings if f.rule in OUTLOOK_RULES]
@@ -549,14 +562,27 @@ async def outlook():
             }
         )
     out.sort(key=lambda s: (-onehealth.Level(s["level"]).rank, s["name"]))
+    # A forecast that could not be had is not a forecast of calm weather. Saying
+    # "no rain or heat ahead" when Open-Meteo was unreachable would be a false
+    # statement about the thing this endpoint exists to report, so it is reported
+    # as unavailable - and remembered only briefly, because the usual cause is a
+    # cold instance whose first request lost the race, and the next caller should
+    # get a real answer rather than two minutes of a cached outage.
+    unavailable = bool(sites) and not forecast
     body = {
-        "available": True,
+        "available": not unavailable,
         "generated_at": datetime.now(UTC).isoformat(),
         "source": "Open-Meteo forecast, CC BY 4.0",
         "sites_checked": len(sites),
+        "forecast": forecast,
         "sites": out,
     }
-    app.state.outlook_cache = (time.monotonic() + OUTLOOK_TTL_SECONDS, body)
+    if unavailable:
+        body["reason"] = "the forecast service could not be reached"
+    app.state.outlook_cache = (
+        time.monotonic() + (OUTLOOK_FAILURE_TTL_SECONDS if unavailable else OUTLOOK_TTL_SECONDS),
+        body,
+    )
     return body
 
 

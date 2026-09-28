@@ -64,3 +64,52 @@ def test_labels_accept_genus_and_common_names(tmp_path):
     p.write_text("photo,families\na.jpg,Gammarus;bloodworm\n", encoding="utf-8")
     [case] = load_labels(p)
     assert case.truth == ["Gammaridae", "Chironomidae"]
+
+
+# ---- the rule-layer sweep (scripts/evaluate_rules.py) -------------------------
+
+
+def _sweep():
+    """Import the script the way a developer runs it, from the repository root."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent.parent / "scripts" / "evaluate_rules.py"
+    spec = importlib.util.spec_from_file_location("evaluate_rules", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_rule_sweep_is_deterministic():
+    """The published table has to be reproducible from the seed, or it is an anecdote."""
+    rules = _sweep()
+    first = rules.sweep(0.4, 0.3, repeats=20, seed=7)
+    again = rules.sweep(0.4, 0.3, repeats=20, seed=7)
+    assert first == again
+
+
+def test_a_worse_observer_catches_fewer_mistakes_and_asks_more_of_a_correct_volunteer():
+    """The whole point of the sweep: the curve has to move the way the design says.
+
+    An observer that misses more animals must catch less and interrupt more, and a
+    perfect one must catch everything without questioning a volunteer who was right.
+    """
+    rules = _sweep()
+    perfect = rules.sweep(0.0, 0.0, repeats=20, seed=7)
+    poor = rules.sweep(0.6, 0.0, repeats=20, seed=7)
+
+    assert perfect["caught"] == 1.0 and perfect["alarms_per_photo"] == 0.0
+    assert poor["caught"] < perfect["caught"]
+    assert poor["alarms_per_photo"] > perfect["alarms_per_photo"]
+
+
+def test_answering_only_to_order_costs_the_suggestion_but_not_the_catch():
+    """'Some kind of mayfly' is a correct answer, so it must still raise the
+    question - it just cannot offer the family as the alternative."""
+    rules = _sweep()
+    exact = rules.sweep(0.0, 0.0, repeats=20, seed=7)
+    coarse = rules.sweep(0.0, 0.6, repeats=20, seed=7)
+
+    assert coarse["right_answer"] < exact["right_answer"]
+    assert coarse["caught"] > 0.5

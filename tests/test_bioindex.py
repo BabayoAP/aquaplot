@@ -105,6 +105,17 @@ def test_no_identifiable_animals_produces_no_reading():
     assert any("placeholder, not a reading" in p for p in s.penalties)
 
 
+def test_a_name_we_cannot_place_is_a_hole_in_the_evidence_not_a_bad_stream():
+    """Reporting an animal the catalogue cannot score must never look worse than
+    reporting nothing. A typo, a common name or a family from outside Europe all
+    land here, and banding them 'Bad' would punish the volunteer who tried."""
+    nothing = score([])
+    unplaceable = score(obs(["Wibblidae", "Nonsenseidae"]))
+    assert unplaceable.band is nothing.band
+    assert unplaceable.families == 0 and unplaceable.evidence_limited
+    assert any("could not be matched" in p for p in unplaceable.penalties)
+
+
 def test_confidence_falls_with_shaky_identifications_and_thin_samples():
     sure = score(obs(CLEAN, confidence=1.0))
     unsure = score(obs(CLEAN, confidence=0.5))

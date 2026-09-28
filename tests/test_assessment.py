@@ -323,6 +323,32 @@ async def test_the_summary_counts_what_the_dashboard_shows():
     assert summary["by_band"] and summary["by_month"]
 
 
+async def test_a_check_with_no_coordinates_is_not_counted_as_a_place_on_the_ground():
+    """The dashboard's site count has to agree with the map and the table under it.
+
+    A reading with no coordinates is real and still counted as an assessment, but
+    it is not somewhere anyone can go back to, so it is not a site.
+    """
+    store = Store(":memory:")
+    store.save(await run(), contributor="anon-1")
+    store.save(await run(region=Region(source="none")), contributor="anon-1")
+
+    summary = store.summary()
+    assert summary["assessments"] == 2
+    assert summary["sites"] == 1 == len(store.sites())
+
+
+async def test_the_alert_feed_leaves_out_readings_that_have_no_site():
+    """Every unlocated reading shares one key, so admitting them would collapse
+    them into a single nameless row and drop all but the newest."""
+    store = Store(":memory:")
+    store.save(await run(region=Region(source="none")), contributor="anon-1")
+    store.save(await run(region=Region(source="none")), contributor="anon-2")
+
+    assert store.alerts() == []
+    assert store.summary()["assessments"] == 2  # still stored, still counted, still exported
+
+
 # ---- HTTP -----------------------------------------------------------------
 
 

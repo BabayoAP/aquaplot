@@ -220,3 +220,62 @@ def test_the_outlook_puts_the_site_that_has_shown_sewage_first(client):
     assert any("overflow running" in b for b in first["findings"][0]["because"])
     client.get("/api/outlook")
     assert forecast.calls == 1  # cached
+
+
+class NoForecast(CountingWeather):
+    """Open-Meteo is unreachable: every site comes back without a forecast."""
+
+    async def around(self, lat, lon, when):
+        return None
+
+    async def ahead(self, points, now=None):
+        self.calls += 1
+        return [None] * len(points)
+
+
+def test_a_forecast_that_could_not_be_had_is_not_a_forecast_of_calm_weather(client):
+    """The panel must not say 'no rain or heat ahead' when nothing was fetched.
+
+    The two look identical from an empty site list, and on a cold free instance
+    the first request is the one most likely to lose the race.
+    """
+    import json
+
+    from aquaplot.app import app
+    from aquaplot.store import Store
+
+    app.state.store = Store(":memory:")
+    app.state.outlook_cache = None
+    app.state.assessor = StreamAssessor(observer=NullObserver(), weather=NoForecast(None))
+    client.post(
+        "/api/assess",
+        data={"lat": "40.2111", "lon": "-8.4291", "site_name": "Below the outfall",
+              "answers": json.dumps({"odour": "sewage"}), "taxa": json.dumps(["Baetidae"])},
+    )
+
+    body = client.get("/api/outlook").json()
+    assert body["available"] is False
+    assert body["sites"] == [] and body["forecast"] == []
+    assert "could not be reached" in body["reason"]
+
+
+def test_a_calm_forecast_still_reports_what_it_read(client):
+    """Nothing over a threshold is a result, and it has to be shown as one."""
+    import json
+
+    from aquaplot.app import app
+    from aquaplot.store import Store
+
+    app.state.store = Store(":memory:")
+    app.state.outlook_cache = None
+    app.state.assessor = StreamAssessor(observer=NullObserver(), weather=Forecast(None))
+    client.post(
+        "/api/assess",
+        data={"lat": "40.2111", "lon": "-8.4291", "site_name": "Below the outfall",
+              "answers": json.dumps({"odour": "none"}), "taxa": json.dumps(["Baetidae"])},
+    )
+
+    body = client.get("/api/outlook").json()
+    assert body["available"] is True
+    assert [f["name"] for f in body["forecast"]] == ["Below the outfall"]
+    assert body["forecast"][0]["rain_next_48h_mm"] == STORM_COMING.rain_next_48h_mm

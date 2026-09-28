@@ -64,7 +64,64 @@ tray-01.jpg,Heptageniidae;Gammaridae;Chironomidae,Ribeira de Coselhas, riffle be
 - **Small numbers are small.** Thirty photos give a direction, not a rate. Quote counts
   ("caught 41 of 60 simulated mistakes") rather than bare percentages.
 
+## The other half: how good does the observer have to be?
+
+Everything above needs a model and labelled photographs. The question underneath it does not:
+**given an observer of a stated quality, how much of a volunteer's mistake does the review
+catch, and how much noise does a volunteer who was right have to wade through?** That is a
+property of `secondopinion.py`, so `scripts/evaluate_rules.py` measures it by handing
+`score_outcomes` a *synthetic* observer with two dials — how often it misses an animal that is
+there, and how often it answers "some kind of mayfly" instead of naming the family — and
+sweeping them.
+
+```sh
+.venv/bin/python scripts/evaluate_rules.py --repeats 200
+```
+
+**This measures the rules, not any model.** It says nothing about whether a vision model can
+identify a mayfly nymph in a phone photograph; the observer is a simulation with a dial on it
+and the trays are drawn from the catalogue rather than photographed in a stream. It is
+deterministic from its seed, so the table below reruns in a second and a regression in the
+review logic shows up as a falling catch rate.
+
 ## Results
 
-Not yet run. Record each run here with the date, the model, the photo set and the four headline
-numbers: right to family, caught, caught with the right answer, false-alarm photos.
+### Rule layer, synthetic observer — 2026-09-28
+
+6 trays spanning a clean upland riffle to a drain, 200 runs per row, seed 1000, 198 simulated
+volunteer mistakes per run. Reproduce with
+`.venv/bin/python scripts/evaluate_rules.py --repeats 200 --markdown`.
+
+| Animals the observer misses | Answered to order only | Mistakes caught | ...with the right animal offered | False-alarm questions per tray |
+|---|---|---|---|---|
+| 0% | 0% | 100% | 100% | 0.00 |
+| 0% | 30% | 87% | 70% | 0.00 |
+| 20% | 0% | 83% | 71% | 0.16 |
+| 20% | 30% | 73% | 50% | 0.16 |
+| 40% | 0% | 69% | 48% | 0.34 |
+| 40% | 30% | 62% | 33% | 0.34 |
+| 60% | 0% | 56% | 28% | 0.53 |
+| 60% | 30% | 52% | 19% | 0.53 |
+
+Reading it:
+
+- **An observer does not have to be good to be worth asking.** One that misses two animals in
+  every five still catches 69% of simulated mistakes, at a cost of one unnecessary question
+  roughly every three trays. This is the design argument for asking a model that only ever
+  raises questions, and it is the row to quote, because a model missing 40% of a mixed tray is
+  a pessimistic reading of what these models do.
+- **A perfect observer never interrupts a volunteer who was right** (0.00 false alarms at 0%
+  miss). Every false alarm in the table comes from the model failing to find an animal the
+  volunteer correctly recorded, which is by design: a *sensitive* family the model could not
+  find is worth a second look, because sensitive families are what lift a stream's reading.
+- **Answering only to order costs the suggestion, not the catch.** At 30% order-only the catch
+  rate falls 13 points but the share where the right animal is offered falls 30. The question
+  still gets asked; it just says "some kind of mayfly" rather than naming the family — which is
+  the honest thing to show, and why order-level answers are counted apart from wrong ones.
+
+### Model layer — not yet run
+
+Needs an API key and labelled photos (`scripts/evaluate_observer.py`). Record each run here
+with the date, the model, the photo set and the four headline numbers: right to family, caught,
+caught with the right answer, false-alarm photos. Do not quote the table above as evidence that
+the model works; it is evidence that the rules around it hold up when it does not.

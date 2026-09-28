@@ -425,6 +425,8 @@ async function flushOutbox(manual) {
     if (!items.length) return;
     const db = await openDB();
     let sent = 0;
+    const refused = [];
+    let heldBack = "";
     for (const item of items) {
       const body = new FormData();
       for (const [k, v] of Object.entries(item.fields)) body.append(k, v);
@@ -435,19 +437,43 @@ async function flushOutbox(manual) {
       } catch (e) {
         break;  // still offline; keep everything and try again later
       }
-      // A 4xx means this submission will never succeed, so drop it rather than
-      // retry it forever; anything else is kept for the next attempt.
-      if (res.ok || (res.status >= 400 && res.status < 500)) {
+      // 429 and 408 are 4xx but they mean "not now", not "never": the server is
+      // rate-limiting a burst or timed out. Dropping those would throw away a
+      // whole morning's queue for hitting the per-address limit while flushing.
+      if (res.status === 429 || res.status === 408) { heldBack = "the server is asking us to slow down"; break; }
+      if (res.ok) {
         await tx(db, "readwrite", (store) => store.delete(item.id));
-        if (res.ok) sent += 1;
+        sent += 1;
+      } else if (res.status >= 400 && res.status < 500) {
+        // The server will never accept this one. Drop it so it cannot block the
+        // queue forever, but say so: silently deleting an observation somebody
+        // walked to a stream to collect, and calling it a connection problem, is
+        // worse than losing it loudly.
+        let why = `${res.status}`;
+        try { why = (await res.json()).detail || why; } catch (e) {}
+        refused.push({ when: item.created, why });
+        await tx(db, "readwrite", (store) => store.delete(item.id));
       } else {
-        break;
+        heldBack = "the server had a problem";
+        break;  // a server error; keep it for the next attempt
       }
     }
     await drawOutbox();
+    if (refused.length) {
+      const lines = refused.map((r) => `· ${String(r.when).slice(0, 10)}: ${r.why}`).join("\n");
+      alert(`${refused.length} saved assessment${refused.length === 1 ? " was" : "s were"} refused by the server `
+          + `and removed from the queue:\n\n${lines}\n\nThe rest of the queue is untouched.`);
+    }
     if (manual) {
-      $("announce").textContent = sent ? `${sent} assessment(s) sent.` : "Still no connection.";
-      if (!sent) alert("Still no connection. Your assessments are safe on this phone and will send automatically.");
+      const tail = refused.length ? `, ${refused.length} refused` : heldBack ? `; the rest are waiting because ${heldBack}` : "";
+      $("announce").textContent = sent || refused.length || heldBack
+        ? `${sent} assessment(s) sent${tail}.`
+        : "Still no connection.";
+      if (!sent && !refused.length) {
+        alert(heldBack
+          ? `Nothing could be sent just now because ${heldBack}. Your assessments are safe on this phone; try again in a few minutes.`
+          : "Still no connection. Your assessments are safe on this phone and will send automatically.");
+      }
     }
   } finally { flushing = false; }
 }
@@ -679,15 +705,21 @@ function reviewBody() {
 }
 
 function habitatCard(item) {
-  const indicator = state.form.indicators.find((i) => i.key === item.key);
+  // The form is fetched separately and can be missing on a slow or dropped
+  // connection, and the server can ask about an indicator this build's form does
+  // not carry. Either way the review step must still render: the question text
+  // travels with the queue item, so fall back to it rather than throwing and
+  // leaving the person looking at a blank step 4.
+  const indicator = (state.form && state.form.indicators || []).find((i) => i.key === item.key);
   const card = document.createElement("div"); card.className = "taxon";
-  const name = document.createElement("div"); name.className = "name"; name.textContent = indicator.question;
+  const name = document.createElement("div"); name.className = "name";
+  name.textContent = (indicator && indicator.question) || item.question || item.key;
   const meta = document.createElement("div"); meta.className = "meta";
   meta.textContent = item.model_said ? `The model said: ${item.model_said} (${Math.round(item.confidence * 100)}% sure)` : "Not answered yet.";
   const why = document.createElement("p"); why.className = "why"; why.textContent = item.why_it_matters;
   card.append(name, meta, why);
   const choices = document.createElement("div"); choices.className = "choices";
-  indicator.options.forEach((o) => {
+  ((indicator && indicator.options) || []).forEach((o) => {
     const b = document.createElement("button"); b.type = "button"; b.textContent = o.label;
     b.setAttribute("aria-pressed", "false");
     b.addEventListener("click", () => {
@@ -697,6 +729,12 @@ function habitatCard(item) {
     });
     choices.append(b);
   });
+  if (!indicator) {
+    const gone = document.createElement("p"); gone.className = "why";
+    gone.textContent = "The answer options for this question could not be loaded, so it cannot be answered here. "
+      + "Everything else on this page still applies.";
+    card.append(gone);
+  }
   card.append(choices);
   return card;
 }
@@ -887,8 +925,15 @@ function resetForm() {
   drawThumbs(); drawPicker();
   document.querySelectorAll(".choices button").forEach((b) => b.setAttribute("aria-pressed", "false"));
   $("description").value = "";
+  // The spot has to be cleared too. Keeping the last position and name would file
+  // the next check at the previous stretch under the previous name - silently
+  // inventing a repeat visit to somewhere the person has walked away from, which
+  // is the one thing a site series must never contain.
+  state.lat = null; state.lon = null;
+  $("sitename").value = "";
+  $("locstatus").textContent = "Not set yet. A photo with GPS also works.";
+  $("nearby").innerHTML = "";
   show("step1");
-  checkNearby();
 }
 
 $("again").addEventListener("click", resetForm);

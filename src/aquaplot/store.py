@@ -360,11 +360,21 @@ class Store:
         return [dict(r) for r in rows]
 
     def alerts(self, days: int = 30) -> list[dict[str, Any]]:
-        """Sites whose most recent assessment reached alert or concern - the early-warning feed."""
+        """Sites whose most recent assessment reached alert or concern - the early-warning feed.
+
+        Assessments with no coordinates are left out, as they are everywhere else a
+        *site* is meant. They all share the 'unlocated' key, so including them
+        would collapse every unlocated reading in the deployment into a single
+        nameless, unmappable row and silently drop all but the most recent - the
+        opposite of what an early-warning feed is for. Those readings are still
+        stored, still counted and still exported; they just cannot be re-visited,
+        put on the map or turned into a trend, which is what this feed is made of.
+        """
         since = (datetime.now(UTC) - timedelta(days=days)).isoformat()
         rows = self._query(
             """SELECT a.* FROM assessments a
-               JOIN (SELECT site_key, MAX(created_at) m FROM assessments WHERE superseded_by IS NULL GROUP BY site_key) t
+               JOIN (SELECT site_key, MAX(created_at) m FROM assessments
+                     WHERE superseded_by IS NULL AND site_key != 'unlocated' GROUP BY site_key) t
                  ON a.site_key = t.site_key AND a.created_at = t.m
                WHERE a.superseded_by IS NULL AND a.level_ordinal >= 2 AND a.created_at >= ?
                ORDER BY a.level_ordinal DESC, a.created_at DESC""",
@@ -398,7 +408,12 @@ class Store:
     def summary(self) -> dict[str, Any]:
         """The numbers the dashboard leads with (FR-11)."""
         rows = self._query(
-            """SELECT COUNT(*) n, COUNT(DISTINCT site_key) sites, COUNT(DISTINCT contributor) people,
+            # 'unlocated' is a bucket, not a place on the ground: counting it would
+            # make the dashboard claim one more site than the map and the table
+            # below it can show. The assessments themselves still count.
+            """SELECT COUNT(*) n,
+                      COUNT(DISTINCT CASE WHEN site_key != 'unlocated' THEN site_key END) sites,
+                      COUNT(DISTINCT contributor) people,
                       AVG(band_ordinal) mean_band, AVG(pressure) mean_pressure, SUM(invasives) invasives,
                       SUM(confirmations) confirmations
                FROM assessments WHERE superseded_by IS NULL"""

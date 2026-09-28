@@ -207,7 +207,18 @@ fetch("/api/outlook").then((r) => r.json()).then((o) => {
   const box = $("outlook"); box.innerHTML = "";
   if (!o.available) { box.innerHTML = `<div class="empty">No outlook: ${escape(o.reason)}.</div>`; return; }
   if (!o.sites.length) {
-    box.innerHTML = `<div class="empty">No heavy rain or heat forecast at any of the ${o.sites_checked} monitored sites.</div>`;
+    // Show what the forecast actually said. "Nothing to report" and "the lookup
+    // silently returned nothing" look identical otherwise, and on a calm week
+    // that is every week.
+    const f = o.forecast || [];
+    const wettest = f.reduce((a, b) => (b.rain_next_48h_mm > (a ? a.rain_next_48h_mm : -1) ? b : a), null);
+    const hottest = f.reduce((a, b) => (b.max_temp_next_48h_c > (a ? a.max_temp_next_48h_c : -99) ? b : a), null);
+    const detail = wettest && hottest
+      ? ` Wettest: ${escape(wettest.name)}, ${wettest.rain_next_48h_mm.toFixed(1)} mm. `
+        + `Hottest: ${escape(hottest.name)}, ${hottest.max_temp_next_48h_c.toFixed(1)} °C.`
+      : "";
+    box.innerHTML = `<div class="empty">Forecast checked at ${f.length} of ${o.sites_checked} monitored sites: `
+      + `no heavy rain or heat ahead.${detail}</div>`;
     return;
   }
   o.sites.forEach((s) => {

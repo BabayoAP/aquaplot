@@ -606,8 +606,14 @@ def score(observations: list[TaxonObservation], index: BioticIndex = BMWP) -> Ec
         )
 
     if len(scored) < MIN_FAMILIES_FOR_INDEX:
+        # The placeholder never depends on ``unmatched``. A name this catalogue
+        # could not place is a hole in the evidence, not evidence of pollution:
+        # it is usually a typo, a common name, or a family from outside Europe.
+        # Banding those as 'Bad' would make reporting an animal we cannot score
+        # look worse than reporting nothing at all, and would put a false alarm
+        # in front of the volunteer who tried hardest to name what they found.
         return EcologicalStatus(
-            band=Band.BAD if unmatched else Band.MODERATE,
+            band=Band.MODERATE,
             bmwp=0.0,
             aspt=None,
             families=0,
