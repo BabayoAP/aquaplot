@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS assessments (
     contributor   TEXT,
     version       TEXT,
     superseded_by TEXT,
+    biotic_index  TEXT,
     payload       TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS site_names (
@@ -139,7 +140,7 @@ class Store:
         change without anyone deleting the data citizens contributed.
         """
         have = {row["name"] for row in cursor.execute("PRAGMA table_info(assessments)").fetchall()}
-        for column, ddl in (("superseded_by", "TEXT"),):
+        for column, ddl in (("superseded_by", "TEXT"), ("biotic_index", "TEXT")):
             if column not in have:
                 cursor.execute(f"ALTER TABLE assessments ADD COLUMN {column} {ddl}")
 
@@ -173,11 +174,11 @@ class Store:
                 """INSERT OR REPLACE INTO assessments
                    (id, created_at, site_key, site_name, lat, lon, place_id, place_name, band, band_ordinal,
                     bmwp, aspt, families, ept_families, pressure, certainty, overall_level, level_ordinal,
-                    invasives, confirmations, observer, contributor, version, superseded_by, payload)
+                    invasives, confirmations, observer, contributor, version, superseded_by, biotic_index, payload)
                    VALUES
                    (:id,:created_at,:site_key,:site_name,:lat,:lon,:place_id,:place_name,:band,:band_ordinal,
                     :bmwp,:aspt,:families,:ept_families,:pressure,:certainty,:overall_level,:level_ordinal,
-                    :invasives,:confirmations,:observer,:contributor,:version,NULL,:payload)""",
+                    :invasives,:confirmations,:observer,:contributor,:version,NULL,:biotic_index,:payload)""",
                 {
                     "id": assessment.id,
                     "created_at": assessment.created_at,
@@ -202,6 +203,7 @@ class Store:
                     "observer": assessment.observer,
                     "contributor": contributor,
                     "version": assessment.version,
+                    "biotic_index": assessment.ecology.index.key,
                     "payload": json.dumps(d),
                 },
             )
@@ -331,14 +333,15 @@ class Store:
         """Every live assessment, flattened, for the CSV export."""
         rows = self._query(
             """SELECT id, created_at, site_key, site_name, place_name, lat, lon, band, band_ordinal,
-                      bmwp, aspt, families, ept_families, pressure, certainty, overall_level,
+                      COALESCE(biotic_index, 'bmwp') AS biotic_index, bmwp AS index_total, aspt AS index_mean,
+                      families, ept_families, pressure, certainty, overall_level,
                       invasives, confirmations, observer, version
                FROM assessments WHERE superseded_by IS NULL ORDER BY created_at LIMIT ?""",
             (limit,),
         )
         # Full float precision on a derived index is noise in a spreadsheet, and
         # invites a reader to believe the number is more exact than it is.
-        rounding = {"bmwp": 1, "aspt": 2, "pressure": 1, "certainty": 1, "lat": 6, "lon": 6}
+        rounding = {"index_total": 1, "index_mean": 2, "pressure": 1, "certainty": 1, "lat": 6, "lon": 6}
         return [
             {k: (round(v, rounding[k]) if k in rounding and isinstance(v, float) else v) for k, v in dict(r).items()}
             for r in rows

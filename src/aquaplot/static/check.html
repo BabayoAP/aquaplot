@@ -770,8 +770,11 @@ function render(d) {
   const rows = [
     ["Identified by", identifiedBy(d)],
     ["Families found", `${d.ecology.families} (${d.ecology.ept_families} mayfly/stonefly/caddisfly)`],
-    ["Average sensitivity (ASPT)", d.ecology.aspt === null ? "not calculated" : `${d.ecology.aspt} out of 10`],
-    ["BMWP total", d.ecology.bmwp],
+    ["Index", `${d.ecology.index} — ${d.ecology.citation}`],
+    [`Average sensitivity (${d.ecology.mean_label})`, d.ecology.aspt === null ? "not calculated" : `${d.ecology.aspt} out of 10`],
+    [`${d.ecology.total_label} total`, d.ecology.total_class
+      ? `${d.ecology.bmwp} (class '${d.ecology.total_class}' on the ${d.ecology.total_label} scale, which assumes a full standard sample)`
+      : d.ecology.bmwp],
     ["Visible pressure", `${d.pressures.pressure} / 100 (${d.pressures.band})`],
     ["Confidence in this reading", `${d.certainty}%`],
     ["Where", d.region.place ? d.region.place.display_name : "not resolved"],
@@ -953,7 +956,7 @@ function drawGuide(query) {
   shown.forEach((f) => {
     const d = document.createElement("div"); d.className = "gitem";
     const s = document.createElement("div"); s.className = "s";
-    s.textContent = `${f.sensitivity} · score ${f.bmwp}/10 · ${f.group}${f.ept ? " · EPT" : ""}${f.vector ? " · health-relevant" : ""}`;
+    s.textContent = `${f.sensitivity}${f.score === null ? "" : ` · score ${f.score}/10`} · ${f.group}${f.ept ? " · EPT" : ""}${f.vector ? " · health-relevant" : ""}`;
     const b = document.createElement("b"); b.textContent = f.plain_name;
     const look = document.createElement("div"); look.textContent = f.look_for;
     const means = document.createElement("div"); means.className = "why"; means.textContent = f.means;

@@ -49,14 +49,73 @@ Indicators marked `photo_visible: false` are never asked of the model. There is 
 today — smell — and it is the indicator that separates a stream cloudy from yesterday's rain
 from a sewage discharge. It is the concrete reason a person stays in the loop.
 
+## Stage 3b — Who identifies the animals
+
+Identifying a 5 mm larva to family from a phone photo is hard for a trained person with a hand
+lens. It is the least defensible thing a vision model could be asked to do here, so AquaPlot
+does not ask it to decide.
+
+**The citizen identifies.** Step 3 of the check is a picker built from the catalogue, grouped by
+shape ("Mayflies", "Snails and limpets"), searchable by what a person can see ("three tails",
+"case", "red worm"), with a "some kind of…" option per group for an honest group-level answer.
+When the citizen supplies a list, **that list is what gets scored.**
+
+**The model gives a second opinion, blind.** The same tray photo goes to the model without the
+citizen's answers — agreement is only evidence if the model could not echo them. `secondopinion.py`
+compares the two lists and produces *questions*, never changes:
+
+| The model… | The card asks | Answers |
+|---|---|---|
+| saw a family commonly confused with one you marked | "You marked a stonefly. The model thinks this may be a mayfly. Which is it?" with the feature that tells them apart (count the tails) | Mine is right · It's the model's |
+| saw something you did not mark | "The model thinks there may also be a net-spinning caddis. Did you see one?" | Yes, add it · No, it's not there |
+| could not find a *sensitive* family you marked | "The model could not find the stonefly you marked. Are you sure?" | Yes, I'm sure · No, remove it |
+
+A tolerant family the model merely failed to find is not questioned: it cannot lift the band,
+and asking would be noise. Every question carries the band the stream would get if the model
+were right, and the ones that would change it come first. A suggestion that is a listed invasive
+goes to the top — and still enters the invasive check only if the person says it was there.
+
+Keeping your own answer dismisses the question; taking the model's swaps the animal. Either way
+the model is not called again. An agreement that exists only because the person took the
+model's answer is reported as that, never as independent agreement. Unsettled disagreements
+that would change the band cost certainty (0.9 each, floor 0.7) and say so.
+
+If the citizen skips identification, the model's list becomes a proposal, scored unconfirmed
+and queued for confirmation as before. With no model or no tray photo, there is no second
+opinion and the result says why. `docs/EVALUATION.md` describes how the second opinion is
+measured.
+
 ## Stage 4 — The biological index
 
-`bioindex.py` scores the invertebrates with **BMWP/ASPT**, the family-level index used across
-Europe. Each family carries a score from 1 (survives almost anything) to 10 (clean, cold,
-well-oxygenated water only). BMWP is their sum; **ASPT** is the mean, and the mean is what the
-band is read from because it barely moves with how hard someone looked.
+`bioindex.py` scores the invertebrates against a family-score table. Each family carries a
+score from 1 (survives almost anything) to 10 (clean, cold, well-oxygenated water only). The
+total is their sum; the mean per scoring family is what the band is read from, because it
+barely moves with how hard someone looked.
 
-| ASPT | Band |
+**Which table depends on where you are**, resolved from the coordinates like everything else:
+
+| Index | Where | Source |
+|---|---|---|
+| **BMWP / ASPT** | Default | Armitage et al. (1983) |
+| **IBMWP / IASPT** | Portugal, Spain, Andorra | Alba-Tercedor et al. (2002); family scores as tabulated in MAGRAMA (2011) |
+
+Both columns in `data/bioindicators.json` were checked against the tables distributed with the
+`biomonitoR` R package. They differ on nine families (Ephemerellidae 10→7, Caenidae 7→4, the
+water beetles and water bugs 5→3, drain-fly larvae unscored→4). A caller can also name the
+index explicitly (`index=bmwp|ibmwp`).
+
+A family an index does not score — the American crayfish and the zebra mussel in both, mosquito,
+drain-fly and rat-tailed maggot larvae in BMWP — is **recorded, not scored**: it appears in the
+result and the report, feeds the One Health rules (mosquito larvae, snail hosts) and the
+invasive check, and adds nothing to the index.
+
+IBMWP publishes its own quality classes on the *total* (>100, 61–100, 36–60, 16–35, ≤15). Those
+assume a standardised sample across every habitat in the reach, which typically finds several
+times more families than one tray. Read from a tray, the total always reads low, so the band is
+read from IASPT with the same thresholds as ASPT, and the total's class is shown beside it,
+labelled as understating a small sample.
+
+| Mean (ASPT or IASPT) | Band |
 |---|---|
 | ≥ 6.5 | High |
 | 5.6 – 6.5 | Good |
@@ -110,6 +169,7 @@ the observer is standing, the result says so instead of asserting it.
               × habitat coverage      (0.6 + 0.4 × answered/12)
               × place factor          (1.0 resolved · 0.9 unresolved · 0.85 no coordinates)
               × photo factor          (1.0 with a photo · 0.95 without)
+              × disagreement factor   (0.9 per unsettled band-changing second-opinion question, floor 0.7)
 
 Biological confidence itself falls with shaky identifications, thin samples and order-level
 answers. Every factor below 1.0 appends a sentence to `penalties`, so the number can always be
@@ -120,10 +180,13 @@ whenever the rule does.
 
 `needs_confirmation` is ordered by how much confirming each item would change the output:
 
-1. Observations holding a health finding below alert level. `RULE_EVIDENCE` maps each rule to
+1. Second-opinion questions that would change the band, and model suggestions that are listed
+   invasives.
+2. Observations holding a health finding below alert level. `RULE_EVIDENCE` maps each rule to
    the habitat answers it rests on, so the queue asks for the one that actually matters.
-2. The questions only a person standing there can answer.
-3. Low-confidence or order-only identifications.
+3. The questions only a person standing there can answer, and the remaining second-opinion
+   questions.
+4. Low-confidence or order-only identifications.
 
 `POST /api/assess/{id}/review` folds the answers back in and recomputes — **without calling the
 model again**. Re-running it would let the model quietly overwrite the correction a person just

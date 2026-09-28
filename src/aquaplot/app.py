@@ -103,7 +103,7 @@ app = FastAPI(
     version=ASSESSMENT_VERSION,
     description=(
         "Guided citizen stream checks. A photo and a few plain-language answers become a "
-        "BMWP/ASPT biological band, a visual pressure score and a One Health read-out for "
+        "biological band (BMWP/ASPT, or IBMWP/IASPT in Iberia), a visual pressure score and a One Health read-out for "
         "people, animals and the ecosystem - with every finding traceable to the observation "
         "behind it. Built for the IEEE OneAquaHealth Global Hackathon 2026."
     ),
@@ -244,6 +244,9 @@ async def assess(
     site_name: str | None = Form(default=None),
     answers: str | None = Form(default=None, description='JSON object of habitat answers, e.g. {"odour": "sewage"}'),
     taxa: str | None = Form(default=None, description='JSON array of invertebrate names the observer identified'),
+    index: str | None = Form(
+        default=None, description="Biotic index: 'bmwp' or 'ibmwp'. Omit to choose from the country the coordinates resolve to."
+    ),
 ):
     """Assess one stream visit.
 
@@ -254,6 +257,8 @@ async def assess(
     """
     citizen_answers = _readings(answers, "citizen")
     citizen_taxa = _taxa(taxa)
+    if index and index not in bioindex.INDICES:
+        raise HTTPException(status_code=422, detail=f"unknown index '{index}'; use one of: {', '.join(bioindex.INDICES)}")
     blobs = [b for b in [await p.read() for p in photos] if b]
     if not blobs and not citizen_answers and not citizen_taxa and not (description or "").strip():
         raise HTTPException(status_code=422, detail="send at least a photo, a habitat answer or a species name")
@@ -285,6 +290,7 @@ async def assess(
                 answers=tuple(citizen_answers),
                 taxa=tuple(citizen_taxa),
                 site_name=(site_name or "").strip() or None,
+                index=index or None,
             )
         )
     )
@@ -451,7 +457,7 @@ def export_csv():
     rows = app.state.store.export_rows()
     columns = [
         "id", "created_at", "site_key", "site_name", "place_name", "lat", "lon", "band", "band_ordinal",
-        "bmwp", "aspt", "families", "ept_families", "pressure", "certainty", "overall_level",
+        "biotic_index", "index_total", "index_mean", "families", "ept_families", "pressure", "certainty", "overall_level",
         "invasives", "confirmations", "observer", "version",
     ]
     buffer = io.StringIO()
@@ -512,7 +518,7 @@ def guide():
     """The bioindicator catalogue: what to look for, and what finding it means."""
     return {
         "version": bioindex.CATALOGUE_VERSION,
-        "index": "BMWP / ASPT",
+        "indices": {k: {"name": i.name, "citation": i.citation} for k, i in bioindex.INDICES.items()},
         "families": [
             {
                 "family": f.family,
@@ -520,13 +526,15 @@ def guide():
                 "common_name": f.common_name,
                 "group": f.group,
                 "bmwp": f.bmwp,
+                "ibmwp": f.ibmwp,
+                "score": f.reference_score,
                 "sensitivity": f.sensitivity,
                 "ept": f.ept,
                 "look_for": f.look_for,
                 "means": f.means,
                 "vector": f.vector,
             }
-            for f in sorted(bioindex.CATALOGUE, key=lambda f: (-f.bmwp, f.family))
+            for f in sorted(bioindex.CATALOGUE, key=lambda f: (-(f.reference_score or 0), f.family))
         ],
     }
 
@@ -549,7 +557,8 @@ def _rehydrate(stored: dict[str, Any]) -> "Assessment":
     from .assess import Assessment, InvasiveHit, readings_of, taxa_of
     from .schema import Region as _Region
 
-    ecology = bioindex.score(taxa_of(stored))
+    index = bioindex.INDICES.get(stored.get("ecology", {}).get("index_key", "bmwp"), bioindex.BMWP)
+    ecology = bioindex.score(taxa_of(stored), index)
     pressures = habitat.assess(readings_of(stored))
     signal = onehealth.evaluate(
         onehealth.Context(

@@ -395,7 +395,7 @@ def biological_condition(ctx: Context) -> Finding | None:
     if ctx.status.aspt is not None:
         because.append(
             f"{ctx.status.families} scoring famil{'y' if ctx.status.families == 1 else 'ies'} were identified, "
-            f"average sensitivity (ASPT) {ctx.status.aspt:.1f}, of which {ctx.status.ept_families} are mayflies, stoneflies or caddisflies"
+            f"average sensitivity ({ctx.status.index.mean}) {ctx.status.aspt:.1f}, of which {ctx.status.ept_families} are mayflies, stoneflies or caddisflies"
         )
     return Finding(
         rule="ecosystem.biological_condition",

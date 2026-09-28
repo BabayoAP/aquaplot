@@ -118,7 +118,9 @@ def status_observation(a: Assessment) -> dict[str, Any]:
             "Ecological status as an ordinal, 5 high to 1 bad",
             valueInteger=BAND_ORDINAL[eco.band],
         ),
-        _component("bmwp-total", "BMWP total score", valueQuantity=_quantity(round(eco.bmwp, 1), "score")),
+        _component(
+            f"{eco.index.key}-total", f"{eco.index.total} total score", valueQuantity=_quantity(round(eco.bmwp, 1), "score")
+        ),
         _component("scoring-families", "Number of scoring macroinvertebrate families", valueInteger=eco.families),
         _component("ept-families", "Number of EPT (mayfly, stonefly, caddisfly) families", valueInteger=eco.ept_families),
         _component(
@@ -133,7 +135,22 @@ def status_observation(a: Assessment) -> dict[str, Any]:
         ),
     ]
     if eco.aspt is not None:
-        components.insert(3, _component("aspt", "Average Score Per Taxon (BMWP/families)", valueQuantity=_quantity(round(eco.aspt, 2), "score")))
+        components.insert(
+            3,
+            _component(
+                eco.index.mean.lower(),
+                f"Average Score Per Taxon ({eco.index.total}/families)",
+                valueQuantity=_quantity(round(eco.aspt, 2), "score"),
+            ),
+        )
+    if eco.total_class is not None:
+        components.append(
+            _component(
+                f"{eco.index.key}-total-class",
+                f"{eco.index.total} class from the total (assumes a standardised sample; understates a single tray)",
+                valueCodeableConcept=_code(f"wfd-{eco.total_class.value.lower()}", eco.total_class.value),
+            )
+        )
 
     notes = [{"text": eco.caveat}, {"text": eco.meaning}]
     if eco.evidence_limited:
@@ -150,7 +167,9 @@ def status_observation(a: Assessment) -> dict[str, Any]:
         "code": _code("stream-ecological-status", "Urban stream ecological status, citizen screening"),
         "subject": {"reference": f"Location/site-{a.id}"},
         "effectiveDateTime": a.created_at,
-        "method": _code("bmwp-aspt-photo-screening", "BMWP/ASPT family-level screening from citizen photographs"),
+        "method": _code(
+            f"{eco.index.key}-photo-screening", f"{eco.index.name} family-level screening from citizen photographs"
+        ),
         "valueCodeableConcept": _code(f"wfd-{a.ecology.band.value.lower()}", a.ecology.band.value),
         "component": components,
         "note": notes,
@@ -172,10 +191,21 @@ def survey_observation(a: Assessment) -> dict[str, Any]:
             _component(
                 _id("taxon", (t.family or t.group or t.name).lower()),
                 f"{t.family or t.group} ({t.plain_name})",
-                valueQuantity=_quantity(t.score, "BMWP sensitivity score"),
+                valueQuantity=_quantity(t.score, f"{a.ecology.index.total} sensitivity score"),
                 interpretation=[{"text": t.sensitivity}],
             )
             for t in a.ecology.scored
+        ]
+        + [
+            _component(
+                _id("taxon", (t.family or t.group or t.name).lower()),
+                f"{t.family or t.group} ({t.plain_name})",
+                dataAbsentReason={
+                    "coding": [{"system": "http://terminology.hl7.org/CodeSystem/data-absent-reason", "code": "not-applicable"}],
+                    "text": f"Recorded; not scored by {a.ecology.index.total}",
+                },
+            )
+            for t in a.ecology.recorded
         ],
         "note": [{"text": s} for s in a.ecology.signals],
     }

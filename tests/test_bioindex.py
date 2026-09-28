@@ -45,7 +45,8 @@ def test_unknown_names_resolve_to_nothing_rather_than_something_close():
 
 def test_catalogue_entries_are_well_formed():
     for f in CATALOGUE:
-        assert 1 <= f.bmwp <= 10
+        for s in (f.bmwp, f.ibmwp):
+            assert s is None or 1 <= s <= 10
         assert f.plain_name and f.look_for and f.means
         assert f.ept == (f.group in {"Ephemeroptera", "Plecoptera", "Trichoptera"})
     assert len({f.family for f in CATALOGUE}) == len(CATALOGUE)

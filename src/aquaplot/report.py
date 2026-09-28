@@ -130,19 +130,22 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
         "## Biological condition",
         "",
         f"- **Screening class:** {a.ecology.band.value} — {BAND_LINE[a.ecology.band]}",
-        f"- **Index:** BMWP {a.ecology.bmwp:.0f}"
-        + (f", ASPT {a.ecology.aspt:.2f}" if a.ecology.aspt is not None else ", ASPT not calculable")
+        f"- **Index:** {a.ecology.index.total} {a.ecology.bmwp:.0f}"
+        + (f", {a.ecology.index.mean} {a.ecology.aspt:.2f}" if a.ecology.aspt is not None else f", {a.ecology.index.mean} not calculable")
         + f", {a.ecology.families} scoring families, {a.ecology.ept_families} EPT families",
     ]
     if a.ecology.evidence_limited:
         lines.append("- **Note:** the sample was too small to support a firmer class; treat as provisional.")
     lines.append("")
-    if a.ecology.scored:
-        lines += ["| Taxon recorded | BMWP | Sensitivity | Identified by |", "|---|---|---|---|"]
+    if a.ecology.scored or a.ecology.recorded:
+        lines += [f"| Taxon recorded | {a.ecology.index.total} | Sensitivity | Identified by |", "|---|---|---|---|"]
         for t in a.ecology.scored:
             who = "observer (confirmed)" if t.confirmed else "model, unconfirmed"
             level = t.family or f"{t.group} (order only)"
             lines.append(f"| {level} | {t.score:.0f} | {t.sensitivity} | {who} |")
+        for t in a.ecology.recorded:
+            who = "observer (confirmed)" if t.confirmed else "model, unconfirmed"
+            lines.append(f"| {t.family or t.group} | not scored | not scored by {a.ecology.index.total} | {who} |")
         lines.append("")
     if a.second_opinion is not None:
         lines += [f"**Independent check:** {a.second_opinion.summary()}", ""]
@@ -191,7 +194,8 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
         "",
         "## How this reading was produced, and what it is not",
         "",
-        "- Method: BMWP/ASPT family-level screening from citizen photographs and a structured visual site form.",
+        f"- Method: {a.ecology.index.name} family-level screening ({a.ecology.index.citation}) from citizen "
+        "photographs and a structured visual site form.",
         f"- Observations confirmed on site by the observer: **{a.confirmations}**. "
         f"Automated observations were produced by `{a.observer}` and are marked unconfirmed in the tables above.",
         f"- Assessment certainty as evidenced: **{a.certainty:.0f}%**.",

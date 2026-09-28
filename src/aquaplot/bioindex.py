@@ -8,10 +8,12 @@ misconnection that discharged on Tuesday and was gone by the time anyone sampled
 OneAquaHealth's field protocols put this group first for urban streams, which is
 why AquaPlot's whole assessment hangs off it.
 
-The index is BMWP/ASPT, the family-level score used across Europe:
+The index is BMWP/ASPT, or its Iberian adaptation IBMWP/IASPT where the
+coordinates resolve to Portugal or Spain (docs/ASSESSMENT.md, Stage 4):
 
 * Every family carries a score from 1 (survives almost anything) to 10 (only in
-  clean, cold, well-oxygenated water). ``data/bioindicators.json`` holds them.
+  clean, cold, well-oxygenated water). ``data/bioindicators.json`` holds both
+  tables; a family an index does not score is recorded but adds nothing to it.
 * **BMWP** is the sum of the scores of the families present. It rewards finding
   more families, so it is sensitive to how hard someone looked.
 * **ASPT** is BMWP divided by the number of scoring families: the *average*
@@ -106,43 +108,114 @@ BAND_MEANING: dict[Band, str] = {
 
 @dataclass(frozen=True, slots=True)
 class Family:
-    """One row of ``data/bioindicators.json``."""
+    """One row of ``data/bioindicators.json``. A score of None means that index does not score the family."""
 
     family: str
     common_name: str
     group: str
-    bmwp: int
+    bmwp: int | None
     ept: bool
     plain_name: str
     look_for: str
     means: str
     vector: bool = False
+    ibmwp: int | None = None
+
+    @property
+    def reference_score(self) -> int | None:
+        """The score used to describe the animal to a person, whichever index is in use."""
+        return self.bmwp if self.bmwp is not None else self.ibmwp
 
     @property
     def sensitivity(self) -> str:
-        if self.bmwp >= 8:
+        s = self.reference_score
+        if s is None:
+            return "not scored"
+        if s >= 8:
             return "sensitive"
-        if self.bmwp >= 5:
+        if s >= 5:
             return "moderate"
         return "tolerant"
 
 
+@dataclass(frozen=True, slots=True)
+class BioticIndex:
+    """A family-score table, and what to call its total and its mean.
+
+    ``total_classes`` are the index's own classes read from the total score, where
+    it has published ones. They assume a standardised multi-habitat sample, which a
+    citizen's tray is not, so the screening band is always read from the mean and
+    the total class is reported beside it as a reference that understates a small
+    sample.
+    """
+
+    key: str
+    name: str
+    total: str
+    mean: str
+    citation: str
+    total_classes: tuple[tuple[float, str], ...] = ()
+
+    def family_score(self, f: Family) -> int | None:
+        return getattr(f, self.key)
+
+    def total_class(self, total: float) -> "Band | None":
+        if not self.total_classes:
+            return None
+        for threshold, name in self.total_classes:
+            if total >= threshold:
+                return Band(name)
+        return Band.BAD
+
+
+BMWP = BioticIndex("bmwp", "BMWP / ASPT", "BMWP", "ASPT", "Armitage et al. (1983)")
+IBMWP = BioticIndex(
+    "ibmwp",
+    "IBMWP / IASPT",
+    "IBMWP",
+    "IASPT",
+    "Alba-Tercedor et al. (2002), family scores as in MAGRAMA (2011)",
+    # Alba-Tercedor's quality classes on the total: >100, 61-100, 36-60, 16-35, <=15.
+    total_classes=((101, "High"), (61, "Good"), (36, "Moderate"), (16, "Poor")),
+)
+INDICES: dict[str, BioticIndex] = {i.key: i for i in (BMWP, IBMWP)}
+
+# Countries whose national practice is built on the Iberian adaptation. Matched
+# against the country iNaturalist resolves from the coordinates, by code or name.
+IBERIAN_COUNTRIES = frozenset({"pt", "es", "ad", "portugal", "spain", "españa", "andorra"})
+
+
+def index_for(country_names: list[str]) -> BioticIndex:
+    """The index to use where these coordinates resolved to. BMWP unless the country is Iberian."""
+    return IBMWP if any(n.strip().lower() in IBERIAN_COUNTRIES for n in country_names if n) else BMWP
+
+
 def _load() -> tuple[str, list[Family]]:
-    raw = json.loads(resources.files("aquaplot.data").joinpath("bioindicators.json").read_text())
+    raw = json.loads(resources.files("aquaplot.data").joinpath("bioindicators.json").read_text(encoding="utf-8"))
     return raw["version"], [Family(**row) for row in raw["families"]]
 
 
 CATALOGUE_VERSION, CATALOGUE = _load()
 BY_FAMILY: dict[str, Family] = {f.family.lower(): f for f in CATALOGUE}
 
+
 # Median family score per order, for the honest half-answer. A citizen photo
 # often supports "that is a stonefly" and no more; refusing to score that throws
 # away the most informative thing they saw. The result is marked ``coarse`` and
 # carries a certainty penalty rather than being passed off as a family-level ID.
-GROUP_SCORES: dict[str, float] = {
-    group: statistics.median([f.bmwp for f in CATALOGUE if f.group == group])
-    for group in {f.group for f in CATALOGUE}
-}
+def _group_scores(index: BioticIndex) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for group in {f.group for f in CATALOGUE}:
+        scores = [s for f in CATALOGUE if f.group == group and (s := index.family_score(f)) is not None]
+        if scores:
+            out[group] = statistics.median(scores)
+    return out
+
+
+GROUP_SCORES_BY_INDEX: dict[str, dict[str, float]] = {key: _group_scores(i) for key, i in INDICES.items()}
+GROUP_SCORES: dict[str, float] = GROUP_SCORES_BY_INDEX["bmwp"]
+# An order that only one index scores still needs a reference score for resolve().
+REFERENCE_GROUP_SCORES: dict[str, float] = {**GROUP_SCORES_BY_INDEX["ibmwp"], **GROUP_SCORES}
 
 # Genus and vernacular spellings a vision model or a citizen actually types.
 # Kept small and explicit: a wrong alias silently changes a stream's band, so
@@ -300,13 +373,13 @@ def resolve(name: str) -> Match | None:
     for candidate in (key, ALIASES.get(key, ""), key.split()[0], ALIASES.get(key.split()[0], "")):
         if candidate and candidate.lower() in BY_FAMILY:
             fam = BY_FAMILY[candidate.lower()]
-            return Match(name=name, family=fam, group=fam.group, score=float(fam.bmwp), coarse=False)
+            return Match(name=name, family=fam, group=fam.group, score=float(fam.reference_score or 0), coarse=False)
         if candidate and candidate in ALIASES and ALIASES[candidate].lower() in BY_FAMILY:
             fam = BY_FAMILY[ALIASES[candidate].lower()]
-            return Match(name=name, family=fam, group=fam.group, score=float(fam.bmwp), coarse=False)
+            return Match(name=name, family=fam, group=fam.group, score=float(fam.reference_score or 0), coarse=False)
     group = GROUP_ALIASES.get(key) or GROUP_ALIASES.get(key.split()[0])
-    if group and group in GROUP_SCORES:
-        return Match(name=name, family=None, group=group, score=GROUP_SCORES[group], coarse=True)
+    if group and group in REFERENCE_GROUP_SCORES:
+        return Match(name=name, family=None, group=group, score=REFERENCE_GROUP_SCORES[group], coarse=True)
     return None
 
 
@@ -381,6 +454,9 @@ class EcologicalStatus:
     evidence_limited: bool = False
     capped: bool = False  # the richness cap lowered the band the index alone would have given
     catalogue_version: str = CATALOGUE_VERSION
+    index: BioticIndex = BMWP
+    recorded: list[ScoredTaxon] = field(default_factory=list)  # identified, but this index does not score them
+    total_class: Band | None = None  # the index's own class from the total, where it publishes one
 
     @property
     def meaning(self) -> str:
@@ -400,23 +476,32 @@ class EcologicalStatus:
     @property
     def caveat(self) -> str:
         return (
-            "Screening estimate from a photo-based sample, not a Water Framework Directive "
-            "classification. A formal classification needs a standardised three-minute kick "
-            "sample, laboratory identification and comparison against a reference site."
+            f"Screening estimate from a photo-based sample using {self.index.total} family scores "
+            f"({self.index.citation}), banded on {self.index.mean}; not a Water Framework Directive "
+            "classification. A formal classification needs a standardised kick sample, laboratory "
+            "identification and comparison against a reference site."
         )
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "band": self.band.value,
             "meaning": self.meaning,
+            # "bmwp" and "aspt" hold the total and the mean of whichever index was used;
+            # the names predate the second index and are kept so stored rows still read.
             "bmwp": round(self.bmwp, 1),
             "aspt": round(self.aspt, 2) if self.aspt is not None else None,
+            "index_key": self.index.key,
+            "total_label": self.index.total,
+            "mean_label": self.index.mean,
+            "citation": self.index.citation,
+            "total_class": self.total_class.value if self.total_class else None,
             "families": self.families,
             "ept_families": self.ept_families,
             "sensitive_families": self.sensitive_families,
             "tolerant_families": self.tolerant_families,
             "confidence": round(self.confidence, 1),
-            "taxa": [t.as_dict() for t in self.scored],
+            "taxa": [t.as_dict() | {"scored": True} for t in self.scored]
+            + [t.as_dict() | {"scored": False, "bmwp": None} for t in self.recorded],
             "unmatched": self.unmatched,
             "signals": self.signals,
             "penalties": self.penalties,
@@ -424,7 +509,7 @@ class EcologicalStatus:
             "evidence_limited": self.evidence_limited,
             "capped_by_effort": self.capped,
             "catalogue_version": self.catalogue_version,
-            "index": "BMWP / ASPT",
+            "index": self.index.name,
             "caveat": self.caveat,
         }
 
@@ -444,7 +529,7 @@ def _richness_cap(families: int) -> Band:
     return Band.BAD
 
 
-def score(observations: list[TaxonObservation]) -> EcologicalStatus:
+def score(observations: list[TaxonObservation], index: BioticIndex = BMWP) -> EcologicalStatus:
     """Turn a list of identified animals into a banded ecological status.
 
     Duplicate families collapse to one entry, because BMWP scores *families
@@ -452,7 +537,12 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
     evidence about the family living there. The highest-confidence submission for
     a family wins, so a citizen-confirmed sighting outranks a shaky model guess
     for the same animal.
+
+    A family the chosen index does not score (an introduced crayfish under BMWP,
+    say) is kept in ``recorded``: it still counts as seen, still feeds the One
+    Health rules and the invasive check, and adds nothing to the index.
     """
+    group_scores = GROUP_SCORES_BY_INDEX[index.key]
     by_family: dict[str, tuple[Match, TaxonObservation]] = {}
     unmatched: list[str] = []
     for obs in observations:
@@ -471,22 +561,42 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
     for key in [k for k, (m, _) in by_family.items() if m.coarse and m.group in family_groups]:
         del by_family[key]
 
-    scored = [
-        ScoredTaxon(
+    def index_score(match: Match) -> float | None:
+        if match.family:
+            s = index.family_score(match.family)
+            return None if s is None else float(s)
+        return group_scores.get(match.group or "")
+
+    def entry(match: Match, obs: TaxonObservation, value: float | None) -> ScoredTaxon:
+        return ScoredTaxon(
             name=obs.name,
             plain_name=match.label,
             family=match.family.family if match.family else None,
             group=match.group,
-            score=match.score,
-            sensitivity=match.family.sensitivity if match.family else _coarse_sensitivity(match.score),
+            score=value if value is not None else 0.0,
+            sensitivity=(match.family.sensitivity if match.family else _coarse_sensitivity(value or 0.0))
+            if value is not None
+            else "not scored",
             ept=match.ept,
             coarse=match.coarse,
             confidence=obs.effective_confidence,
             confirmed=obs.confirmed_by is not None,
             means=match.family.means if match.family else f"Recognised only as far as {match.group}; the family would sharpen this.",
         )
-        for match, obs in sorted(by_family.values(), key=lambda pair: -pair[0].score)
-    ]
+
+    valued = [(m, o, index_score(m)) for m, o in by_family.values()]
+    scored = [entry(m, o, v) for m, o, v in sorted((x for x in valued if x[2] is not None), key=lambda x: -x[2])]
+    recorded = [entry(m, o, None) for m, o, v in valued if v is None]
+    all_seen = [*scored, *recorded]
+    vectors = sorted({t.plain_name for t in all_seen if t.family and BY_FAMILY[t.family.lower()].vector})
+    not_scored_signal = (
+        [
+            f"Also recorded but not scored by {index.total}: {', '.join(sorted(t.plain_name for t in recorded))}. "
+            "They still count for the health and invasive-species checks."
+        ]
+        if recorded
+        else []
+    )
 
     penalties: list[str] = []
     if unmatched:
@@ -507,10 +617,12 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
             confidence=0.0,
             scored=[],
             unmatched=unmatched,
-            signals=["No scoreable invertebrates were identified, so the biological index could not be calculated."],
+            signals=["No scoreable invertebrates were identified, so the biological index could not be calculated.", *not_scored_signal],
             evidence_limited=True,
             penalties=penalties + ["no scoreable invertebrates identified; the band is a placeholder, not a reading"],
-            vectors=[],
+            vectors=vectors,
+            index=index,
+            recorded=recorded,
         )
 
     bmwp = sum(t.score for t in scored)
@@ -544,8 +656,14 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
     if shaky:
         penalties.append(f"{len(shaky)} identification(s) were below 60 % confidence and no person has confirmed them")
 
-    signals = _signals(scored, ept_families, sensitive, tolerant, aspt)
-    vectors = sorted({t.plain_name for t in scored if t.family and BY_FAMILY[t.family.lower()].vector})
+    signals = _signals(scored, ept_families, sensitive, tolerant, aspt, index) + not_scored_signal
+    total_class = index.total_class(bmwp)
+    if total_class is not None:
+        signals.append(
+            f"The {index.total} total is {bmwp:.0f}. On {index.total}'s own scale that is class '{total_class.value}', "
+            "but that scale assumes a standardised sample across every habitat in the reach; one tray finds far fewer "
+            f"families, so the total reads low. The band above is read from the {index.mean} instead."
+        )
 
     # Confidence in the band: how sure we are of the animals, softened by how
     # thin the sample is and how much of it is only order-level.
@@ -570,6 +688,9 @@ def score(observations: list[TaxonObservation]) -> EcologicalStatus:
         vectors=vectors,
         evidence_limited=evidence_limited,
         capped=capped is not capped_from,
+        index=index,
+        recorded=recorded,
+        total_class=total_class,
     )
 
 
@@ -581,7 +702,9 @@ def _coarse_sensitivity(score_value: float) -> str:
     return "tolerant"
 
 
-def _signals(scored: list[ScoredTaxon], ept: int, sensitive: int, tolerant: int, aspt: float) -> list[str]:
+def _signals(
+    scored: list[ScoredTaxon], ept: int, sensitive: int, tolerant: int, aspt: float, index: BioticIndex = BMWP
+) -> list[str]:
     """Plain-language readings of the sample, in the order a person would notice them."""
     out: list[str] = []
     if ept == 0:
@@ -612,5 +735,5 @@ def _signals(scored: list[ScoredTaxon], ept: int, sensitive: int, tolerant: int,
             "Sludge worms and bloodworms together, with no sensitive families, is the classic community of an "
             "oxygen-starved bed. Look upstream for a discharge or a misconnected drain."
         )
-    out.append(f"Average sensitivity of the families present (ASPT) is {aspt:.1f} out of 10.")
+    out.append(f"Average sensitivity of the families present ({index.mean}) is {aspt:.1f} out of 10.")
     return out

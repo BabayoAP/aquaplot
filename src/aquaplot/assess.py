@@ -159,6 +159,7 @@ class Submission:
     taxa: tuple[bioindex.TaxonObservation, ...] = ()  # invertebrates the citizen identified or confirmed
     site_name: str | None = None
     when: datetime | None = None
+    index: str | None = None  # force a biotic index ("bmwp" | "ibmwp"); otherwise chosen from the country
 
 
 @dataclass
@@ -181,6 +182,10 @@ class StreamAssessor:
         if self.places is not None and region.lat is not None:
             region = await self.places.refine(region)
             locality = await self.places.locality(region)
+
+        # Which family-score table applies here is a fact about the place, resolved
+        # from the coordinates like everything else, unless the caller names one.
+        index = bioindex.INDICES.get(submission.index or "") or bioindex.index_for(_country_names(region))
 
         # 2. What is in the photos?
         model_readings: list[habitat.Reading] = []
@@ -229,11 +234,11 @@ class StreamAssessor:
         citizen_led = bool(submission.taxa)
         if citizen_led:
             scored_taxa = list(submission.taxa)
-            second = self._second_opinion(submission.taxa, model_taxa, photo_kinds)
+            second = self._second_opinion(submission.taxa, model_taxa, photo_kinds, index)
         else:
             scored_taxa = [*model_taxa]
             second = None
-        ecology = bioindex.score(scored_taxa)
+        ecology = bioindex.score(scored_taxa, index)
         penalties.extend(ecology.penalties)
 
         # 5. Is anything here on an invasive list for this jurisdiction?
@@ -271,8 +276,7 @@ class StreamAssessor:
             needs_confirmation=_confirmation_queue(ecology, pressures, signal, open_to_person, second),
             observer=self.observer.name,
             model_notes=notes,
-            confirmations=len([r for r in pressures.readings if r.source == "citizen"])
-            + len([t for t in ecology.scored if t.confirmed]),
+            confirmations=_confirmations(pressures, ecology),
             identified_by="citizen" if citizen_led else ("model" if model_taxa else "none"),
             second_opinion=second,
         )
@@ -282,6 +286,7 @@ class StreamAssessor:
         citizen: tuple[bioindex.TaxonObservation, ...],
         model: list[bioindex.TaxonObservation],
         photo_kinds: list[str],
+        index: bioindex.BioticIndex,
     ) -> SecondOpinion:
         if self.observer.name == "none":
             return secondopinion.unavailable("no vision model is configured, so nobody double-checked the identifications")
@@ -290,7 +295,7 @@ class StreamAssessor:
                 "there was no photo of the sample tray, so the model had nothing to compare your identifications against",
                 model,
             )
-        return secondopinion.compare(citizen, model, bioindex.score)
+        return secondopinion.compare(citizen, model, lambda taxa: bioindex.score(taxa, index))
 
     async def _invasives(self, taxa: list[bioindex.TaxonObservation], locality) -> list[InvasiveHit]:
         """Check every reported name against the seed list, and confirm species-rank hits upstream.
@@ -397,6 +402,16 @@ def _taxa_from(seen: StreamObservation) -> list[bioindex.TaxonObservation]:
     ]
 
 
+def _country_names(region: Region) -> list[str]:
+    return [region.country.name, region.country.display_name] if region.country else []
+
+
+def _confirmations(pressures: habitat.HabitatPressure, ecology: bioindex.EcologicalStatus) -> int:
+    return len([r for r in pressures.readings if r.source == "citizen"]) + len(
+        [t for t in (*ecology.scored, *ecology.recorded) if t.confirmed]
+    )
+
+
 def _dedupe(items: list[str]) -> list[str]:
     out: list[str] = []
     for i in items:
@@ -475,7 +490,7 @@ def _confirmation_queue(
             }
         )
 
-    for taxon in ecology.scored:
+    for taxon in (*ecology.scored, *ecology.recorded):
         if taxon.confirmed:
             continue
         if taxon.confidence < 0.7 or taxon.coarse:
@@ -490,6 +505,8 @@ def _confirmation_queue(
                         f"Identified only to {taxon.group}; a family-level answer would sharpen the index."
                         if taxon.coarse
                         else f"This animal contributes {taxon.score:.0f} of the sensitivity score."
+                        if taxon.sensitivity != "not scored"
+                        else "The index does not score this animal, but the health checks use it."
                     ),
                     "priority": 3 if taxon.coarse else 2,
                 }
@@ -560,7 +577,8 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
     taxa += [bioindex.TaxonObservation(name=n, confidence=1.0, confirmed_by="citizen") for n in review.added_taxa if n.strip()]
 
     pressures = habitat.assess([*readings_of(previous), *review.answers])
-    ecology = bioindex.score(taxa)
+    index = bioindex.INDICES.get(previous.get("ecology", {}).get("index_key", "bmwp"), bioindex.BMWP)
+    ecology = bioindex.score(taxa, index)
     region = Region.model_validate(previous["region"])
     when = datetime.fromisoformat(previous["created_at"])
     still_listed = [i for i in previous.get("invasives", []) if i.get("reported_as", "").strip().lower() not in rejected]
@@ -595,7 +613,7 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
             second = secondopinion.compare(
                 taxa,
                 model,
-                bioindex.score,
+                lambda t: bioindex.score(t, index),
                 dismissed=[*stored_second.get("dismissed", []), *review.dismissed],
                 adopted=[*stored_second.get("adopted", []), *took_models],
             )
@@ -635,8 +653,7 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
         second_opinion=second,
         observer=previous.get("observer", "none"),
         model_notes=list(previous.get("model_notes", [])),
-        confirmations=len([r for r in pressures.readings if r.source == "citizen"])
-        + len([t for t in ecology.scored if t.confirmed]),
+        confirmations=_confirmations(pressures, ecology),
         # A review is the same visit, looked at again. Saying so is what stops a
         # careful volunteer's corrections from showing up as a second trip to the
         # stream and inventing a trend that never happened.
