@@ -2,34 +2,48 @@
 
 *Plot the health of your local water.*
 
-**From a photo at the water's edge to a stream-health reading and a One Health signal.**
+**The citizen identifies. The AI double-checks, blind. The rules decide.**
 
 A citizen scoops gravel from a shallow, fast patch of an urban stream into a pale tray,
-photographs what moves, photographs the reach, and answers two questions a camera cannot
-answer. AquaPlot returns a **Water Framework Directive band** for the stream, a **visual
-pressure score**, and what that means for the **people and animals** around it — with
-every finding traceable to the observation behind it, and an alert held back until a
-person has confirmed the observation it rests on.
+photographs it, and picks what they see from a guide organised by shape — "three tails",
+"a case made of sand". A vision model looks at the same photograph **without seeing their
+answers** and asks about the places it saw something different: *you marked a stonefly; this
+may be a mayfly — count the tails.* The citizen decides. AquaPlot then returns a **Water
+Framework Directive screening band**, a **visual pressure score**, and what it means for the
+**people and animals** around the stream, with every finding traceable to the observation
+behind it and every health alert held back until a person has confirmed what it rests on.
 
 Built for the [IEEE OneAquaHealth Global Hackathon 2026](docs/HACKATHON.md).
-Primary track: **AI-Supported Assessment**. See [track alignment](docs/HACKATHON.md#track-alignment).
+**Track 3: AI-Supported Assessment** — AI that supports stream assessment without replacing
+human judgement. See [track alignment](docs/HACKATHON.md#track-alignment).
 
 ```
-photos ─▶ observe.py     the vision model reports structured observations, never a verdict
-          ├────────────▶ bioindex.py   BMWP / ASPT band from the invertebrates found
-          └────────────▶ habitat.py    visual pressures, model and citizen answers merged
-coords ─▶ places.py      which municipality is this? (anywhere on Earth)
-taxa   ─▶ status.py      is any of this on an invasive list, here?
-                  └────▶ onehealth.py  rules → ecosystem / human / animal findings + actions
-                                 └───▶ assessment ─▶ store.py    trends, sites, early warning
-                                                  ├▶ report.py   what you send your water authority
-                                                  ├▶ fhir.py     FHIR R4, for health systems
-                                                  └▶ csv/geojson for everyone else
+tray photo ──▶ citizen picks the animals ─────────────────────┐  scored
+           └─▶ observe.py (blind) ─▶ secondopinion.py ─▶ questions only, ranked by
+                                                          whether the answer changes the band
+reach photo ─▶ observe.py ─▶ habitat.py   visual pressures; a citizen answer beats the model's
+coords ─────▶ places.py                   which municipality, which country, which index
+                 └─▶ bioindex.py          BMWP/ASPT, or IBMWP/IASPT in Portugal and Spain
+                 └─▶ status.py            is any of this on an invasive list, here?
+                        └─▶ onehealth.py  rules → ecosystem / human / animal findings + actions
+                               └─▶ assessment ─▶ store.py    trends, sites, early warning
+                                             ├▶ report.py   what you send your water authority
+                                             ├▶ fhir.py     FHIR R4, HL7-validated
+                                             └▶ csv/geojson for everyone else
 ```
 
 ## Why this shape
 
-Three decisions define the project, and each one is visible in the code.
+Four decisions define the project, and each one is visible in the code.
+
+**The person identifies; the model gives a blind second opinion.** Naming a 5 mm larva from
+a phone photo is hard for a trained ecologist with a hand lens, so AquaPlot never asks a model
+to decide it. The citizen's own identifications are what get scored. The model, shown the same
+tray without their answers, produces only questions — a likely confusion with the feature that
+separates the two, an animal they may have missed, a sensitive family it could not find — each
+carrying the band the stream would get if the model were right. Asked blind, its agreement is
+independent evidence; taking its answer is recorded as that, never as agreement. Whether this
+catches real mistakes is measurable, and [EVALUATION.md](docs/EVALUATION.md) is how.
 
 **The model observes; the rules decide.** A vision-language model is excellent at *what
 is in this picture* — is the water cloudy, is that a bloom, is the bank concrete, is that
@@ -50,22 +64,45 @@ leaves a sentence behind — *8 of 12 habitat questions were answered*, *2 anima
 identified only to order*, *the coordinates could not be resolved to a municipality* — so
 the number can always be taken apart.
 
+## Where this fits
+
+OneAquaHealth already has a citizen-science app for stream assessment. AquaPlot is built to sit
+beside it, not to replace it. What it adds is the part between a volunteer's observation and
+somebody acting on it: a check on the identifications that keeps the volunteer in charge, a
+One Health reading of what they found, a report an authority can act on, and a record a health
+system can import. Nothing it records is locked in: every assessment leaves as CSV, GeoJSON or
+validated FHIR, so it can feed the project's own data platform instead of becoming another
+silo. Mapping AquaPlot's field form onto the project app's fields is the first integration step.
+
 ## What works today
 
-**The guided check** (`/`). Four steps at the water's edge: where you are, two photographs
-(the reach and the sample tray), the two questions only a person standing there can answer
-(smell, and who uses the water), then confirm or correct what the model proposed. Every
-question on the page is rendered from `/api/form`, the same file the model's prompt and the
-server's validator are generated from, so the words on the screen cannot drift from the
-vocabulary the system accepts. The result gives the band, what it means in plain language,
-findings for all three One Health domains, and actions split by who can actually take them:
-you now, your community, your authority.
+**The guided check** (`/`). Five short steps at the water's edge: where you are, two
+photographs (the reach and the sample tray), **the animals you found**, the two questions only
+a person standing there can answer (smell, and who uses the water), then the places where you
+and the model differ. The animal picker is grouped by shape, searchable by what you can see,
+and offers "some kind of mayfly" when the family is beyond you. Every habitat question is
+rendered from `/api/form`, the same file the model's prompt and the server's validator are
+generated from, so the words on the screen cannot drift from the vocabulary the system accepts.
+The result gives the band, what it means in plain language, who identified the animals and how
+often the model independently agreed, findings for all three One Health domains, and actions
+split by who can actually take them: you now, your community, your authority.
 
-**The biological index.** BMWP/ASPT over 53 macroinvertebrate families, banded on the WFD's
-five classes. Sampling effort caps the claim — three families under one stone cannot earn
-*High*, and two tolerant families cannot prove a stream is dead; both come back marked
-*provisional* with the reason. An identification to order only ("that's a stonefly") is
-scored from the group median and flagged coarse rather than thrown away.
+**The second opinion** (`secondopinion.py`). Three kinds of question — a disagreement with
+the separating feature (tails, gills, how it moves), something the model saw that you did not
+mark, a sensitive family it could not find — ranked by whether the answer changes the band. A
+suggestion that is a listed invasive goes first and still enters the invasive check only if
+you say it was there. *Keep mine* or *it's the model's*: either way the model is not called
+again. Unsettled band-changing disagreements cost certainty and say so.
+
+**The biological index.** 53 macroinvertebrate families scored under **BMWP/ASPT** or, where
+the coordinates resolve to Portugal or Spain, the Iberian **IBMWP/IASPT** — both tables
+checked against published ones. Banded on the WFD's five classes from the mean, because a tray
+never approaches the effort an index's own total classes assume; IBMWP's total class is shown
+beside it, labelled as reading low. Effort caps the claim: three families under one stone
+cannot earn *High*, and two tolerant families cannot prove a stream is dead. An order-level
+answer ("some kind of stonefly") is scored from the group median and flagged, not thrown away.
+An animal an index does not score (mosquito larvae under BMWP) is recorded, not scored, and
+still feeds the health rules.
 
 **The One Health rules.** Twelve rules over the index, the pressures, the invasive check and
 the exposure answer: harmful algal blooms, sewage indicators, chemical sheen, mosquito
@@ -103,17 +140,26 @@ riffle and why it is the fair place to judge a stream, how to kick-sample withou
 to photograph a tray so the animals are visible, a best-news-first identification table, and
 check-clean-dry. Printable, because a river-day group needs paper.
 
-**FHIR R4 export** (`/api/assess/{id}/fhir`). The assessment as a Bundle: a `Location`, an
-`Observation` panel carrying BMWP, ASPT, EPT richness and the band, the raw survey and the
-habitat form as their own Observations, one Observation per One Health domain with an HL7
-interpretation code, a `Flag` per alert, and a `Provenance` recording which model observed
-and how many observations a human confirmed. No code pretends to be LOINC; see
-[docs/FHIR.md](docs/FHIR.md).
+**FHIR R4 export** (`/api/assess/{id}/fhir`), **validated with the official HL7 validator —
+no errors, no warnings.** The assessment as a Bundle: a `Location`, an `Observation` panel
+carrying the index, EPT richness, the band, who identified the animals and what the second
+opinion found; the raw survey and the habitat form as their own Observations; one Observation
+per One Health domain with an HL7 interpretation code; a `Flag` per alert; a `Provenance`. Every
+project code belongs to one CodeSystem generated from the app's own vocabularies and served at
+`/api/fhir/CodeSystem/stream-health`. No code pretends to be LOINC. Validated examples are in
+[docs/fhir/](docs/fhir/); see [docs/FHIR.md](docs/FHIR.md).
+
+**A way to find out whether it works** (`scripts/evaluate_observer.py`). Calls the model once
+per labelled photo, then measures what it saw, how many simulated volunteer mistakes the second
+opinion would catch, and how many questions a correct list still draws. A starter set of
+openly licensed larva and nymph photos comes from iNaturalist with `scripts/fetch_inat_eval.py`.
+See [docs/EVALUATION.md](docs/EVALUATION.md).
 
 **It works with no model at all.** With no API key and no local model, nothing is read off
-the photos and the citizen answers the form themselves — and the band, the pressure score,
-the findings, the actions, the trends and the FHIR export are all identical. The model makes
-AquaPlot usable by a novice; it is not what makes it work.
+the photos, nobody double-checks the identifications, and the citizen answers the form
+themselves — and the band, the pressure score, the findings, the actions, the trends and the
+FHIR export are all computed the same way. The model makes AquaPlot safer for a novice; it is
+not what makes it work.
 
 ## Run
 
@@ -122,7 +168,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 167 tests, no network, no model
+.venv/bin/python -m pytest                       # 210 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -157,21 +203,23 @@ demo cannot drain an API key.
 | Path | What |
 |---|---|
 | `src/aquaplot/observe.py` | The vision model's only job: photo → structured observations. Three backends, one schema. |
-| `src/aquaplot/bioindex.py` | BMWP/ASPT, WFD bands, the effort cap, the coarse-identification rule. |
+| `src/aquaplot/secondopinion.py` | The citizen's list against the model's blind one: questions, the feature that settles each, the band at stake. |
+| `src/aquaplot/bioindex.py` | BMWP/ASPT and IBMWP/IASPT, index choice by country, WFD bands, the effort cap, the coarse-identification rule. |
 | `src/aquaplot/habitat.py` | The visual field form: scoring, validation, model-vs-citizen precedence. |
 | `src/aquaplot/onehealth.py` | The rule engine. Every finding carries a rule id, its evidence and an action. |
 | `src/aquaplot/assess.py` | Composes the stages; the certainty rule; the confirmation queue; `reassess` for review. |
 | `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
-| `src/aquaplot/fhir.py` | FHIR R4 Bundle export. |
+| `src/aquaplot/fhir.py` | FHIR R4 Bundle export and the project CodeSystem. |
+| `src/aquaplot/evaluation.py` | Scores stored model output on labelled photos: accuracy, mistakes caught, false alarms. |
 | `src/aquaplot/report.py` | The incident report a citizen sends an authority, as Markdown and as a printable page. |
-| `src/aquaplot/data/bioindicators.json` | 53 families: BMWP score, what to look for, what finding it means. |
+| `src/aquaplot/data/bioindicators.json` | 53 families: BMWP and IBMWP scores, what to look for, what finding it means. |
 | `src/aquaplot/data/habitat_indicators.json` | The field form. Drives the prompt, the validator, the UI and the scoring. |
 | `src/aquaplot/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
-| `src/aquaplot/static/check.html` | The guided citizen workflow. |
+| `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
 | `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
@@ -182,9 +230,10 @@ demo cannot drain an API key.
 
 - [docs/FIELD-GUIDE.md](docs/FIELD-GUIDE.md) — how to check a stream: what to bring, safety, sampling, photographing a tray. Also served at `/field-guide`.
 - [docs/API.md](docs/API.md) — every endpoint, with examples. Interactive version at `/docs`.
-- [docs/ASSESSMENT.md](docs/ASSESSMENT.md) — how a photo becomes a band, stage by stage, and what the certainty number means.
+- [docs/ASSESSMENT.md](docs/ASSESSMENT.md) — how a photo becomes a band, stage by stage, who identifies, and what the certainty number means.
+- [docs/EVALUATION.md](docs/EVALUATION.md) — how the second opinion is measured, and how to read the numbers honestly.
 - [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md) — every rule, its trigger, its evidence and its action.
-- [docs/FHIR.md](docs/FHIR.md) — the resources, the codes, and what would have to happen to make them standard.
+- [docs/FHIR.md](docs/FHIR.md) — the resources, the codes, validating it yourself, and what would have to happen to make it standard.
 - [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, and the build timeline.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to correct a rule, add a family, or swap in a country-specific index.
 - [docs/AREA-VIEWER.md](docs/AREA-VIEWER.md), [docs/CLASSIFIER.md](docs/CLASSIFIER.md) — the inherited features.
@@ -195,11 +244,12 @@ AquaPlot is a fork of **SpeciesGuard** ([BabayoAP/nativeview](https://github.com
 a terrestrial invasive-species classifier the same author built for NextStep Hacks 2026.
 What carried over: the pipeline shape, the certainty rule and its insistence on an evidence
 trail, the cached iNaturalist client, the pluggable model backends, and the area viewer.
-What is new here: the freshwater domain entirely — the biotic index, the field form, the
-One Health rule engine, the assessment pipeline and its review loop, persistence and trends,
-the authority report, FHIR and tabular export, the generalised geography, the offline field
-app, and every page except the classifier. Roughly 3,300 lines of new Python and 2,400 of new
-interface, with 99 new tests. The original project's PRD is kept at
+What is new here: the freshwater domain entirely — the citizen-first identification and the
+blind second opinion, both biotic indices, the field form, the One Health rule engine, the
+assessment pipeline and its review loop, persistence and trends, the authority report, FHIR
+and tabular export, the evaluation harness, the generalised geography, the offline field app,
+and every page except the classifier. By `git diff --shortstat` against the imported commit:
+about 5,900 lines of new Python and 2,100 of new interface, and 142 of the 210 tests. The original project's PRD is kept at
 [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
 [docs/HACKATHON-NEXTSTEP.md](docs/HACKATHON-NEXTSTEP.md), so the boundary between the two is
 on the record rather than implied.
@@ -211,17 +261,22 @@ on the record rather than implied.
   comparison. AquaPlot is a screening tool, and every result says so.
 - **Not a medical, water-quality or regulatory determination.** Findings name the authority
   that can make one and tell the user to contact it.
+- **The second opinion has not yet been measured on real trays.** The harness to measure it
+  exists and is documented; until it has been run, "it catches volunteers' mistakes" is the
+  design intent, not a result.
 - **The certainty factors are priors, not measured calibration.** They order outcomes
   sensibly and explain themselves; no calibration study has been run. `assessment_version`
   changes whenever the rules do, so results stay comparable.
 - **The seed invasive list is unverified.** It cites Cal-IPC, CDFW, USGS, UC IPM and EU
   Regulation 1143/2014, and every entry must be re-checked against those authorities before
   it is used for anything beyond screening.
-- **BMWP is a British index applied across Europe.** Family sensitivity scores vary by
-  ecoregion; a country-specific index (IBMWP, IBE, ASPT variants) would be more accurate and
-  is the obvious next step, one adapter away in `bioindex.py`. See
-  [CONTRIBUTING.md](CONTRIBUTING.md).
-- **The FHIR CodeSystem is provisional.** No code here pretends to be LOINC, and
+- **Two indices, not every national method.** BMWP everywhere, IBMWP in Portugal and Spain.
+  Portugal's WFD method is the multimetric IPtI and Italy's is IBE; neither is implemented.
+  Adding an index is a score column and a few lines (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+  The catalogue has 53 families; IBMWP scores 125, and a family outside the catalogue is
+  reported as unmatched rather than guessed.
+- **The FHIR CodeSystem is provisional.** It is published, complete and validated, but it is
+  a project terminology marked `draft`; no code pretends to be LOINC, and
   [docs/FHIR.md](docs/FHIR.md) states exactly what would have to happen to make it standard.
 
 ## Data sources
@@ -229,7 +284,8 @@ on the record rather than implied.
 | Source | Used for | Terms |
 |---|---|---|
 | [iNaturalist API](https://api.inaturalist.org/v1/docs/) | Taxonomy, establishment means, administrative places, sightings | Free, attribution, ~1 req/s |
-| BMWP / ASPT family scores | The biological index | Published methodology, widely reproduced |
+| BMWP family scores (Armitage et al. 1983) | The biological index | Published methodology, widely reproduced |
+| IBMWP family scores (Alba-Tercedor et al. 2002; MAGRAMA 2011) | The index in Portugal and Spain | Published methodology; checked against the tables in the `biomonitoR` R package |
 | EU Regulation (EU) 1143/2014 Union list | Invasive species of Union concern | Public |
 | Cal-IPC Inventory, CDFW, USGS NAS, UC IPM | Inherited Californian invasive entries | Public lists |
 | [OneAquaHealth field protocols](https://zenodo.org/records/20344421) | The shape of the site-characterisation form | CC, cited |

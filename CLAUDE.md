@@ -14,6 +14,15 @@ docstring, and name tests after the behaviour they protect, not the function the
 - **An alert waits for a human.** `onehealth.evaluate` downgrades an unconfirmed alert to
   concern and says so. If you add a rule that can reach alert, list the habitat answers it
   rests on in `assess.RULE_EVIDENCE` so the confirmation queue knows what to ask for.
+- **When the citizen identifies, their list is what gets scored.** The model's view of the tray
+  is a second opinion that may only raise questions (`secondopinion.py`). Never pass the
+  citizen's identifications to the model: agreement is only evidence if it was given blind.
+  Taking the model's answer in a review is recorded as `adopted`, never as agreement.
+- **The biotic index is chosen from the resolved country** (`bioindex.index_for`), and the band
+  is always read from the mean. A family an index does not score is `recorded`, not scored,
+  and must still reach the One Health rules. Every score column must name its published source.
+- **FHIR codings take their `display` from `fhir.code_system()`**; case-specific wording goes
+  in `text`. Run the HL7 validator after changing `fhir.py` (docs/FHIR.md).
 - **A review must never call the model again** (`assess.reassess`). Re-running it would let
   the model overwrite a correction a person just made.
 - **`data/habitat_indicators.json` is the single source of truth** for the field form: the

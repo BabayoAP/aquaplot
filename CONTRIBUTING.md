@@ -8,11 +8,15 @@ value:
    and action. If you are a public-health officer, a freshwater ecologist or a
    vector biologist and one of them is wrong, saying so is worth more than any
    feature.
-2. **Correct the bioindicator scores or the identification hints.** BMWP is a
-   British index; family sensitivity genuinely varies by ecoregion, and the plain
-   -language hints are written by someone who is not a local expert.
-3. **Check the invasive seed list** against the authority it cites.
-4. Then code.
+2. **Correct the bioindicator scores or the identification hints.** Both score
+   columns were checked against published tables, but family sensitivity genuinely
+   varies by ecoregion, and the plain-language hints are written by someone who is
+   not a local expert.
+3. **Add a confusion to the second opinion.** `CONFUSIONS` in `secondopinion.py` lists
+   pairs of groups volunteers mix up, with the feature that separates them in a white
+   tray. If you run volunteer training days you know better ones.
+4. **Check the invasive seed list** against the authority it cites.
+5. Then code.
 
 ## Setup
 
@@ -75,11 +79,18 @@ words the observer used, and an action a specific person can take. Add it to
 
 ### A different biotic index
 
-`bioindex.py` bands on ASPT through `_band_for_aspt` and `RICHNESS_CAP`. A
-country-specific index (IBMWP, IBE, a national ASPT variant) is a second scoring
-table and a second band function, not a rewrite. This is the most valuable
-technical contribution available: BMWP is British, and AquaPlot applies it across
-Europe, which the README says plainly and should stop having to.
+BMWP and the Iberian IBMWP are both in. Another national index (Italy's IBE, a
+Scandinavian ASPT variant) is:
+
+1. a score column in `data/bioindicators.json`, `null` where the index does not score
+   a family, with the published table it came from named in the file's `note`;
+2. a `BioticIndex` in `bioindex.py` and an entry in `INDICES`, with its own
+   `total_classes` if it publishes classes on the total;
+3. the countries it applies to in `index_for`;
+4. a test that pins a few scores where it differs from BMWP, as `tests/test_indices.py` does.
+
+The band is always read from the mean, because a single tray never approaches the
+sampling effort an index's own total classes assume.
 
 ### A data source
 

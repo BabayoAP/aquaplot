@@ -21,7 +21,8 @@ photo, a habitat answer, a species name or a description must be present.
 | `lat`, `lon` | float | Used only if no photo carries EXIF GPS — EXIF wins, because it records where the *photo* was taken. |
 | `site_name` | string | What people call the spot. |
 | `answers` | JSON object | `{"odour": "sewage", "algae": "bloom"}`. Keys and values must come from `/api/form`; an unknown key is a 422, not a silent drop. |
-| `taxa` | JSON array | `["Gammaridae", "Chironomidae"]`. Anything sent here is recorded as citizen-confirmed. |
+| `taxa` | JSON array | `["Gammaridae", "Chironomidae"]`, or a group for an honest group-level answer (`"Plecoptera"`). **Sending this makes the check citizen-identified:** this list is what gets scored, and the model's view of the tray photo becomes a blind second opinion that can only raise questions. Omit it and the model's identifications are scored as unconfirmed proposals. |
+| `index` | string | `bmwp` or `ibmwp`. Omit it and the index follows the country the coordinates resolve to (IBMWP in Portugal and Spain). |
 
 Send `X-AquaPlot-Contributor: <opaque id>` to have the assessment counted towards
 a contributor's record. Omit it and the assessment is still stored, anonymously.
@@ -37,8 +38,38 @@ curl -X POST http://localhost:8000/api/assess \
 ```
 
 The response is the full assessment: `band`, `ecology`, `pressures`, `one_health`,
-`invasives`, `certainty`, `penalties`, `needs_confirmation`, `region`. See
-[ASSESSMENT.md](ASSESSMENT.md) for what each number means.
+`invasives`, `certainty`, `penalties`, `needs_confirmation`, `region`, `identified_by`
+and `second_opinion`. See [ASSESSMENT.md](ASSESSMENT.md) for what each number means.
+
+`ecology` names its index (`index`, `index_key`, `total_label`, `mean_label`,
+`citation`). For historical reasons `ecology.bmwp` and `ecology.aspt` hold the total
+and the mean of *whichever* index was used. Each entry in `ecology.taxa` says whether
+the index scored it (`scored: false` for, say, mosquito larvae under BMWP; they still
+count for the health checks).
+
+`second_opinion` is `null` when the model proposed the identifications, and otherwise:
+
+```json
+{
+  "available": true,
+  "agreed": ["Midge larva (bloodworm)"],
+  "independent_agreements": 1,
+  "adopted": [],
+  "dismissed": [],
+  "open": [{
+    "kind": "disagree",
+    "key": "disagree:perlidae:baetidae",
+    "question": "You marked Stonefly. The model thinks this may be Mayfly (swimmer). Which is it?",
+    "how_to_tell": "Count the tails and look at the sides of the body. ...",
+    "citizen_name": "Perlidae", "model_name": "Baetidae",
+    "band_if_model_right": "Bad", "changes_band": true, "priority": 1
+  }],
+  "model_taxa": [{"name": "Baetidae", "confidence": 0.8}]
+}
+```
+
+Open items also appear in `needs_confirmation` with `kind: "second_opinion"` and
+`check` set to `disagree`, `model_only` or `unsupported`.
 
 ### `POST /api/assess/{id}/review`
 
@@ -51,9 +82,15 @@ again** — re-running it could overwrite the correction just made.
   "confirmed_taxa": ["Chironomidae"],
   "rejected_taxa": ["Asellidae"],
   "added_taxa": ["Perlidae"],
+  "dismissed": ["disagree:perlidae:baetidae"],
   "site_name": "Ribeira da Fonte"
 }
 ```
+
+Settling a second-opinion question is expressed in the same terms: *keep mine* or
+*not there* sends the item's `key` in `dismissed`; *it's the model's* sends the
+citizen's name in `rejected_taxa` and the model's in `added_taxa`; *add it* sends the
+model's name in `added_taxa`.
 
 Returns a **new** assessment carrying `supersedes`. The row it replaces drops out
 of every count, trend and feed but stays fetchable by id, as the record of what
@@ -69,8 +106,9 @@ The stored assessment, exactly as produced.
 |---|---|
 | `GET /api/assess/{id}/report` | A printable incident report for a water authority. |
 | `GET /api/assess/{id}/report.md` | The same report as Markdown, for pasting into a contact form. |
-| `GET /api/assess/{id}/fhir` | A FHIR R4 collection Bundle. See [FHIR.md](FHIR.md). |
-| `GET /api/export.csv` | Every live assessment, one row each. Superseded revisions excluded. |
+| `GET /api/assess/{id}/fhir` | A FHIR R4 collection Bundle, validated against the HL7 validator. See [FHIR.md](FHIR.md). |
+| `GET /api/fhir/CodeSystem/stream-health` | The project CodeSystem every non-standard code in a bundle belongs to. |
+| `GET /api/export.csv` | Every live assessment, one row each. Superseded revisions excluded. `biotic_index`, `index_total` and `index_mean` say which scale each row's numbers are on. |
 | `GET /api/export.geojson` | Monitored sites as points, with their trend. |
 
 ## Sites and insight
@@ -96,7 +134,7 @@ anyone else can build against the same vocabulary.
 | Endpoint | Returns |
 |---|---|
 | `GET /api/form` | The visual field form: every indicator, its question, its options, its `why`, and whether a photograph can answer it. |
-| `GET /api/guide` | The bioindicator catalogue: 53 families with BMWP score, sensitivity, what to look for and what finding it means. |
+| `GET /api/guide` | The bioindicator catalogue: 53 families with their BMWP and IBMWP scores (`null` where an index does not score the family), sensitivity, what to look for and what finding it means. |
 | `GET /api/field-guide.md` | The sampling protocol as Markdown. Rendered for printing at `/field-guide`. |
 | `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
 | `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |

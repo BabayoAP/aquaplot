@@ -7,7 +7,7 @@ two never meet, which is exactly the fragmentation this hackathon's Track 7 name
 
 FHIR R4 turns out to fit an environmental observation with no abuse of the spec,
 because ``Observation.subject`` and ``Flag.subject`` both admit a **Location**.
-So a AquaPlot assessment becomes:
+So an AquaPlot assessment becomes:
 
 * one ``Location`` with the site's coordinates and municipality,
 * one ``Observation`` panel for the ecological status, carrying the index total and
