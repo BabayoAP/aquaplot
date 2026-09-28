@@ -81,12 +81,15 @@ class RateLimiter:
     limit: int = CLASSIFY_LIMIT
     window: float = CLASSIFY_WINDOW_SECONDS
     _hits: dict[str, deque[float]] = field(default_factory=lambda: defaultdict(deque))
+    _swept: float = 0.0
 
     def retry_after(self, key: str, now: float | None = None) -> float:
         """0 if the request is allowed (and recorded), else seconds until the next slot."""
         if self.limit <= 0:
             return 0.0
         now = time.monotonic() if now is None else now
+        if now - self._swept >= self.window:
+            self._sweep(now)
         q = self._hits[key]
         while q and q[0] <= now - self.window:
             q.popleft()
@@ -94,6 +97,21 @@ class RateLimiter:
             return q[0] + self.window - now
         q.append(now)
         return 0.0
+
+    def _sweep(self, now: float) -> None:
+        """Forget addresses whose window has passed.
+
+        Without this the table keeps one entry for every address ever seen, and
+        the key is taken from ``X-Forwarded-For`` - a header the caller chooses -
+        so on a public instance the growth is not merely slow but arbitrary. A
+        counter with nothing left in its window carries no information, so
+        dropping it changes no decision. Swept at most once per window, which
+        keeps the cost amortised over the requests that caused the growth.
+        """
+        cutoff = now - self.window
+        for key in [k for k, q in self._hits.items() if not q or q[-1] <= cutoff]:
+            del self._hits[key]
+        self._swept = now
 
 
 def client_key(request: Request) -> str:

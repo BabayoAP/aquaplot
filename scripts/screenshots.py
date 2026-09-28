@@ -35,6 +35,13 @@ async def main(url: str) -> int:
         # The sample check, as a judge meets it from /try.
         await phone.goto(f"{url}/try")
         await phone.wait_for_selector("#step2:not([hidden]) .thumb img")
+        # The sample notice carries the photographers' credit and the fact that the
+        # model reading is a replay. It shares the page with the "no vision model"
+        # banner, which arrives from a different request; on a deployment with no
+        # key both must be on screen, and neither may overwrite the other.
+        sample_notice = phone.locator("#notices .notice", has_text="Sample check")
+        if await sample_notice.count() != 1:
+            errors.append("the sample check's credit and replay notice is missing from /try")
         await phone.click("#step2 [data-go=animals]")
         await phone.fill("#picksearch", "two tails")
         await phone.wait_for_timeout(300)

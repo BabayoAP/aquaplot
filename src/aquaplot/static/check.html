@@ -171,7 +171,7 @@
   </ol>
 
   <div class="outbox" id="outbox" hidden></div>
-  <div class="notice" id="notice" hidden></div>
+  <div id="notices"></div>
   <p class="sr" id="announce" role="status" aria-live="polite"></p>
 
   <!-- Step 1 -->
@@ -358,13 +358,33 @@ function show(id) {
 }
 show("step1");
 
+// ---- notices
+//
+// Two independent facts can be true at once - this server has no vision model,
+// and these are the sample photos whose reading was recorded - and they arrive
+// from different requests in an order nothing guarantees. Keyed notices keep
+// both: sharing one element let whichever answered last erase the other, and the
+// one most likely to be erased carried the photographers' credit and the fact
+// that the reading is a replay rather than a live one.
+const notices = new Map();
+function setNotice(key, text) {
+  notices.set(key, text);
+  const box = $("notices");
+  box.innerHTML = "";
+  for (const message of notices.values()) {
+    const div = document.createElement("div");
+    div.className = "notice";
+    div.textContent = message;
+    box.append(div);
+  }
+}
+
 // ---- health banner
 api("/api/health").then((r) => r.json()).then((h) => {
   if (h.observer === "none") {
-    $("notice").hidden = false;
-    $("notice").textContent = "This server has no vision model set up, so nothing reads your photos and nothing " +
+    setNotice("model", "This server has no vision model set up, so nothing reads your photos and nothing " +
       "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself. " +
-      "The reading is calculated the same way. (The sample photos below are the exception: their model reading was recorded.)";
+      "The reading is calculated the same way. (The sample photos below are the exception: their model reading was recorded.)");
   }
 }).catch(() => {});
 
@@ -549,9 +569,8 @@ $("samplebtn").addEventListener("click", async () => {
     $("sitename").value = set.location.site_name;
     $("locstatus").textContent = `Set: ${set.location.lat.toFixed(4)}, ${set.location.lon.toFixed(4)}`;
     const credits = set.photos.map((p) => `${p.title} (${p.credit}, ${p.licence})`).join("; ");
-    $("notice").hidden = false;
-    $("notice").textContent = `Sample check. ${set.location.explanation} Photos: ${credits}. What the model sees in them `
-      + `was recorded from ${set.recorded_by} on ${set.recorded_on} and is replayed; any photo of your own is read live.`;
+    setNotice("sample", `Sample check. ${set.location.explanation} Photos: ${credits}. What the model sees in them `
+      + `was recorded from ${set.recorded_by} on ${set.recorded_on} and is replayed; any photo of your own is read live.`);
     show("step2");
   } catch (e) {
     $("locstatus").textContent = "The sample photos could not be loaded.";

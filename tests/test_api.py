@@ -104,3 +104,25 @@ def test_rate_limiter_window_slides():
     assert rl.retry_after("b", now=4) == 0  # another client is independent
     assert rl.retry_after("a", now=10.1) == 0
     assert RateLimiter(limit=0).retry_after("a", now=0) == 0  # disabled
+
+
+def test_rate_limiter_forgets_addresses_whose_window_has_passed():
+    """The key comes from a header the caller chooses, so the table must not grow with it."""
+    from aquaplot.app import RateLimiter
+
+    rl = RateLimiter(limit=5, window=10)
+    for i in range(500):
+        rl.retry_after(f"10.0.0.{i}", now=1)
+    assert len(rl._hits) == 500
+    rl.retry_after("10.0.0.0", now=60)  # one later request sweeps the rest
+    assert len(rl._hits) == 1
+
+
+def test_rate_limiter_still_counts_a_client_that_keeps_calling_across_a_sweep():
+    """Sweeping must forget only counters a sweep cannot change a decision about."""
+    from aquaplot.app import RateLimiter
+
+    rl = RateLimiter(limit=2, window=10)
+    assert rl.retry_after("a", now=100) == 0
+    assert rl.retry_after("a", now=105) == 0
+    assert rl.retry_after("a", now=106) == pytest.approx(4)  # still limited after the sweep

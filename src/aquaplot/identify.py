@@ -179,6 +179,12 @@ async def ollama_post(path: str, body: dict[str, Any]) -> dict[str, Any]:
             raise IdentifyError(f"Ollama timed out after {OLLAMA_TIMEOUT:.0f}s; the model may be too large for this machine") from exc
         except httpx.HTTPError as exc:
             raise IdentifyError(f"Ollama request failed: {exc or exc.__class__.__name__}") from exc
+        except ValueError as exc:
+            # A 200 whose body is not JSON. Every other backend failure here is an
+            # IdentifyError, which the assessor turns into a named penalty; letting
+            # this one escape as a raw decode error would end a citizen's check in a
+            # 500 instead of a reading with one photo missing from it.
+            raise IdentifyError(f"Ollama returned a response that was not JSON: {exc}") from exc
 
 
 def detect_ollama_vision_model(timeout: float = 1.5) -> str | None:

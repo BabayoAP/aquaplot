@@ -398,6 +398,28 @@ async def test_ollama_backend_rejects_garbage():
         await OllamaIdentifier(model="x", post=post).identify(None, "plant", IRVINE)
 
 
+async def test_a_non_json_reply_from_ollama_costs_a_photo_not_the_whole_check(monkeypatch):
+    """A 200 carrying HTML - a captive portal or a proxy - must not escape as a 500.
+
+    Every other Ollama failure arrives as an IdentifyError, which the assessor
+    turns into a named penalty and carries on. A raw decode error would end a
+    citizen's check with no reading at all.
+    """
+    import httpx
+
+    from aquaplot import identify
+
+    real_client = httpx.AsyncClient  # captured before the patch: identify.httpx is the module itself
+
+    def portal(*args, **kwargs):
+        transport = httpx.MockTransport(lambda request: httpx.Response(200, text="<html>sign in</html>"))
+        return real_client(transport=transport)
+
+    monkeypatch.setattr(identify.httpx, "AsyncClient", portal)
+    with pytest.raises(IdentifyError, match="not JSON"):
+        await identify.ollama_post("/api/chat", {})
+
+
 def test_identifier_selection_is_overridable(monkeypatch):
     from aquaplot.identify import ClaudeIdentifier, select_identifier
 
