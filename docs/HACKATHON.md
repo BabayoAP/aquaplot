@@ -1,6 +1,6 @@
 # IEEE OneAquaHealth Global Hackathon 2026 — submission notes
 
-**Deadline:** Sep 30, 2026, 9:00 pm PDT. **Submission:** track alignment, project
+**Deadline:** Oct 4, 2026, 9:00 pm PDT. **Submission:** track alignment, project
 description, a 3–5 minute demo video, a public repository, and a working prototype.
 
 ## One paragraph
@@ -104,7 +104,7 @@ commit from everything after it.
 - [x] Prior work disclosed
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository)
 - [ ] Demo video, 3–5 minutes
-- [ ] Submitted on Devpost before Sep 30, 2026, 9:00 pm PDT
+- [ ] Submitted on Devpost before Oct 4, 2026, 9:00 pm PDT
 
 ## Demo script (for the video)
 
