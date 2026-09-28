@@ -11,3 +11,7 @@ dist/
 aquaplot.db
 riffle.db
 *.db-journal
+
+# evaluation photos and model outputs
+eval/
+eval-results/
