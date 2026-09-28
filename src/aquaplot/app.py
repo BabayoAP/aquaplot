@@ -34,12 +34,14 @@ and cheap for a script to hit; ``AQUAPLOT_CLASSIFY_LIMIT=0`` disables it.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
 import os
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from importlib import resources
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -47,7 +49,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
@@ -101,7 +103,32 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Fill an empty store with the labelled demo data when ``AQUAPLOT_SEED_DEMO=1``.
+
+    A free host's disk is wiped on every restart, and a judge who opens the live link
+    once must not land on an empty dashboard (demo.py). Seeding runs in the
+    background so the app answers immediately, and a failure only costs the demo data.
+    """
+    task = None
+    if os.environ.get("AQUAPLOT_SEED_DEMO", "").lower() in ("1", "true", "yes"):
+        from . import demo
+
+        async def run():
+            try:
+                await demo.seed(app.state.assessor, app.state.store)
+            except Exception:  # the demo data is a courtesy; the app must start without it
+                pass
+
+        task = asyncio.create_task(run())
+    yield
+    if task is not None and not task.done():
+        task.cancel()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="AquaPlot",
     version=ASSESSMENT_VERSION,
     description=(
@@ -776,6 +803,18 @@ def area_listed():
 def index() -> FileResponse:
     """The guided stream check. This is the product; everything else supports it."""
     return FileResponse(STATIC_DIR / "check.html")
+
+
+@app.get("/about", include_in_schema=False)
+def about_page() -> FileResponse:
+    """AquaPlot in two minutes: the problem, the moment worth seeing, and what is and is not claimed."""
+    return FileResponse(STATIC_DIR / "about.html")
+
+
+@app.get("/try", include_in_schema=False)
+def try_it() -> RedirectResponse:
+    """Straight into the sample check: the one link to give someone with two minutes."""
+    return RedirectResponse("/?sample=1", status_code=307)
 
 
 @app.get("/dashboard", include_in_schema=False)

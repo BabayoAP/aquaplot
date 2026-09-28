@@ -4,6 +4,21 @@
 
 **The citizen identifies. The AI double-checks, blind. The rules decide.**
 
+**The problem.** The animals living in a stream are the best evidence of its health, and the
+hardest thing for a volunteer to name: a flat-headed mayfly and a stonefly look alike to a
+beginner, and one wrong name can move a stream's reading. Letting an AI identify them instead
+teaches nobody anything, hides the AI's mistakes, and puts a machine's guess in a health record.
+The hackathon's Track 3 names the problem directly: *citizen observations can be inconsistent
+and error-prone.*
+
+**Try it in 90 seconds:** run it (below) and open `/try`: real photographs are pre-loaded, you
+name the animal, and the AI, which never saw your answer, asks you to count its tails.
+`/about` is the two-minute version of this page.
+
+| You identify | The AI asks, blind | The reading | The trend |
+|---|---|---|---|
+| ![Picking the animal](docs/screenshots/1-identify.png) | ![The second opinion](docs/screenshots/2-second-opinion.png) | ![The result](docs/screenshots/3-result.png) | ![A site declining](docs/screenshots/5-site-trend.png) |
+
 A citizen scoops gravel from a shallow, fast patch of an urban stream into a pale tray,
 photographs it, and picks what they see from a guide organised by shape — "three tails",
 "a case made of sand". A vision model looks at the same photograph **without seeing their
@@ -204,18 +219,20 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 244 tests, no network, no model
+.venv/bin/python -m pytest                       # 247 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
-Open `/` to check a stream, `/site/{key}` for one spot's history, `/dashboard` for the
+Open `/about` for the two-minute tour, `/try` for the sample check, `/` to check a stream, `/site/{key}` for one spot's history, `/dashboard` for the
 insights, `/map` for the map, `/field-guide` for the sampling protocol, `/docs` for the
 interactive API reference.
 
 A fresh install has an empty dashboard, which is the worst first impression of a tool whose
-argument is that a *series* is worth more than one reading. `scripts/seed_demo.py` posts a
-small, clearly-labelled demo dataset across the five research cities — including a site that
-declines between visits — through the public API:
+argument is that a *series* is worth more than one reading. Start with `AQUAPLOT_SEED_DEMO=1`
+and an empty database is filled at startup with a small, clearly-labelled demo dataset across
+the five research cities, dated over five months, with one site that declines and one that
+improves (`src/aquaplot/demo.py`; the Render blueprint sets it, because a free instance's disk
+is wiped on every restart). Or post the same visits to a running server through the public API:
 
 ```sh
 .venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000
@@ -247,6 +264,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
 | `src/aquaplot/weather.py` | The 48 hours either side of a visit and the 48-hour outlook, from Open-Meteo. Injectable, stored with the check. |
+| `src/aquaplot/demo.py` | The labelled demo dataset, seeded into an empty store at startup with `AQUAPLOT_SEED_DEMO=1`. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
 | `src/aquaplot/fhir.py` | FHIR R4 Bundle export, conforming to the OneAquaHealth IG profiles, and the project CodeSystem. |
 | `src/aquaplot/oah.py` | The OneAquaHealth research sites, and a check as the project's Citizen Science App submission. |
@@ -258,6 +276,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
 | `src/aquaplot/data/oah_reference.json` | Snapshot of the OneAquaHealth public API: 106 research sites and the Citizen Science App's answer codes. Refresh with `scripts/fetch_oah_reference.py`. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
+| `src/aquaplot/static/about.html` | AquaPlot in two minutes, at `/about`: the problem, the moment worth seeing, what is and is not claimed. `/try` opens the sample check. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
@@ -273,7 +292,8 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 - [docs/EVALUATION.md](docs/EVALUATION.md) — how the second opinion is measured, and how to read the numbers honestly.
 - [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md) — every rule, its trigger, its evidence and its action.
 - [docs/FHIR.md](docs/FHIR.md) — the resources, the codes, validating it yourself, and what would have to happen to make it standard.
-- [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, and the build timeline.
+- [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, the build timeline and the timed demo script.
+- [docs/DEVPOST.md](docs/DEVPOST.md) — the submission text, section by section.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to correct a rule, add a family, or swap in a country-specific index.
 - [docs/AREA-VIEWER.md](docs/AREA-VIEWER.md), [docs/CLASSIFIER.md](docs/CLASSIFIER.md) — the inherited features.
 
@@ -288,7 +308,7 @@ blind second opinion, both biotic indices, the field form, the One Health rule e
 assessment pipeline and its review loop, persistence and trends, the authority report, FHIR
 and tabular export, the evaluation harness, the generalised geography, the offline field app,
 and every page except the classifier. By `git diff --shortstat` against the imported commit:
-about 6,900 lines of new Python and 2,100 of new interface, and 176 of the 244 tests. SpeciesGuard's
+about 6,900 lines of new Python and 2,100 of new interface, and 179 of the 247 tests. SpeciesGuard's
 code was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's PRD is kept at
 [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at

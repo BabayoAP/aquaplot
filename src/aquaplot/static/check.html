@@ -137,6 +137,7 @@
       <a href="/dashboard">Dashboard</a>
       <a href="/map">Map</a>
       <a href="#" id="guidebtn">ID guide</a>
+      <a href="/about">About</a>
     </nav>
   </div>
 </header>
@@ -507,6 +508,9 @@ $("samplebtn").addEventListener("click", async () => {
     $("locstatus").textContent = "The sample photos could not be loaded.";
   } finally { btn.disabled = false; }
 });
+
+// /try lands here with ?sample=1: start the sample check without making anyone hunt for it.
+if (new URLSearchParams(location.search).has("sample")) $("samplebtn").click();
 
 // ---- photos
 $("camerabtn").addEventListener("click", () => $("camera").click());

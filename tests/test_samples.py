@@ -96,3 +96,11 @@ def test_the_sample_set_is_served_with_its_credits(client):
     assert body["location"]["lat"] and "not taken there" in body["location"]["explanation"]
     assert client.get(body["photos"][0]["url"]).status_code == 200
     json.dumps(body)
+
+
+def test_the_two_minute_path_leads_with_the_problem_and_one_link_into_the_sample(client):
+    about = client.get("/about")
+    assert about.status_code == 200 and "The problem." in about.text and 'href="/try"' in about.text
+    hop = client.get("/try", follow_redirects=False)
+    assert hop.status_code == 307 and hop.headers["location"] == "/?sample=1"
+    assert "?sample" in client.get("/").text or "has(\"sample\")" in client.get("/").text

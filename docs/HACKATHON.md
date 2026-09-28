@@ -116,7 +116,7 @@ Weights are from the Devpost rules; each criterion is scored 1–10.
 |---|---|
 | **Impact & alignment with the OneAquaHealth mission (30%)** | Benthic macroinvertebrates, the indicator group the project's protocols put first, scored with the index Iberian practice uses where the project's Coimbra pilot is. These are exactly what the project's own Citizen Science App does not ask about. Mosquito larvae and parasite-host snails are carried through to human and animal findings. Checks at the project's 106 research sites are linked to them by the project's site code, and every check can leave in the project's own formats: its app's submission and its FHIR IG. Every finding ends in an action split between the citizen, the community and the authority, and the authority's action arrives as a document the citizen can send. |
 | **Innovation & creativity (20%)** | The model as a *blind second opinion* on the volunteer rather than the identifier: questions ranked by whether the answer changes the band, with the feature that settles each. Plus an alert that waits for a human, a review that supersedes a visit instead of inventing one, and one rule applied to every hand-off: only what a person stands behind crosses into the project's formats. |
-| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 244 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The whole system degrades: no model, no place, no coordinates and no photo each cost a named certainty factor instead of an error. |
+| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 247 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The whole system degrades: no model, no place, no coordinates and no photo each cost a named certainty factor instead of an error. |
 | **Usability & UX (15%)** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks do not have signal. |
 | **Feasibility & scalability (15%)** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter. The project's own FHIR IG and app schema are the integration path, not a new one. CSV, GeoJSON and FHIR mean the data outlives this deployment. |
 
@@ -134,10 +134,11 @@ here, in the README and in the first commit message rather than left to be disco
 | Sep 24, 2026 | The authority report and its printable page; CSV and GeoJSON export; nearby-site detection so a repeat visit joins its series; the per-site history page and its chart; the offline service worker, the IndexedDB outbox and the web manifest; the progress rail, focus management and the searchable ID guide; the field guide; the API reference and the contributing guide. |
 | Sep 27, 2026 | Citizen-first identification and the blind second opinion; the IBMWP index and index choice by country, with the catalogue's scores checked against published tables; the evaluation harness and the iNaturalist test-set builder; the FHIR export brought to zero validator errors and the CodeSystem published. |
 | Sep 28, 2026 | The sample check (openly licensed photos with a recorded, labelled model reading, so the second opinion works without a model key); the weather either side of a visit and three weather rules; the 48-hour outlook on the dashboard. |
+| Sep 28, 2026 | The two-minute path for judges (`/about`, `/try`); demo data seeded at startup with real dates, and a Render blueprint that works on the free plan; screenshots; the Devpost text and a timed demo script. |
 | Sep 28, 2026 | OneAquaHealth interoperability: the 106 research sites and the Citizen Science App's answer codes from the project's public API; a check as the app's submission; the FHIR export brought into conformance with the project's IG (`hl7-eu/oah`) and validated against its profiles; the research sites on the map. |
 
 By `git diff --shortstat` against the imported commit: about 6,900 lines of new Python and
-2,100 of new interface, and 176 of the 244 tests. `git log` separates the imported commit from
+2,100 of new interface, and 179 of the 247 tests. `git log` separates the imported commit from
 everything after it.
 
 ## Submission checklist
@@ -146,14 +147,14 @@ everything after it.
 - [x] Source and documentation ([API](API.md), [field guide](FIELD-GUIDE.md), [rules](ONE-HEALTH.md), [FHIR](FHIR.md), [evaluation](EVALUATION.md), [contributing](../CONTRIBUTING.md))
 - [x] Working prototype, runnable in three commands, with a test suite that needs no network
 - [x] Track alignment stated (above)
-- [x] Project description (this file and the README)
+- [x] Project description: [DEVPOST.md](DEVPOST.md) is written to paste into Devpost's fields
 - [x] Prior work disclosed
 - [ ] Evaluation run and the results recorded in [EVALUATION.md](EVALUATION.md). With no API key,
       one option is to have Claude Code run it by looking at the iNaturalist photos with the labels
       hidden, disclosed as exactly that rather than as `observe.ClaudeObserver` API calls; decide first
 - [ ] Before judging opens (Oct 1): open the live link so the free instance is awake, and try
       *Use the sample photos* on it once
-- [ ] Live link deployed (`render.yaml` blueprint is in the repository)
+- [ ] Live link deployed (`render.yaml` blueprint is in the repository: free plan, no disk, demo data seeded at startup). Put `<live link>/about` in the Devpost description and `<live link>/try` as the first link
 - [ ] Demo video, 3–5 minutes (the sample check on step 1 makes it possible without a stream)
 - [ ] Eligibility confirmed: registered on Devpost, and the Devpost overview says "students
       only" and "team participation" (the rules page says individuals or teams)
@@ -161,33 +162,46 @@ everything after it.
 
 ## Demo script (for the video)
 
-1. **The problem, at a real stream.** Open `/`, locate, name the spot. (No stream to hand: *Use the
-   sample photos* runs steps 2–6 on real photographs, placed at research site C3.)
-2. **Two photographs.** The reach, then the tray. Say what a riffle is and why the sample comes
-   from there.
-3. **You identify.** Open the animal list, search "two tails", pick a stonefly; pick the
-   bloodworms. Say it: the person decides what is in the tray.
-4. **The two questions a camera cannot answer.** Smell, and who gets into the water.
-5. **The second opinion.** The card: *you marked a stonefly; the model thinks this may be a
-   mayfly; count the tails and look for gills on the sides.* Point at the line that says the
-   band changes if the model is right. Say that the model never saw your answer. Choose. This
-   is the part judges have not seen elsewhere.
-6. **The result.** Band first, then the sentence about people, then "identified by you,
-   double-checked by the model". Read one finding's evidence and action aloud — that is the
-   explainability claim, on screen.
-7. **The weather.** Point at the weather line on the result, then open `/dashboard` and scroll to
-   *The next 48 hours*: the same rules, re-run with the forecast. (If nothing is forecast that
-   day, say so; the tests show the rain case.)
-8. **The alert loop.** An alert held at concern until you confirm the observation under it.
-9. **The thing you send.** Open the report. It is dated, located, attributed, says who
-   identified the animals and what the independent check found, and states its own limits.
-10. **The trend.** `/site/{key}`: the class plotted across visits, and a site that declined.
-11. **Offline.** Airplane mode, complete a check, show it queued, reconnect, watch it send.
-12. **The project's own terms.** Do the check at Vale das Flores in Coimbra: the result names
-    OneAquaHealth research site C3. Open *Export for the OneAquaHealth app*: the app's own
-    codes, each field's source, and what did not translate and why. Then
-    `/api/assess/{id}/fhir`: the Location carries `C3`, the indicators use the project's IG
-    profiles, and the validator, run with the IG loaded, reports no errors and no warnings.
-    Say it once: only what a person confirmed is marked final.
-13. **Scale.** `/map`, with the 106 research sites shown. Jump to Coimbra: the same check scores
-    with IBMWP there, because the index is resolved from the coordinates, not hard-coded.
+Target **3 min 30 s**; the rules allow 3–5. Built around what judges say decides hackathons:
+lead with the problem, show one thing working within about 90 seconds, put the judge in the
+user's shoes, be direct about what works and what does not, and have the video finished before
+the deadline rather than on it. Record from the live link, at phone width, with the demo data
+seeded. Rehearse it out loud once and time it.
+
+**0:00–0:20 · The problem.** *"The animals in a stream are the best evidence of its health, and
+the hardest thing for a volunteer to name. This is a flat-headed mayfly. To a beginner it looks
+like a stonefly, and that one name can move a stream's reading. OneAquaHealth's own track brief
+says it: citizen observations are inconsistent and error-prone. If an AI names the animals
+instead, nobody learns anything, and nobody can tell when it is wrong."*
+
+**0:20–1:30 · The moment.** Open `/try`. The photos are already loaded. Search "two tails",
+pick a stonefly, answer the smell and access questions, submit. The card: *"You marked some
+kind of stonefly. The model thinks this may be Mayfly (flat-headed)."* Say: *"The AI looked at
+the same photo without seeing my answer. It doesn't overrule me; it asks, and tells me what to
+look at: count the tails."* Count them on the photo: three. Take the mayfly. *"Because it was
+asked blind, its agreement is evidence, not an echo, and taking its answer is recorded as
+that."*
+
+**1:30–2:10 · The reading and its reasons.** The band, then the sentence about people. Open one
+finding: its evidence and its action, and the rain forecast line if the weather has one. Point
+at "provisional": one animal cannot prove a stream healthy or dead, and the app says so. Then
+the confirmation rule in one sentence: an alert waits for a person to confirm what it rests on.
+
+**2:10–2:50 · In OneAquaHealth's own terms.** The result names research site C3. Open *Export
+for the OneAquaHealth app* (the app's own answer codes, and what did not translate and why),
+then the FHIR Bundle: *"It conforms to the project's own FHIR IG, and the HL7 validator reports
+no errors and no warnings. Only what a person confirmed is marked final."* Open the report: the
+thing a citizen actually sends the water authority.
+
+**2:50–3:20 · Looking forward.** `/dashboard`: the declining Coimbra site and its chart, then
+*The next 48 hours*: the same rules re-run with the forecast. Heavy rain where sewage was seen
+is when an overflow runs.
+
+**3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 247
+tests. What we have not claimed yet: that the second opinion catches real mistakes on real
+trays. The harness to measure it is built; that is the next step. AquaPlot: the citizen
+identifies, the AI double-checks blind, the rules decide."*
+
+If a judge asks about something not built, it was scoped out on purpose: a national index per
+country (one score column each), mapping to the project's expert macroinvertebrate codes (the
+codes are undocumented), and sending the app submission (it needs an app account).

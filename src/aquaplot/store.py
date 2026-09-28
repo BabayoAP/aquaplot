@@ -43,11 +43,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .assess import Assessment
 from .bioindex import Band
 from .onehealth import Level
+
+if TYPE_CHECKING:  # a type hint only; importing assess here would close an import cycle (assess -> oah -> store)
+    from .assess import Assessment
 
 DEFAULT_DB = os.environ.get("AQUAPLOT_DB", "aquaplot.db")
 SITE_PRECISION = 3  # decimal degrees, about 110 m: close enough to be "the same spot"

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AquaPlot in two minutes</title>
+<meta name="description" content="Citizens identify what lives in their stream; an AI double-checks them without seeing their answers; published indices and readable rules turn it into a One Health reading.">
+<link rel="icon" href="/icon.svg">
+<style>
+  :root {
+    --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
+    --accent: #0f6b7a; --soft: #e8f1f3; --warn: #c2662a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31; --warn: #e3925f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 14px; font-size: 14px; flex-wrap: wrap; }
+  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 70px; }
+  a { color: var(--accent); }
+  .kicker { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+  h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 6px 0 12px; letter-spacing: -.02em; }
+  h2 { font-size: 20px; margin: 40px 0 10px; }
+  p.lede { font-size: 18px; color: var(--muted); max-width: 64ch; margin: 0; }
+  .problem { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--warn);
+             border-radius: 12px; padding: 16px 18px; margin-top: 22px; }
+  .problem p { margin: 0 0 8px; } .problem p:last-child { margin: 0; }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+  .btn { display: inline-block; text-decoration: none; border-radius: 10px; padding: 13px 20px; font-weight: 700; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.ghost { border: 1px solid var(--line); color: var(--accent); background: var(--card); }
+  .cta small { color: var(--muted); }
+  ol.moment { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px;
+              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); counter-reset: m; }
+  ol.moment li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; counter-increment: m; }
+  ol.moment li::before { content: counter(m); display: inline-grid; place-items: center; width: 26px; height: 26px;
+                         border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  ol.moment b { display: block; }
+  ol.moment span { color: var(--muted); font-size: 14px; }
+  .quote { font-style: italic; background: var(--soft); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
+  .grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card ul { margin: 6px 0 0; padding-left: 18px; }
+  .card li { margin: 3px 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stat .n { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .stat .l { color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line);
+          border-radius: 12px; overflow: hidden; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  tr:last-child td { border-bottom: 0; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 40px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">AquaPlot<span>.</span></div>
+  <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/docs">API</a></nav>
+</div></header>
+<main>
+  <p class="kicker">IEEE OneAquaHealth Global Hackathon 2026 · Track 3, AI-Supported Assessment</p>
+  <h1>A volunteer's stream reading, checked by an AI that never saw their answer.</h1>
+  <p class="lede">AquaPlot turns a walk past an urban stream into a health reading for the water, the people and the
+    animals around it. The citizen identifies; the AI double-checks, blind; published indices and readable rules decide.</p>
+
+  <div class="problem" role="note">
+    <p><b>The problem.</b> The track names it: <i>citizen observations can be inconsistent and error-prone.</i> The
+      animals living in a stream are the best evidence of its health, and the hardest thing for a volunteer to name. A
+      flat-headed mayfly and a stonefly look alike to a beginner, and one wrong name can move a stream's reading.</p>
+    <p>The obvious fix, letting an AI identify the animals, makes it worse in a quieter way: the volunteer learns
+      nothing, nobody can tell when the AI is wrong, and a machine's guess ends up in a health record.</p>
+    <p>And a reading that ends in a number nobody acts on protects nobody. OneAquaHealth's own Citizen Science App
+      records the channel, banks and flow, but does not ask what lives in the water.</p>
+  </div>
+
+  <div class="cta">
+    <a class="btn primary" href="/try">Try it in 90 seconds</a>
+    <a class="btn ghost" href="/dashboard">See the dashboard</a>
+    <small>No account, no stream needed: real photographs, pre-loaded.</small>
+  </div>
+
+  <h2>The moment worth seeing</h2>
+  <ol class="moment">
+    <li><b>The photos are loaded.</b><span>A reach, and a tray with one nymph in it, placed at OneAquaHealth research site C3 in Coimbra.</span></li>
+    <li><b>You name the animal.</b><span>Search "two tails", pick a stonefly. Your list is what gets scored.</span></li>
+    <li><b>The AI asks, it doesn't overrule.</b><span>It looked at the tray without your answer, and only raises a question where it saw something different.</span></li>
+  </ol>
+  <p class="quote">"You marked some kind of stonefly. The model thinks this may be Mayfly (flat-headed). Which is it?"
+    <br>How to tell: "Count the tails and look at the sides of the body. Mayfly nymphs usually have three tails and
+    feathery or plate-like gills along the sides of the abdomen; stonefly nymphs have two tails and no gills on the abdomen."</p>
+  <p>You decide. Because the model was asked blind, its agreement is independent evidence rather than an echo, and
+    taking its answer is recorded as that, never as agreement. Questions are ranked by whether the answer would change
+    the stream's reading.</p>
+
+  <h2>What happens to the reading</h2>
+  <div class="grid2">
+    <div class="card"><h3>A One Health read-out, with its reasons</h3>
+      <ul><li>A Water Framework Directive screening band from a published index (BMWP, or the Iberian IBMWP in Portugal and Spain, chosen from the coordinates).</li>
+        <li>Findings for ecosystem, human and animal health, each naming its rule, its evidence and an action.</li>
+        <li>A health alert waits until a person confirms the observation under it.</li></ul></div>
+    <div class="card"><h3>Something to send, in the project's own formats</h3>
+      <ul><li>A dated incident report for the water authority.</li>
+        <li>A FHIR R4 Bundle that conforms to the OneAquaHealth IG (<code>hl7-eu/oah</code>): 0 errors, 0 warnings in the HL7 validator.</li>
+        <li>The OneAquaHealth Citizen Science App's own submission, in the app's answer codes.</li></ul></div>
+    <div class="card"><h3>Early warning that looks forward</h3>
+      <ul><li>The weather either side of a visit says whether sewage came from a storm overflow or a misconnected drain.</li>
+        <li>The dashboard re-runs every site's latest reading with the next 48 hours' forecast: heavy rain where sewage was seen, heat on open, slow water.</li></ul></div>
+    <div class="card"><h3>Built for a riverbank</h3>
+      <ul><li>Works with no signal: the check is kept on the phone and sent when coverage returns.</li>
+        <li>Identification by shape, plain language, a printable field guide, keyboard and screen-reader support.</li>
+        <li>Works with no AI at all: the citizen fills the form and every reading is computed the same way.</li></ul></div>
+  </div>
+
+  <h2>On this deployment, right now</h2>
+  <div class="stats" id="stats"><div class="stat"><div class="n">…</div><div class="l">loading</div></div></div>
+
+  <h2>What works, and what doesn't yet</h2>
+  <div class="grid2">
+    <div class="card"><h3>Works, end to end</h3>
+      <ul><li>The guided check, the blind second opinion, the review loop and the result.</li>
+        <li>Both indices, fifteen One Health rules, the weather and the outlook.</li>
+        <li>Reports, CSV, GeoJSON, FHIR and the OneAquaHealth app export.</li>
+        <li>Offline recording, site trends and the dashboard. 246 automated tests, none of which need the network.</li></ul></div>
+    <div class="card"><h3>Deliberately not claimed</h3>
+      <ul><li><b>The second opinion has not been measured on real trays yet.</b> The harness that measures it is built (<a href="https://github.com/BabayoAP/aquaplot/blob/main/docs/EVALUATION.md">EVALUATION.md</a>); until it has run, catching mistakes is the design, not a result.</li>
+        <li>The sample photos' AI reading is a recording, labelled as one; any other photo is read live when a model is configured.</li>
+        <li>The band is a screening estimate, never a WFD classification, and every screen says so.</li>
+        <li>Demo sites are labelled "(demo data)". None of them is a real observation.</li></ul></div>
+  </div>
+
+  <h2>Where it fits the tracks</h2>
+  <table>
+    <tr><th>Track</th><th>What AquaPlot does for it</th></tr>
+    <tr><td><b>3 · AI-Supported Assessment</b> (primary)</td><td>Blind second opinion; the model observes, the rules decide; alerts wait for a human; prompts generated from the field form; an evaluation harness.</td></tr>
+    <tr><td>1 · Citizen Science UX</td><td>Five steps, identification by shape, "why" on every question, offline, accessible.</td></tr>
+    <tr><td>2 · Data-to-Insight</td><td>Dashboard, map, per-site trends, alert feed, CSV and GeoJSON.</td></tr>
+    <tr><td>6 · Resilience Informatics</td><td>The 48-hour outlook, weather-aware findings, drought and heat signals.</td></tr>
+    <tr><td>7 · Digital Health Standards</td><td>FHIR R4 conforming to the OneAquaHealth IG, validated; the project's own site codes and app schema.</td></tr>
+  </table>
+
+  <div class="cta">
+    <a class="btn primary" href="/try">Try the check</a>
+    <a class="btn ghost" href="https://github.com/BabayoAP/aquaplot">Source and documentation</a>
+  </div>
+  <p class="foot">AquaPlot is a citizen-science screening tool, not a medical, water-quality or regulatory
+    determination. Sample photographs: John Rostron (geograph.org.uk, CC BY-SA 2.0) and Johan Kjær Prehn (iNaturalist,
+    CC BY 4.0). Weather: Open-Meteo, CC BY 4.0.</p>
+</main>
+<script>
+Promise.all([fetch("/api/insights").then((r) => r.json()), fetch("/api/health").then((r) => r.json())])
+  .then(([i, h]) => {
+    const tiles = [
+      [i.assessments, "stream checks stored"],
+      [i.sites, "sites monitored"],
+      [i.human_confirmations, "observations a person checked"],
+      [h.observer === "none" ? "recorded" : h.observer, "AI second opinion (live model, or the sample's recording)"],
+    ];
+    document.getElementById("stats").innerHTML = tiles.map(([n, l]) => {
+      const d = document.createElement("div"); d.textContent = String(n);
+      const e = document.createElement("div"); e.textContent = l;
+      return `<div class="stat"><div class="n">${d.innerHTML}</div><div class="l">${e.innerHTML}</div></div>`;
+    }).join("");
+  }).catch(() => { document.getElementById("stats").innerHTML = ""; });
+</script>
+</body>
+</html>

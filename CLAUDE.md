@@ -31,6 +31,8 @@ docstring, and name tests after the behaviour they protect, not the function the
 - **The sample photos replay a recording, and must say so** (`observe.SampleReplay`,
   `data/samples.json`). The assessment's `observer` and first model note name the recording;
   never let a replayed reading pass as live, and never replay for any other photo.
+- **Demo data is labelled and seeded only into an empty store** (`demo.py`, `AQUAPLOT_SEED_DEMO`). Every
+  demo site name ends in "(demo data)"; never seed into a store that holds real checks.
 - **Weather is stored with the visit and never refetched** (`weather.py`). Reviews, reports and
   exports reuse `assessment.weather`; a failed lookup means no weather, never an error.
 - **A review must never call the model again** (`assess.reassess`). Re-running it would let
