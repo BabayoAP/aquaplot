@@ -86,7 +86,7 @@ review logic shows up as a falling catch rate.
 
 ## Results
 
-### Rule layer, synthetic observer (2026-09-28)
+### Rule layer, synthetic observer (2026-09-28, rerun)
 
 6 trays spanning a clean upland riffle to a drain, 200 runs per row, seed 1000, 198 simulated
 volunteer mistakes per run. Reproduce with
@@ -98,15 +98,15 @@ volunteer mistakes per run. Reproduce with
 | 0% | 30% | 87% | 70% | 0.00 |
 | 20% | 0% | 83% | 71% | 0.16 |
 | 20% | 30% | 73% | 50% | 0.16 |
-| 40% | 0% | 69% | 48% | 0.34 |
-| 40% | 30% | 62% | 33% | 0.34 |
-| 60% | 0% | 56% | 28% | 0.53 |
-| 60% | 30% | 52% | 19% | 0.53 |
+| 40% | 0% | 68% | 48% | 0.32 |
+| 40% | 30% | 61% | 33% | 0.32 |
+| 60% | 0% | 51% | 28% | 0.44 |
+| 60% | 30% | 47% | 19% | 0.44 |
 
 Reading it:
 
 - **An observer does not have to be good to be worth asking.** One that misses two animals in
-  every five still catches 69% of simulated mistakes, at a cost of one unnecessary question
+  every five still catches 68% of simulated mistakes, at a cost of one unnecessary question
   roughly every three trays. This is the case for a model that only ever raises questions. It
   is the row to quote, because a model missing 40% of a mixed tray is a pessimistic estimate of
   what these models do.
@@ -118,6 +118,12 @@ Reading it:
   rate falls 13 points but the share where the right animal is offered falls 30. The question
   still gets asked; it just says "some kind of mayfly" rather than naming the family. That is
   the honest thing to show, and it's why order-level answers are counted apart from wrong ones.
+- **The two bottom rows moved when blanket questioning stopped counting as a catch.** They read
+  56%/0.53 and 52%/0.53 before `secondopinion.compare` learned to treat an observer that named
+  *nothing* as no second opinion rather than as one that disagreed with everything. An observer
+  missing 60% of a small tray sometimes sees none of it, and questioning every family on the
+  strength of that caught mistakes the way a stopped clock tells the time. Fewer catches, a
+  fifth fewer false alarms, and what remains is signal.
 
 ### Model layer: not yet run
 

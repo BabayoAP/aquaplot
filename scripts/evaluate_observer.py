@@ -145,7 +145,6 @@ def main() -> int:
 
         observations = asyncio.run(observe_all(cases, args.labels.parent, observer, save, done, args.concurrency))
         payload = {"observer": observer.name, "model": getattr(observer, "model", None), "observations": observations}
-        save(done)
 
     report = score_outcomes(outcomes_from(cases, payload["observations"]))
     label = payload["observer"] + (f" / {payload['model']}" if payload.get("model") else "")

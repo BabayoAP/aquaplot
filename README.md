@@ -223,7 +223,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 255 tests, no network, no model
+.venv/bin/python -m pytest                       # 262 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -313,7 +313,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 187 of the 255 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 194 of the 262 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
