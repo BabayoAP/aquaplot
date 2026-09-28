@@ -54,7 +54,7 @@ conservation groups use, so results are directly actionable.
 ## Submission checklist
 
 - [ ] Video ≤ 5 min (script below).
-- [ ] Repository link: https://github.com/BabayoAP/aquaplot. **The repo is private today**: make it public (Settings → Danger zone → Change visibility) before submitting.
+- [x] Repository link: https://github.com/BabayoAP/aquaplot (public since 2026-09-28).
 - [ ] Live link (deploy notes below).
 - [ ] Devpost "built with": Python, FastAPI, Claude API, Ollama, Leaflet, iNaturalist API, Global Forest Watch, Esri.
 - [ ] Set `ANTHROPIC_API_KEY` on the deployed instance so judges get Claude-quality identification (Claude is a sponsor; the prize includes Claude credits). Without it the live link runs the placeholder.

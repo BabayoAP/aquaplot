@@ -38,21 +38,51 @@ from aquaplot.observe import select_observer
 from aquaplot.schema import Region
 
 
-async def observe_all(cases, folder: Path, observer) -> list[dict]:
-    raw = []
-    for n, case in enumerate(cases, 1):
-        print(f"[{n}/{len(cases)}] {case.photo}", file=sys.stderr)
-        entry = {"photo": case.photo, "photo_kind": "", "taxa": [], "error": None}
-        try:
-            image = decode_image((folder / case.photo).read_bytes())
-            seen = await observer.observe(image.image, "", Region(source="none"))
-            entry["photo_kind"] = seen.photo_kind
-            entry["taxa"] = [{"name": t.name, "confidence": t.confidence, "rank": t.rank} for t in seen.taxa]
-            entry["reasoning"] = seen.reasoning
-        except (OSError, InvalidImage, IdentifyError) as exc:
-            entry["error"] = str(exc)
-        raw.append(entry)
-    return raw
+async def observe_one(case, folder: Path, observer) -> dict:
+    entry = {"photo": case.photo, "photo_kind": "", "taxa": [], "error": None}
+    try:
+        image = decode_image((folder / case.photo).read_bytes())
+        seen = await observer.observe(image.image, "", Region(source="none"))
+        entry["photo_kind"] = seen.photo_kind
+        entry["taxa"] = [{"name": t.name, "confidence": t.confidence, "rank": t.rank} for t in seen.taxa]
+        entry["reasoning"] = seen.reasoning
+    except (OSError, InvalidImage, IdentifyError) as exc:
+        entry["error"] = str(exc)
+    return entry
+
+
+async def observe_all(cases, folder: Path, observer, save, done: dict[str, dict], concurrency: int = 1) -> list[dict]:
+    """Call the model once per photo, saving after each answer and skipping the ones already in ``done``.
+
+    A hundred photos on a local vision model is hours, and the answers are the
+    only expensive thing here - scoring them is free and rerunnable. Writing the
+    file only at the end meant an interrupted run threw away every call it had
+    already paid for, so each answer is saved as it arrives and a rerun picks up
+    where the last one stopped. Delete observations.json to start again.
+
+    ``concurrency`` is 1 by default because a local Ollama serves one request at
+    a time anyway; raise it for a hosted model, where the wait is the network.
+    """
+    todo = [c for c in cases if c.photo not in done]
+    if done:
+        print(f"{len(done)} already recorded; {len(todo)} to go.", file=sys.stderr)
+    counter = 0
+    lock = asyncio.Lock()
+    limit = asyncio.Semaphore(max(1, concurrency))
+
+    async def run(case):
+        nonlocal counter
+        async with limit:
+            entry = await observe_one(case, folder, observer)
+        async with lock:
+            counter += 1
+            done[case.photo] = entry
+            save(done)
+            note = f" - {entry['error']}" if entry["error"] else ""
+            print(f"[{counter}/{len(todo)}] {case.photo}{note}", file=sys.stderr)
+
+    await asyncio.gather(*(run(c) for c in todo))
+    return [done[c.photo] for c in cases if c.photo in done]
 
 
 def outcomes_from(cases, raw: list[dict]) -> list[Outcome]:
@@ -76,6 +106,7 @@ def main() -> int:
     parser.add_argument("labels", type=Path, help="labels.csv; photos are read from the same folder")
     parser.add_argument("--out", type=Path, default=Path("eval-results"))
     parser.add_argument("--rescore", action="store_true", help="reuse observations.json instead of calling the model")
+    parser.add_argument("--concurrency", type=int, default=1, help="photos in flight at once; raise it for a hosted model")
     args = parser.parse_args()
 
     cases = load_labels(args.labels)
@@ -90,12 +121,31 @@ def main() -> int:
             print("No vision model is configured (set ANTHROPIC_API_KEY or run Ollama). Nothing to evaluate.", file=sys.stderr)
             return 2
         print(f"Calling {observer.name} once for each of {len(cases)} photos.", file=sys.stderr)
-        payload = {
-            "observer": observer.name,
-            "model": getattr(observer, "model", None),
-            "observations": asyncio.run(observe_all(cases, args.labels.parent, observer)),
-        }
-        stored.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        wanted = {c.photo for c in cases}
+        done: dict[str, dict] = {}
+        if stored.exists():
+            previous = json.loads(stored.read_text(encoding="utf-8"))
+            # Only resume answers from the same backend: mixing two models' output
+            # into one table would report a score no single observer achieved.
+            if previous.get("model") == getattr(observer, "model", None) and previous.get("observer") == observer.name:
+                done = {o["photo"]: o for o in previous.get("observations", []) if o["photo"] in wanted}
+
+        def save(answers: dict[str, dict]) -> None:
+            stored.write_text(
+                json.dumps(
+                    {
+                        "observer": observer.name,
+                        "model": getattr(observer, "model", None),
+                        "observations": [answers[c.photo] for c in cases if c.photo in answers],
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+        observations = asyncio.run(observe_all(cases, args.labels.parent, observer, save, done, args.concurrency))
+        payload = {"observer": observer.name, "model": getattr(observer, "model", None), "observations": observations}
+        save(done)
 
     report = score_outcomes(outcomes_from(cases, payload["observations"]))
     label = payload["observer"] + (f" / {payload['model']}" if payload.get("model") else "")

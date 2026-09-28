@@ -63,6 +63,13 @@ def test_every_backend_is_wrapped_and_keeps_its_own_name():
     assert isinstance(observer, SampleReplay) and observer.name == "none"
 
 
+def test_the_wrapper_also_reports_which_model_is_behind_it():
+    """docs/EVALUATION.md asks every recorded run to name its model; the wrapper must not hide it."""
+    observer = select_observer({"AQUAPLOT_OBSERVER": "ollama", "OLLAMA_MODEL": "qwen2.5vl:3b"})
+    assert observer.name == "ollama" and observer.model == "qwen2.5vl:3b"
+    assert select_observer({"AQUAPLOT_OBSERVER": "none"}).model is None
+
+
 async def test_the_sample_check_gets_a_second_opinion_with_no_model_configured():
     photos = tuple(decode_image(sample_bytes(f)) for f in ("reach.jpg", "tray.jpg"))
     result = await StreamAssessor(observer=SampleReplay(NullObserver())).assess(

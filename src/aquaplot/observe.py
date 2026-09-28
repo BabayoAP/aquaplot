@@ -347,6 +347,17 @@ class SampleReplay:
     def name(self) -> str:
         return self.live.name
 
+    @property
+    def model(self) -> str | None:
+        """Which model the live observer is, for anything recording what produced a result.
+
+        ``NullObserver`` has none. Without this the evaluation harness saved
+        ``"model": null`` beside every number, and docs/EVALUATION.md asks for a
+        run to be recorded with the model that produced it - a figure whose
+        backend is unnamed cannot be compared with the next one, or reproduced.
+        """
+        return getattr(self.live, "model", None)
+
     async def observe(self, image, description, region) -> StreamObservation:
         sample = self.samples.match(image) if image is not None else None
         if sample is None:

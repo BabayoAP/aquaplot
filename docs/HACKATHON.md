@@ -145,7 +145,7 @@ everything after it.
 
 ## Submission checklist
 
-- [ ] **Repository made public** (it is private today)
+- [x] **Repository made public** (2026-09-28): <https://github.com/BabayoAP/aquaplot>
 - [x] Source and documentation ([API](API.md), [field guide](FIELD-GUIDE.md), [rules](ONE-HEALTH.md), [FHIR](FHIR.md), [evaluation](EVALUATION.md), [contributing](../CONTRIBUTING.md))
 - [x] Working prototype, runnable in three commands, with a test suite that needs no network
 - [x] Track alignment stated (above)
