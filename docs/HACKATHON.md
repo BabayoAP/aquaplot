@@ -163,8 +163,12 @@ everything after it.
       *Use the sample photos* on it once
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository: free plan, no disk, demo data seeded at startup). Put `<live link>/about` in the Devpost description and `<live link>/try` as the first link
 - [ ] Demo video, 3–5 minutes (the sample check on step 1 makes it possible without a stream)
-- [ ] Eligibility confirmed: registered on Devpost, and the Devpost overview says "students
-      only" and "team participation" (the rules page says individuals or teams)
+- [ ] Eligibility confirmed: registered on Devpost. **The two Devpost pages contradict each
+      other** — the overview sidebar says "Students only" and "Team required", while the rules
+      page (checked 2026-09-28) says *"Open to individuals or teams (each participant can join
+      only one team)"* and states no student requirement. The rules page normally governs, but
+      a solo entry is the case the sidebar would exclude, so email the hackathon manager and get
+      the answer in writing before the deadline rather than after it
 - [ ] Submitted on Devpost before Oct 4, 2026, 9:00 pm PDT
 
 ## Demo script (for the video)
