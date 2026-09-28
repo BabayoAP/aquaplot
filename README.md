@@ -251,6 +251,12 @@ a running server through the public API:
 | no | yes (`ollama pull qwen2.5vl:3b`) | local model via Ollama (`OLLAMA_MODEL` to pick one) |
 | no | no | none: the citizen fills the form, everything else is unchanged |
 
+The three are not interchangeable. A small local model is enough to tell a tray from a
+riverbank, and on the photographs we measured it named no invertebrate families at all, so it
+produces no second opinion rather than a weak one — see
+[the model-layer results](docs/EVALUATION.md#results). Treat Ollama as the offline and
+keyless path, not as the double-check.
+
 `AQUAPLOT_OBSERVER=claude|ollama|none` forces a choice and `/api/health` reports which is
 active. `AQUAPLOT_DB` sets the SQLite path (default `aquaplot.db`). `AQUAPLOT_CLASSIFY_LIMIT`
 caps assessments per client address per 10 minutes (default 20, `0` disables) so a public
