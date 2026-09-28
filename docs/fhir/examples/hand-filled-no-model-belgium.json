@@ -1,14 +1,25 @@
 {
   "resourceType": "Bundle",
-  "id": "aquaplot-ddd31e18441d",
+  "id": "aquaplot-2a925911c606",
   "type": "collection",
   "timestamp": "2026-09-27T10:30:00+00:00",
   "entry": [
     {
-      "fullUrl": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8",
+      "fullUrl": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9",
       "resource": {
         "resourceType": "Location",
-        "id": "site-ddd31e18441d",
+        "id": "site-2a925911c606",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/location-oah"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://github.com/BabayoAP/aquaplot/site",
+            "value": "51.054,3.717"
+          }
+        ],
         "status": "active",
         "name": "Coupure, Gent (example)",
         "description": "Urban freshwater monitoring point recorded by a citizen scientist",
@@ -37,10 +48,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a",
+      "fullUrl": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694",
       "resource": {
         "resourceType": "Observation",
-        "id": "status-ddd31e18441d",
+        "id": "status-2a925911c606",
         "status": "amended",
         "category": [
           {
@@ -64,7 +75,7 @@
           "text": "Urban stream ecological status, citizen screening"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -279,10 +290,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:acce1aef-13bd-5e2e-8f5d-8d72f2777bc7",
+      "fullUrl": "urn:uuid:7bb392da-48f9-5af6-b712-980c08ca87c4",
       "resource": {
         "resourceType": "Observation",
-        "id": "survey-ddd31e18441d",
+        "id": "survey-2a925911c606",
         "status": "final",
         "category": [
           {
@@ -306,7 +317,7 @@
           "text": "Benthic macroinvertebrate survey"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -316,7 +327,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "component": [
@@ -387,10 +398,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:508d6837-e71e-52ba-92b2-a5640433136e",
+      "fullUrl": "urn:uuid:9bc95360-668c-54ec-acd9-4205a92dc0a2",
       "resource": {
         "resourceType": "Observation",
-        "id": "habitat-ddd31e18441d",
+        "id": "habitat-2a925911c606",
         "status": "final",
         "category": [
           {
@@ -414,7 +425,7 @@
           "text": "Visual stream habitat and pressure assessment"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -424,7 +435,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "component": [
@@ -480,10 +491,222 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:679daede-c7e9-5320-a1c0-8616e547caad",
+      "fullUrl": "urn:uuid:1912ab49-ce5b-584a-9ee3-834f260b8dfb",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-ecosystem-ddd31e18441d",
+        "id": "oah-macroinvertebreates-2a925911c606",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "macroinvertebreates",
+              "display": "Benthic Macro invertebrates count"
+            }
+          ],
+          "text": "Benthic Macro invertebrates count"
+        },
+        "subject": {
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueQuantity": {
+          "value": 3,
+          "unit": "families",
+          "system": "http://unitsofmeasure.org",
+          "code": "1"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-asellidae",
+                  "display": "Asellidae (Water hoglouse (water slater))"
+                }
+              ],
+              "text": "Asellidae (Water hoglouse (water slater))"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-planorbidae",
+                  "display": "Planorbidae (Ramshorn snail)"
+                }
+              ],
+              "text": "Planorbidae (Ramshorn snail)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-oligochaeta",
+                  "display": "Oligochaeta (Sludge worm)"
+                }
+              ],
+              "text": "Oligochaeta (Sludge worm)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Families present in one kick sample sorted in a tray and identified by a citizen; a count of families, not of individuals."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Benthic Macro invertebrates count</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2c2454d3-2a20-5c2d-9258-f257e4b7daa8",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "oah-foam-2a925911c606",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "foam",
+              "display": "Foam/colour/smell"
+            }
+          ],
+          "text": "Foam/colour/smell"
+        },
+        "subject": {
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "present",
+              "display": "Present"
+            }
+          ],
+          "text": "Present"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-odour",
+                  "display": "What can you smell? (only you can answer this)"
+                }
+              ],
+              "text": "What can you smell? (only you can answer this)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "odour-sewage",
+                  "display": "Sewage or rotten eggs"
+                }
+              ],
+              "text": "Sewage or rotten eggs (reported by the citizen)"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Present when any of colour, foam or smell was reported as other than natural."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Foam/colour/smell: Present</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:5093c4b9-6a97-5521-ae1e-dbd295c9d573",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "onehealth-ecosystem-2a925911c606",
         "status": "final",
         "category": [
           {
@@ -516,7 +739,7 @@
           "text": "One Health signal: ecosystem health"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -526,7 +749,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "valueCodeableConcept": {
@@ -588,10 +811,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:75c9b444-664a-5fe0-afe7-c35774e1640a",
+      "fullUrl": "urn:uuid:dcdddb9b-53e2-5b3d-9003-3c3861bd5fc1",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-human-ddd31e18441d",
+        "id": "onehealth-human-2a925911c606",
         "status": "final",
         "category": [
           {
@@ -624,7 +847,7 @@
           "text": "One Health signal: human health"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -634,7 +857,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "valueCodeableConcept": {
@@ -696,10 +919,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:394c0245-46e1-53d3-ac50-e15c8cadc764",
+      "fullUrl": "urn:uuid:0ad7f62d-7d05-5189-a121-b623996c6be0",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-animal-ddd31e18441d",
+        "id": "onehealth-animal-2a925911c606",
         "status": "final",
         "category": [
           {
@@ -732,7 +955,7 @@
           "text": "One Health signal: animal health"
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -742,7 +965,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "valueCodeableConcept": {
@@ -831,10 +1054,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:b49abadb-d5dd-5f90-9975-4d54c063d6fc",
+      "fullUrl": "urn:uuid:b7092404-b192-525b-83bf-87fffde87d7a",
       "resource": {
         "resourceType": "Flag",
-        "id": "flag-human-faecal-contamination-ddd31e18441d",
+        "id": "flag-human-faecal-contamination-2a925911c606",
         "status": "active",
         "category": [
           {
@@ -867,7 +1090,7 @@
           "text": "Signs of sewage reaching the stream. Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location - overflow and misconnection cases are made from exactly this kind of dated citizen record."
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "period": {
           "start": "2026-09-27T10:30:00+00:00"
@@ -879,10 +1102,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:aa5a1cef-9476-5368-a0dd-85313a2e7138",
+      "fullUrl": "urn:uuid:d6ffd57a-a6de-527b-8936-86a3cf2fff39",
       "resource": {
         "resourceType": "Flag",
-        "id": "flag-ecosystem-biological-condition-ddd31e18441d",
+        "id": "flag-ecosystem-biological-condition-2a925911c606",
         "status": "active",
         "category": [
           {
@@ -915,7 +1138,7 @@
           "text": "Biological condition: Bad. Repeat the check upstream and downstream of this point. Where the invertebrates change is where the problem enters."
         },
         "subject": {
-          "reference": "urn:uuid:fb11b8f0-4bc5-5bf1-ab54-17f510e8e2f8"
+          "reference": "urn:uuid:2b80b3e3-d42d-5d2d-a66e-6f97a9f115b9"
         },
         "period": {
           "start": "2026-09-27T10:30:00+00:00"
@@ -927,13 +1150,13 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:49b63461-9920-5df8-930c-947950289409",
+      "fullUrl": "urn:uuid:462ca070-c420-5d06-8055-8ce29e7f13b5",
       "resource": {
         "resourceType": "Provenance",
-        "id": "prov-ddd31e18441d",
+        "id": "prov-2a925911c606",
         "target": [
           {
-            "reference": "urn:uuid:e6bf8133-9514-5885-96e0-78237c69889a"
+            "reference": "urn:uuid:4947c2a4-437c-59fb-a75d-65c6eee89694"
           }
         ],
         "recorded": "2026-09-27T10:30:00+00:00",

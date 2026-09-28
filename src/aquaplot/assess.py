@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from . import bioindex, habitat, onehealth, secondopinion
+from . import bioindex, habitat, oah, onehealth, secondopinion
 from .area import ListedTaxon, load_seed, match_listed
 from .identify import IdentifyError
 from .inputs import DecodedImage
@@ -123,7 +123,9 @@ class Assessment:
     second_opinion: SecondOpinion | None = None
 
     def as_dict(self) -> dict[str, Any]:
+        research = oah.research_site_at(self.region.lat, self.region.lon)
         return {
+            "research_site": research[0].as_dict(research[1]) if research else None,
             "identified_by": self.identified_by,
             "second_opinion": self.second_opinion.as_dict() if self.second_opinion else None,
             "id": self.id,

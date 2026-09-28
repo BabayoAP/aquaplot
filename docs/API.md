@@ -106,7 +106,8 @@ The stored assessment, exactly as produced.
 |---|---|
 | `GET /api/assess/{id}/report` | A printable incident report for a water authority. |
 | `GET /api/assess/{id}/report.md` | The same report as Markdown, for pasting into a contact form. |
-| `GET /api/assess/{id}/fhir` | A FHIR R4 collection Bundle, validated against the HL7 validator. See [FHIR.md](FHIR.md). |
+| `GET /api/assess/{id}/fhir` | A FHIR R4 collection Bundle conforming to the OneAquaHealth IG's profiles, validated with the HL7 validator. See [FHIR.md](FHIR.md). |
+| `GET /api/assess/{id}/oah-app` | The check as a OneAquaHealth Citizen Science App submission (`CitizenSubmissionPutDTO`) in the app's answer codes: `body`, the `carried` fields with their sources, what was `not_carried` and why, and the matched `research_site`. Not sent anywhere. |
 | `GET /api/fhir/CodeSystem/stream-health` | The project CodeSystem every non-standard code in a bundle belongs to. |
 | `GET /api/export.csv` | Every live assessment, one row each. Superseded revisions excluded. `biotic_index`, `index_total` and `index_mean` say which scale each row's numbers are on. |
 | `GET /api/export.geojson` | Monitored sites as points, with their trend. |
@@ -137,6 +138,7 @@ anyone else can build against the same vocabulary.
 | `GET /api/guide` | The bioindicator catalogue: 53 families with their BMWP and IBMWP scores (`null` where an index does not score the family), sensitivity, what to look for and what finding it means. |
 | `GET /api/field-guide.md` | The sampling protocol as Markdown. Rendered for printing at `/field-guide`. |
 | `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
+| `GET /api/oah/sites` | The OneAquaHealth project's 106 research sites (code, name, city, coordinates), from a snapshot of its public API, and the radius within which a check is linked to one. |
 | `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |
 
 ## Inherited from SpeciesGuard

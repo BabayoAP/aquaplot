@@ -84,6 +84,7 @@
     <h2>Layers</h2>
     <label class="layer"><input type="checkbox" data-layer="aquaplot" checked><i class="sw" style="background:linear-gradient(90deg,#1a7f5a,#a5342b)"></i> AquaPlot stream assessments <span class="cnt" id="c-aquaplot"></span></label>
     <label class="layer" style="padding-left:22px"><span class="sub">colour = ecological band, ring = a site where the last visit scored worse than the one before</span></label>
+    <label class="layer"><input type="checkbox" data-layer="oah" checked><i class="sw" style="background:#1f5fa8"></i> OneAquaHealth research sites <span class="cnt" id="c-oah"></span></label>
     <label class="layer"><input type="checkbox" data-layer="introduced" checked><i class="sw introduced"></i> Introduced species sightings <span class="cnt" id="c-introduced"></span></label>
     <label class="layer" style="padding-left:22px"><i class="sw listed"></i> <span class="sub">darker ring = on an invasive-species list (EU Union list, Cal-IPC, CDFW)</span></label>
     <label class="layer"><input type="checkbox" data-layer="native"><i class="sw native"></i> Native species sightings <span class="cnt" id="c-native"></span></label>
@@ -223,6 +224,19 @@
     $("sitesection").style.display = sites.length ? "" : "none";
   }
 
+  // The OneAquaHealth project's own research sites: where its laboratory samples.
+  // Static reference data, so it is drawn once rather than per viewport.
+  const oahLayer = L.layerGroup().addTo(map);
+  fetch("/api/oah/sites").then((r) => r.json()).then((d) => {
+    d.sites.forEach((s) => {
+      L.circleMarker([s.lat, s.lon], { radius: 6, color: "#fff", weight: 2, fillColor: "#1f5fa8", fillOpacity: 0.95 })
+        .bindPopup(`<b>${esc(s.name)}</b><br>OneAquaHealth research site <b>${esc(s.code)}</b>, ${esc(s.city)}`
+          + `<br><small>A check within ${d.match_radius_m} m of here is linked to this site in every export.</small>`)
+        .addTo(oahLayer);
+    });
+    $("c-oah").textContent = String(d.sites.length);
+  }).catch(() => {});
+
   if (start !== HOME) L.circleMarker(start.center, { radius: 9, color: "#fff", fillColor: "#2f6b3a", fillOpacity: 1, weight: 2 })
     .addTo(map).bindPopup("Your photo's location");
 
@@ -352,7 +366,8 @@
     if (name === "loss") { cb.checked ? loss.addTo(map) : map.removeLayer(loss); return; }
     if (name === "labels") { cb.checked ? labels.addTo(map) : map.removeLayer(labels); return; }
     if (name === "heat") { cb.checked ? heat.addTo(map) : map.removeLayer(heat); if (cb.checked) reload(); return; }
-    cb.checked ? clusters[name].addTo(map) : map.removeLayer(clusters[name]);
+    if (name === "oah") { cb.checked ? oahLayer.addTo(map) : map.removeLayer(oahLayer); return; }
+    if (clusters[name]) cb.checked ? clusters[name].addTo(map) : map.removeLayer(clusters[name]);
     reload();
   }));
   clusters.introduced.addTo(map);

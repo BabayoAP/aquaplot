@@ -51,7 +51,7 @@ from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
 
-from . import bioindex, fhir, habitat, onehealth, report
+from . import bioindex, fhir, habitat, oah, onehealth, report
 from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
@@ -342,6 +342,31 @@ def assessment_as_fhir(assessment_id: str):
     if stored is None:
         raise HTTPException(status_code=404, detail="no assessment with that id")
     return fhir.bundle(_rehydrate(stored))
+
+
+@app.get("/api/assess/{assessment_id}/oah-app", tags=["assessment", "interoperability"])
+def assessment_as_oah_app_submission(assessment_id: str):
+    """The check as a OneAquaHealth Citizen Science App submission body, with every mapping shown.
+
+    Only answers a person gave or confirmed are carried; what did not translate is
+    listed with the reason. AquaPlot prepares the body and does not send it.
+    """
+    stored = app.state.store.get(assessment_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="no assessment with that id")
+    return oah.app_submission(_rehydrate(stored))
+
+
+@app.get("/api/oah/sites", tags=["reference"])
+def oah_research_sites():
+    """The OneAquaHealth project's research sites (a snapshot of its public API)."""
+    ref = oah.reference()
+    return {
+        "version": ref["version"],
+        "source": ref["source"],
+        "match_radius_m": oah.MATCH_RADIUS_M,
+        "sites": [s.as_dict() for s in oah.research_sites()],
+    }
 
 
 @app.get("/api/fhir/CodeSystem/stream-health", tags=["interoperability"])

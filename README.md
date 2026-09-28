@@ -66,13 +66,31 @@ the number can always be taken apart.
 
 ## Where this fits
 
-OneAquaHealth already has a citizen-science app for stream assessment. AquaPlot is built to sit
-beside it, not to replace it. What it adds is the part between a volunteer's observation and
-somebody acting on it: a check on the identifications that keeps the volunteer in charge, a
-One Health reading of what they found, a report an authority can act on, and a record a health
-system can import. Nothing it records is locked in: every assessment leaves as CSV, GeoJSON or
-validated FHIR, so it can feed the project's own data platform instead of becoming another
-silo. Mapping AquaPlot's field form onto the project app's fields is the first integration step.
+OneAquaHealth already has a Citizen Science App: a volunteer at one of the project's research
+sites (or a personal site) records photos, the channel and banks, flow, water colour, habitats,
+vegetation and an overall Good / Moderate / Poor judgement. It does not ask what lives in the
+water. AquaPlot is built to sit beside it, not to replace it. What it adds is the part the app
+leaves out and the part after it: the animals, identified by the volunteer and checked by a
+model; a One Health reading of what they found; a report an authority can act on; and a record
+a health system can import.
+
+It speaks the project's own terms, from a snapshot of the project's public API:
+
+- **The 106 research sites.** A check made within 200 m of one (Vale das Flores in Coimbra is
+  `C3`) says so on the result, on the map and in every export, so a citizen reading can be set
+  beside the laboratory data the project files under the same code.
+- **The app's own submission.** `GET /api/assess/{id}/oah-app` gives the check as the body the
+  app submits (`CitizenSubmissionPutDTO`), in the app's answer codes, with every field's source
+  and every answer that did not translate listed with the reason.
+- **The project's FHIR IG.** The export conforms to the OneAquaHealth IG
+  ([`hl7-eu/oah`](https://github.com/hl7-eu/oah)): its Location profile, and its indicator
+  Observation profile for macroinvertebrates, Diptera, foam/colour/smell, riparian vegetation,
+  morphology, hydrology, algae and invasive organisms. It passes the HL7 validator with the IG
+  loaded, with no errors and no warnings.
+
+Only what a person gave or confirmed crosses into the project's formats. What the vision model
+alone saw stays in AquaPlot, marked preliminary. Nothing is locked in either way: every
+assessment also leaves as CSV and GeoJSON.
 
 ## What works today
 
@@ -168,7 +186,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 210 tests, no network, no model
+.venv/bin/python -m pytest                       # 222 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -211,19 +229,21 @@ demo cannot drain an API key.
 | `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
-| `src/aquaplot/fhir.py` | FHIR R4 Bundle export and the project CodeSystem. |
+| `src/aquaplot/fhir.py` | FHIR R4 Bundle export, conforming to the OneAquaHealth IG profiles, and the project CodeSystem. |
+| `src/aquaplot/oah.py` | The OneAquaHealth research sites, and a check as the project's Citizen Science App submission. |
 | `src/aquaplot/evaluation.py` | Scores stored model output on labelled photos: accuracy, mistakes caught, false alarms. |
 | `src/aquaplot/report.py` | The incident report a citizen sends an authority, as Markdown and as a printable page. |
 | `src/aquaplot/data/bioindicators.json` | 53 families: BMWP and IBMWP scores, what to look for, what finding it means. |
 | `src/aquaplot/data/habitat_indicators.json` | The field form. Drives the prompt, the validator, the UI and the scoring. |
 | `src/aquaplot/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
+| `src/aquaplot/data/oah_reference.json` | Snapshot of the OneAquaHealth public API: 106 research sites and the Citizen Science App's answer codes. Refresh with `scripts/fetch_oah_reference.py`. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
 | `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
-| `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites over iNaturalist layers. No build step. |
+| `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites and the OneAquaHealth research sites over iNaturalist layers. No build step. |
 | `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |
 
 ## Documentation
@@ -249,7 +269,9 @@ blind second opinion, both biotic indices, the field form, the One Health rule e
 assessment pipeline and its review loop, persistence and trends, the authority report, FHIR
 and tabular export, the evaluation harness, the generalised geography, the offline field app,
 and every page except the classifier. By `git diff --shortstat` against the imported commit:
-about 5,900 lines of new Python and 2,100 of new interface, and 142 of the 210 tests. The original project's PRD is kept at
+about 6,400 lines of new Python and 2,100 of new interface, and 154 of the 222 tests. SpeciesGuard's
+code was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
+([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's PRD is kept at
 [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
 [docs/HACKATHON-NEXTSTEP.md](docs/HACKATHON-NEXTSTEP.md), so the boundary between the two is
 on the record rather than implied.

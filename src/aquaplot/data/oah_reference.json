@@ -1,0 +1,1104 @@
+{
+ "version": "oah-2026-09-28",
+ "source": "https://api.enora-oah.eu/api",
+ "note": "Snapshot of the OneAquaHealth project's public API: its research sites and the answer codes of its Citizen Science App. Regenerate with scripts/fetch_oah_reference.py; the app never calls the API itself.",
+ "sites": [
+  {
+   "code": "C1",
+   "name": "Exploratório",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.19787,
+   "lon": -8.42865,
+   "altitude_m": 20.0
+  },
+  {
+   "code": "C2",
+   "name": "Estação Cbr-B",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.22483,
+   "lon": -8.44135,
+   "altitude_m": 14.0
+  },
+  {
+   "code": "C3",
+   "name": "Vale das Flores",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.19307,
+   "lon": -8.41945,
+   "altitude_m": 22.0
+  },
+  {
+   "code": "C4",
+   "name": "Eiras",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.25289,
+   "lon": -8.43659,
+   "altitude_m": 17.0
+  },
+  {
+   "code": "C5",
+   "name": "Mina Hospital",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.2186,
+   "lon": -8.42733,
+   "altitude_m": 27.0
+  },
+  {
+   "code": "C6",
+   "name": "Casa do Sal",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.21942,
+   "lon": -8.43772,
+   "altitude_m": 16.0
+  },
+  {
+   "code": "C7",
+   "name": "São Romão",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.22243,
+   "lon": -8.40165,
+   "altitude_m": 53.0
+  },
+  {
+   "code": "C8",
+   "name": "Covões",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.19133,
+   "lon": -8.46002,
+   "altitude_m": 77.0
+  },
+  {
+   "code": "C9",
+   "name": "Fornos",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.27702,
+   "lon": -8.4272,
+   "altitude_m": 19.0
+  },
+  {
+   "code": "C10",
+   "name": "Arregaça",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.19776,
+   "lon": -8.41773,
+   "altitude_m": 23.0
+  },
+  {
+   "code": "C11",
+   "name": "Bairro São Miguel",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.22752,
+   "lon": -8.43757,
+   "altitude_m": 20.0
+  },
+  {
+   "code": "C12",
+   "name": "Escola Agrária",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.20386,
+   "lon": -8.45302,
+   "altitude_m": 42.0
+  },
+  {
+   "code": "C13",
+   "name": "Condeixa",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.11106,
+   "lon": -8.49052,
+   "altitude_m": 106.0
+  },
+  {
+   "code": "C14",
+   "name": "Antanhol",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.16719,
+   "lon": -8.47817,
+   "altitude_m": 68.0
+  },
+  {
+   "code": "C15",
+   "name": "Copeira",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.17943,
+   "lon": -8.42117,
+   "altitude_m": 25.0
+  },
+  {
+   "code": "C16",
+   "name": "Rio Velho",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.22461,
+   "lon": -8.44304,
+   "altitude_m": 15.0
+  },
+  {
+   "code": "C17",
+   "name": "Conraria",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.17422,
+   "lon": -8.39363,
+   "altitude_m": 27.0
+  },
+  {
+   "code": "C18",
+   "name": "Ponte da Espertina",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.25621,
+   "lon": -8.45312,
+   "altitude_m": 14.0
+  },
+  {
+   "code": "C19",
+   "name": "Escravote",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.24812,
+   "lon": -8.41159,
+   "altitude_m": 42.0
+  },
+  {
+   "code": "C20",
+   "name": "Corujeira",
+   "city": "Coimbra",
+   "city_code": "CO",
+   "lat": 40.21085,
+   "lon": -8.47667,
+   "altitude_m": 14.0
+  },
+  {
+   "code": "T21",
+   "name": "",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.59278,
+   "lon": 1.34767,
+   "altitude_m": 162.0
+  },
+  {
+   "code": "T24",
+   "name": "",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.59604,
+   "lon": 1.36671,
+   "altitude_m": 148.0
+  },
+  {
+   "code": "G2",
+   "name": "Zottegem1 (Zo1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.85943,
+   "lon": 3.79794,
+   "altitude_m": 38.71
+  },
+  {
+   "code": "BN1",
+   "name": "Capodimonte",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.13231,
+   "lon": 14.80039,
+   "altitude_m": 135.0
+  },
+  {
+   "code": "BN2",
+   "name": "Cretarossa",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.12679,
+   "lon": 14.80333,
+   "altitude_m": 146.0
+  },
+  {
+   "code": "BN3",
+   "name": "Ponticelli",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.13348,
+   "lon": 14.78614,
+   "altitude_m": 550.0
+  },
+  {
+   "code": "BN4",
+   "name": "Serretelle 4",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.12414,
+   "lon": 14.74864,
+   "altitude_m": 130.0
+  },
+  {
+   "code": "BN5",
+   "name": "Serretelle 5",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.10429,
+   "lon": 14.74295,
+   "altitude_m": 182.0
+  },
+  {
+   "code": "BN6",
+   "name": "Pezzapiano",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.14775,
+   "lon": 14.78437,
+   "altitude_m": 127.0
+  },
+  {
+   "code": "BN7",
+   "name": "Margiacca",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.14905,
+   "lon": 14.81407,
+   "altitude_m": 135.0
+  },
+  {
+   "code": "BN8",
+   "name": "Paduli",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.15405,
+   "lon": 14.8345,
+   "altitude_m": 204.0
+  },
+  {
+   "code": "BN9",
+   "name": "Vallone Cornacchie",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.11089,
+   "lon": 14.8325,
+   "altitude_m": 126.0
+  },
+  {
+   "code": "BN10",
+   "name": "Malacagna",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.14607,
+   "lon": 14.76353,
+   "altitude_m": 120.0
+  },
+  {
+   "code": "BN11",
+   "name": "Masseria Roseto",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.16124,
+   "lon": 14.75972,
+   "altitude_m": 153.0
+  },
+  {
+   "code": "BN12",
+   "name": "Vallone S. Vitale",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.13628,
+   "lon": 14.73193,
+   "altitude_m": 130.0
+  },
+  {
+   "code": "BN13",
+   "name": "Vallone la Ripa",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.11727,
+   "lon": 14.73683,
+   "altitude_m": 245.0
+  },
+  {
+   "code": "BN14",
+   "name": "Rocca - Tufara",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.06014,
+   "lon": 14.70843,
+   "altitude_m": null
+  },
+  {
+   "code": "BN15",
+   "name": "Corvo Tressanti",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.06921,
+   "lon": 14.70959,
+   "altitude_m": 148.0
+  },
+  {
+   "code": "BN16",
+   "name": "Ranno",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.06923,
+   "lon": 14.70876,
+   "altitude_m": 146.0
+  },
+  {
+   "code": "BN17",
+   "name": "Lossauro",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.13221,
+   "lon": 14.7127,
+   "altitude_m": 284.0
+  },
+  {
+   "code": "BN18",
+   "name": "Jenga",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.15126,
+   "lon": 14.70936,
+   "altitude_m": 100.0
+  },
+  {
+   "code": "BN19",
+   "name": "Foeniculum",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.185791,
+   "lon": 14.719005,
+   "altitude_m": 267.0
+  },
+  {
+   "code": "BN20",
+   "name": "Lenta",
+   "city": "Benevento",
+   "city_code": "BE",
+   "lat": 41.213825,
+   "lon": 14.68999,
+   "altitude_m": 147.0
+  },
+  {
+   "code": "G6",
+   "name": "Zwalm2 (Zw2)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87579,
+   "lon": 3.75151,
+   "altitude_m": 18.9
+  },
+  {
+   "code": "T1",
+   "name": "Ruisseau du Palays",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.55267,
+   "lon": 1.49147,
+   "altitude_m": 130.0
+  },
+  {
+   "code": "T3",
+   "name": "Ruisseau de Bonneval amont",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.52756,
+   "lon": 1.47439,
+   "altitude_m": 208.0
+  },
+  {
+   "code": "G8",
+   "name": "Zwalm4 (Zw4)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87971,
+   "lon": 3.73771,
+   "altitude_m": 18.29
+  },
+  {
+   "code": "G9",
+   "name": "Zwalm5 (Zw5)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87366,
+   "lon": 3.73125,
+   "altitude_m": 20.12
+  },
+  {
+   "code": "G10",
+   "name": "Zwalm6 (Zw6)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.88344,
+   "lon": 3.71431,
+   "altitude_m": 14.02
+  },
+  {
+   "code": "G22",
+   "name": "Zwalm7 (Zw7)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.88527,
+   "lon": 3.692821,
+   "altitude_m": 12.19
+  },
+  {
+   "code": "G11",
+   "name": "Zwalm8 (Zw8)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.88437,
+   "lon": 3.68791,
+   "altitude_m": 13.11
+  },
+  {
+   "code": "G12",
+   "name": "Zwalm9 (Zw9)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.88541,
+   "lon": 3.68606,
+   "altitude_m": 11.89
+  },
+  {
+   "code": "G13",
+   "name": "Merelbeke1 (Mr1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.97958,
+   "lon": 3.72241,
+   "altitude_m": 4.88
+  },
+  {
+   "code": "G14",
+   "name": "Merelbeke2 (Mr2)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.99821,
+   "lon": 3.73925,
+   "altitude_m": 28.04
+  },
+  {
+   "code": "G15",
+   "name": "Melle1 (Ml1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.98975,
+   "lon": 3.80615,
+   "altitude_m": 5.79
+  },
+  {
+   "code": "G16",
+   "name": "Melle2 (Ml2)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.99491,
+   "lon": 3.80568,
+   "altitude_m": 5.79
+  },
+  {
+   "code": "G17",
+   "name": "Gent1 (G1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 51.02678,
+   "lon": 3.77389,
+   "altitude_m": 24.08
+  },
+  {
+   "code": "G18",
+   "name": "Gent2 (G2)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 51.05458,
+   "lon": 3.68126,
+   "altitude_m": 20.12
+  },
+  {
+   "code": "O17",
+   "name": "Alna – Bryn stasjon",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9078,
+   "lon": 10.8128,
+   "altitude_m": null
+  },
+  {
+   "code": "G1",
+   "name": "Oosterzele1 (O1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.94744,
+   "lon": 3.8168,
+   "altitude_m": 54.86
+  },
+  {
+   "code": "G4",
+   "name": "Zottegem3 (Zo3)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87507,
+   "lon": 3.80222,
+   "altitude_m": 39.01
+  },
+  {
+   "code": "G21",
+   "name": "Zottegem4 (Zo4)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.89162,
+   "lon": 3.81558,
+   "altitude_m": 48.46
+  },
+  {
+   "code": "G5",
+   "name": "Zwalm1 (Zw1)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87539,
+   "lon": 3.74917,
+   "altitude_m": 20.12
+  },
+  {
+   "code": "T2",
+   "name": "Ruisseau de Bonneval aval",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.53219,
+   "lon": 1.46332,
+   "altitude_m": 178.0
+  },
+  {
+   "code": "G19",
+   "name": "Gent3 (G3)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 51.02843,
+   "lon": 3.786,
+   "altitude_m": 3.05
+  },
+  {
+   "code": "G20",
+   "name": "Gent4 (G4)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 51.0939,
+   "lon": 3.71687,
+   "altitude_m": 2.74
+  },
+  {
+   "code": "G3",
+   "name": "Zottegem2 (Zo2)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.87604,
+   "lon": 3.75174,
+   "altitude_m": 51.21
+  },
+  {
+   "code": "T5",
+   "name": "Marcaissonne aval",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5678,
+   "lon": 1.50937,
+   "altitude_m": 138.0
+  },
+  {
+   "code": "T6",
+   "name": "Marcaissonne amont",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.56755,
+   "lon": 1.51974,
+   "altitude_m": 145.0
+  },
+  {
+   "code": "T7",
+   "name": "Saune",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.57873,
+   "lon": 1.53609,
+   "altitude_m": 145.0
+  },
+  {
+   "code": "T8",
+   "name": "Ruisseau du Grand Port de Mer",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.58553,
+   "lon": 1.52861,
+   "altitude_m": 157.0
+  },
+  {
+   "code": "T9",
+   "name": "Ruisseau du Roussimort amont",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.52152,
+   "lon": 1.34273,
+   "altitude_m": 165.0
+  },
+  {
+   "code": "T15",
+   "name": "Fossé Mère (ou Ruisseau Le Négogousses)",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5713,
+   "lon": 1.38535,
+   "altitude_m": 157.0
+  },
+  {
+   "code": "G7",
+   "name": "Zwalm3 (Zw3)",
+   "city": "Ghent",
+   "city_code": "GH",
+   "lat": 50.86216,
+   "lon": 3.76577,
+   "altitude_m": 23.77
+  },
+  {
+   "code": "O1",
+   "name": "Gaustadbekken-Skådalen",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9561,
+   "lon": 10.7153,
+   "altitude_m": null
+  },
+  {
+   "code": "O2",
+   "name": "Hoffsbekken",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9514,
+   "lon": 10.6806,
+   "altitude_m": null
+  },
+  {
+   "code": "O3",
+   "name": "Gaustadbekken-Slemdalsveien/RH",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9475,
+   "lon": 10.7111,
+   "altitude_m": null
+  },
+  {
+   "code": "O5",
+   "name": "Hoffselva - Møllhausen",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9308,
+   "lon": 10.6769,
+   "altitude_m": null
+  },
+  {
+   "code": "O4",
+   "name": "Makrellbekken - Dronningfossen",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9308,
+   "lon": 10.6778,
+   "altitude_m": null
+  },
+  {
+   "code": "O6",
+   "name": "Ljanselva- Skullerud -",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.8628,
+   "lon": 10.8458,
+   "altitude_m": null
+  },
+  {
+   "code": "O7",
+   "name": "Ljanselvas mljøpark",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.8511,
+   "lon": 10.8164,
+   "altitude_m": null
+  },
+  {
+   "code": "O8",
+   "name": "Ljanselva – Nedre Ljan Nordstrand",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.8433,
+   "lon": 10.7847,
+   "altitude_m": null
+  },
+  {
+   "code": "O9",
+   "name": "Gaustadbekken -Forskningsparketn",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9425,
+   "lon": 10.7181,
+   "altitude_m": null
+  },
+  {
+   "code": "O10",
+   "name": "Frognerelva - VInderen",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9414,
+   "lon": 10.7097,
+   "altitude_m": null
+  },
+  {
+   "code": "O11",
+   "name": "Mærradalsbekken - Radiumhospital",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9297,
+   "lon": 10.6594,
+   "altitude_m": null
+  },
+  {
+   "code": "O12",
+   "name": "Makrellbekken – ring3",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9356,
+   "lon": 10.6736,
+   "altitude_m": null
+  },
+  {
+   "code": "O13",
+   "name": "Mærradalsbekken – Huseby skole",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.945,
+   "lon": 10.6503,
+   "altitude_m": null
+  },
+  {
+   "code": "O14",
+   "name": "Hovinbekken - Krokliveien",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9392,
+   "lon": 10.8214,
+   "altitude_m": null
+  },
+  {
+   "code": "O15",
+   "name": "Hovinbekken - Hovin",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9206,
+   "lon": 10.8006,
+   "altitude_m": null
+  },
+  {
+   "code": "O16",
+   "name": "Alna - Kværnerfossene",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9044,
+   "lon": 10.7944,
+   "altitude_m": null
+  },
+  {
+   "code": "O18",
+   "name": "Alna – v Tveita / plantasjen-",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9219,
+   "lon": 10.8369,
+   "altitude_m": null
+  },
+  {
+   "code": "O19",
+   "name": "Alna - Grorud",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9525,
+   "lon": 10.9017,
+   "altitude_m": null
+  },
+  {
+   "code": "O20",
+   "name": "Makrellbekken - Njård",
+   "city": "Oslo",
+   "city_code": "OS",
+   "lat": 59.9432,
+   "lon": 10.6736,
+   "altitude_m": null
+  },
+  {
+   "code": "T10",
+   "name": "Canal de Saint Martory",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5322,
+   "lon": 1.32265,
+   "altitude_m": 169.0
+  },
+  {
+   "code": "T12",
+   "name": "Fossé de Larramet médian",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.54003,
+   "lon": 1.34077,
+   "altitude_m": 164.0
+  },
+  {
+   "code": "T13",
+   "name": "Ruisseau du Roussimort aval",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5353,
+   "lon": 1.37785,
+   "altitude_m": 155.0
+  },
+  {
+   "code": "T14",
+   "name": "Canal agricole (depuis la Saudrune)",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.53855,
+   "lon": 1.42074,
+   "altitude_m": 145.0
+  },
+  {
+   "code": "T17",
+   "name": "Fossé de pluvial avant rejet dans fossé de Larramet",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5786,
+   "lon": 1.35861,
+   "altitude_m": 159.0
+  },
+  {
+   "code": "T18",
+   "name": "Ousseau",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.57882,
+   "lon": 1.35262,
+   "altitude_m": 153.0
+  },
+  {
+   "code": "T19",
+   "name": "Touch",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.58253,
+   "lon": 1.35047,
+   "altitude_m": 140.0
+  },
+  {
+   "code": "T20",
+   "name": "Canal de Moulin",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.5828,
+   "lon": 1.3493,
+   "altitude_m": 150.0
+  },
+  {
+   "code": "T4",
+   "name": "Hers",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.56499,
+   "lon": 1.49464,
+   "altitude_m": 140.0
+  },
+  {
+   "code": "T11",
+   "name": "Fossé de Larramet amont",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.52992,
+   "lon": 1.32597,
+   "altitude_m": 172.0
+  },
+  {
+   "code": "T25",
+   "name": "Ruisseau de l’Armurié",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.64862,
+   "lon": 1.51501,
+   "altitude_m": 137.0
+  },
+  {
+   "code": "T16",
+   "name": "Fossé de Larramet aval",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.57895,
+   "lon": 1.35929,
+   "altitude_m": 159.0
+  },
+  {
+   "code": "T22",
+   "name": "Ruisseau de l’Armurié",
+   "city": "Toulouse",
+   "city_code": "TO",
+   "lat": 43.59608,
+   "lon": 1.36657,
+   "altitude_m": 150.0
+  }
+ ],
+ "app_vocabularies": {
+  "water_flows": [
+   {
+    "code": "FAS",
+    "name": "Fast (with waves or high velocity) (A)"
+   },
+   {
+    "code": "NOR",
+    "name": "Slow (B)"
+   },
+   {
+    "code": "STA",
+    "name": "Stagnant/intermittent (C)"
+   },
+   {
+    "code": "DRY",
+    "name": "Dry (D)"
+   }
+  ],
+  "water_colors": [
+   {
+    "code": "CL",
+    "name": "Clear/transparent (A)"
+   },
+   {
+    "code": "MU",
+    "name": "Muddy/turbid (B)"
+   },
+   {
+    "code": "FO",
+    "name": "Has foam (C)"
+   },
+   {
+    "code": "CO",
+    "name": "Has colors/altered color (D)"
+   }
+  ],
+  "habitats": [
+   {
+    "code": "SB",
+    "name": "Sand banks (A)"
+   },
+   {
+    "code": "SI",
+    "name": "Sand islands (B)"
+   },
+   {
+    "code": "RF",
+    "name": "Riffles, rapids, falls (D)"
+   },
+   {
+    "code": "AV",
+    "name": "Aquatic vegetation (E)"
+   },
+   {
+    "code": "SD",
+    "name": "Stone deposits (C)"
+   }
+  ],
+  "vegetation_types": [
+   {
+    "code": "H",
+    "name": "Herbs (A)"
+   },
+   {
+    "code": "B",
+    "name": "Shrubs (B)"
+   },
+   {
+    "code": "T",
+    "name": "Trees (C)"
+   }
+  ],
+  "channel_types": [
+   {
+    "code": "NAT",
+    "name": "Natural (Α)"
+   },
+   {
+    "code": "ART",
+    "name": "Artificial (concrete or stones with concrete) (Β)"
+   }
+  ],
+  "channel_forms": [
+   {
+    "code": "FLAT",
+    "name": "Flat (Α)"
+   },
+   {
+    "code": "U",
+    "name": "U Shape (Β)"
+   },
+   {
+    "code": "V",
+    "name": "V Shape (C)"
+   }
+  ],
+  "bank_types": [
+   {
+    "code": "NAT",
+    "name": "Natural (Α)"
+   },
+   {
+    "code": "ART",
+    "name": "Artificial (concrete or stones with concrete) (Β)"
+   },
+   {
+    "code": "LAS",
+    "name": "Layed stones with no concrete (C)"
+   }
+  ],
+  "fallen_biomass": [
+   {
+    "code": "FT",
+    "name": "Fallen trees (A)"
+   },
+   {
+    "code": "FB",
+    "name": "Fallen branches (B)"
+   },
+   {
+    "code": "FL",
+    "name": "Deposits of fallen leaves (C)"
+   }
+  ],
+  "stream_assessments": [
+   {
+    "code": "GOOD",
+    "name": "Good quality",
+    "description": "The ecosystem components are there: riparian vegetation, natural channel, good water quality, biodiversity"
+   },
+   {
+    "code": "MODERATE",
+    "name": "Moderate quality",
+    "description": "Some alterations, still biodiverse, with vegetation in the margins, water looks good…"
+   },
+   {
+    "code": "POOR",
+    "name": "Poor quality",
+    "description": "Highly modified / artificialized, loss of riparian vegetation, loss of habitats, polluted"
+   }
+  ]
+ }
+}

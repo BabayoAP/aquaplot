@@ -23,6 +23,11 @@ docstring, and name tests after the behaviour they protect, not the function the
   and must still reach the One Health rules. Every score column must name its published source.
 - **FHIR codings take their `display` from `fhir.code_system()`**; case-specific wording goes
   in `text`. Run the HL7 validator after changing `fhir.py` (docs/FHIR.md).
+- **Only what a person gave or confirmed crosses into OneAquaHealth formats**: the app submission
+  (`oah.app_submission`) and the `observation-indicators-oah` Observations, whose profile fixes
+  `status = final`. OAH codes are used verbatim, typos included. Validate with the OAH IG loaded
+  (docs/FHIR.md). `data/oah_reference.json` is a snapshot refreshed by
+  `scripts/fetch_oah_reference.py`; the app never calls the OAH API at run time.
 - **A review must never call the model again** (`assess.reassess`). Re-running it would let
   the model overwrite a correction a person just made.
 - **`data/habitat_indicators.json` is the single source of truth** for the field form: the

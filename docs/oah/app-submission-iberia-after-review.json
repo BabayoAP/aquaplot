@@ -1,0 +1,43 @@
+{
+  "target": "OneAquaHealth Citizen Science App",
+  "endpoint": "PUT https://api.enora-oah.eu/api/citizens/submit",
+  "schema": "CitizenSubmissionPutDTO",
+  "research_site": {
+    "code": "C3",
+    "name": "Vale das Flores",
+    "city": "Coimbra",
+    "lat": 40.19307,
+    "lon": -8.41945,
+    "distance_m": 5
+  },
+  "body": {
+    "latitude": 40.1931,
+    "longitude": -8.4195,
+    "researchSite": "C3",
+    "bottomChannelType": "NAT",
+    "overallAssessment": "MODERATE"
+  },
+  "carried": [
+    {
+      "field": "bottomChannelType",
+      "value": "NAT",
+      "from": "substrate = gravel"
+    },
+    {
+      "field": "overallAssessment",
+      "value": "MODERATE",
+      "from": "the screening band (Moderate), not the observer's own impression"
+    }
+  ],
+  "not_carried": [
+    "partly reinforced banks: the app separates concrete from laid stones, and AquaPlot does not ask which",
+    "patchy bank vegetation: the app asks whether each bank is covered, and 'patchy' is neither",
+    "3 answer(s) only the vision model gave (algae, flow, water_clarity): confirm them in the review to carry them",
+    "photographs: the app takes uploaded file ids, so photos must be attached in the app itself",
+    "how the place made you feel (joy, serenity, anger, fear): AquaPlot does not ask",
+    "dams, pipes, discharges, water abstraction, construction and water height: AquaPlot does not ask",
+    "the macroinvertebrates: the app's citizen form has no place for them; they travel in the FHIR export instead"
+  ],
+  "vocabulary": "oah-2026-09-28",
+  "note": "Built from the app's published answer codes. Only answers a person gave or confirmed are carried. Submitting needs an app account; AquaPlot prepares the body and does not send it."
+}

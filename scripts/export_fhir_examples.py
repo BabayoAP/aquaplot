@@ -18,7 +18,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aquaplot import fhir
+from aquaplot import fhir, oah
 from aquaplot.assess import Review, StreamAssessor, Submission, reassess
 from aquaplot.bioindex import TaxonObservation
 from aquaplot.habitat import Reading
@@ -28,10 +28,10 @@ from aquaplot.schema import PlaceRef, Region
 OUT = Path(__file__).resolve().parent.parent / "docs" / "fhir"
 WHEN = datetime(2026, 9, 27, 10, 30, tzinfo=UTC)
 
-COIMBRA = Region(
+COIMBRA = Region(  # at OneAquaHealth research site C3, Vale das Flores
     source="user",
-    lat=40.2056,
-    lon=-8.4195,
+    lat=40.19310,
+    lon=-8.41950,
     place=PlaceRef(id=1, name="Coimbra", display_name="Coimbra, Portugal", kind="municipality"),
     country=PlaceRef(id=2, name="Portugal", display_name="Portugal", kind="country"),
 )
@@ -82,9 +82,16 @@ async def build() -> dict[str, object]:
         Submission(
             photos=(Photo(), Photo()),
             region=COIMBRA,
-            site_name="Ribeira de Coselhas (example)",
+            site_name="Vale das Flores (example)",
             taxa=citizen("Perlidae", "Chironomidae", "Culicidae"),
-            answers=(Reading(key="access", value="contact", source="citizen"), Reading(key="odour", value="none", source="citizen")),
+            answers=(
+                Reading(key="access", value="contact", source="citizen"),
+                Reading(key="odour", value="none", source="citizen"),
+                Reading(key="water_colour", value="natural", source="citizen"),
+                Reading(key="substrate", value="gravel", source="citizen"),
+                Reading(key="bank_modification", value="partly_reinforced", source="citizen"),
+                Reading(key="riparian_vegetation", value="patchy", source="citizen"),
+            ),
             when=WHEN,
         )
     )
@@ -111,9 +118,16 @@ def main() -> int:
     examples = OUT / "examples"
     examples.mkdir(parents=True, exist_ok=True)
     (OUT / "CodeSystem-stream-health.json").write_text(json.dumps(fhir.code_system(), indent=2) + "\n", encoding="utf-8")
-    for name, assessment in asyncio.run(build()).items():
+    built = asyncio.run(build())
+    for name, assessment in built.items():
         (examples / f"{name}.json").write_text(json.dumps(fhir.bundle(assessment), indent=2) + "\n", encoding="utf-8")
         print(f"wrote {name}: {assessment.ecology.index.name}, band {assessment.ecology.band.value}, {assessment.signal.worst.value}")
+    # The same Coimbra check as the OneAquaHealth Citizen Science App would submit it.
+    app_example = OUT.parent / "oah" / "app-submission-iberia-after-review.json"
+    app_example.parent.mkdir(parents=True, exist_ok=True)
+    submission = oah.app_submission(built["citizen-identified-iberia-after-review"])
+    app_example.write_text(json.dumps(submission, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"wrote {app_example.name}: research site {submission['research_site']['code']}")
     return 0
 
 

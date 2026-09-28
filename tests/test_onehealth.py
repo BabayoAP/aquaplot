@@ -169,7 +169,8 @@ def test_bundle_holds_the_site_the_panel_the_evidence_and_the_flags(assessment):
     kinds = [e["resource"]["resourceType"] for e in bundle["entry"]]
     assert bundle["resourceType"] == "Bundle" and bundle["type"] == "collection"
     assert kinds.count("Location") == 1 and kinds.count("Provenance") == 1
-    assert kinds.count("Observation") == 6  # status, survey, habitat, and one per One Health domain
+    own = [e for e in bundle["entry"] if e["resource"]["resourceType"] == "Observation" and not e["resource"]["id"].startswith("oah-")]
+    assert len(own) == 6  # status, survey, habitat, and one per One Health domain
     assert "Flag" in kinds
 
 
@@ -206,6 +207,8 @@ def test_every_project_code_is_defined_in_the_published_code_system(assessment):
     defined = {c["code"] for c in fhir.code_system()["concept"]}
     used = set(re.findall(r"'system': '" + re.escape(fhir.CODE_SYSTEM) + r"', 'code': '([^']+)'", str(fhir.bundle(assessment))))
     assert used and used <= defined, used - defined
+    oah_used = set(re.findall(r"'system': '" + re.escape(fhir.OAH_CODE_SYSTEM) + r"', 'code': '([^']+)'", str(fhir.bundle(assessment))))
+    assert oah_used and oah_used <= set(fhir.OAH_CODES)
 
 
 def test_no_empty_arrays_reach_the_export():
@@ -244,6 +247,38 @@ def test_no_code_pretends_to_be_a_standard_it_is_not(assessment):
     text = str(fhir.bundle(assessment))
     assert "loinc" not in text.lower()
     assert fhir.CODE_SYSTEM in text
+
+
+def test_only_what_the_citizen_reported_becomes_a_final_oah_indicator(assessment):
+    """The OAH profile fixes status to final; a model's unconfirmed guess is not a final observation."""
+    oah_obs = [e["resource"] for e in fhir.bundle(assessment)["entry"] if e["resource"]["id"].startswith("oah-")]
+    assert {o["code"]["coding"][0]["code"] for o in oah_obs} == {"foam", "filamentous-algae"}  # odour and algae were the citizen's
+    for o in oah_obs:
+        assert o["meta"]["profile"] == [fhir.OAH_INDICATOR_PROFILE] and o["status"] == "final"
+        assert o["code"]["coding"][0]["system"] == fhir.OAH_CODE_SYSTEM
+    algae = next(o for o in oah_obs if o["code"]["coding"][0]["code"] == "filamentous-algae")
+    assert algae["valueCodeableConcept"]["coding"][0]["code"] == "extensive"  # a bloom
+
+
+def test_confirmed_animals_become_the_oah_macroinvertebrate_and_diptera_indicators(assessment):
+    from dataclasses import replace
+
+    confirmed = [replace(t, confirmed=True) for t in assessment.ecology.scored]
+    a = replace(assessment, ecology=replace(assessment.ecology, scored=confirmed))
+    oah_obs = {e["resource"]["code"]["coding"][0]["code"]: e["resource"] for e in fhir.bundle(a)["entry"] if e["resource"]["id"].startswith("oah-")}
+    assert oah_obs["macroinvertebreates"]["valueQuantity"] == {"value": 4, "unit": "families", "system": "http://unitsofmeasure.org", "code": "1"}
+    assert "diptera" in oah_obs  # Culicidae
+
+
+def test_the_location_conforms_to_the_oah_profile_and_names_the_research_site(assessment):
+    from dataclasses import replace
+
+    loc = fhir.location_resource(assessment)
+    assert loc["meta"]["profile"] == [fhir.OAH_LOCATION_PROFILE] and loc["identifier"] and loc["mode"] == "instance"
+    assert fhir.OAH_LOCATION_ID not in str(loc)  # a city centroid is not a research site
+    at_c3 = replace(assessment, region=assessment.region.model_copy(update={"lat": 40.19310, "lon": -8.41950}))
+    ids = {i["system"]: i["value"] for i in fhir.location_resource(at_c3)["identifier"]}
+    assert ids[fhir.OAH_LOCATION_ID] == "C3"
 
 
 def test_the_bundle_is_json_serialisable(assessment):

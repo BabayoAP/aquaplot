@@ -22,6 +22,17 @@ So an AquaPlot assessment becomes:
 * one ``Provenance`` recording who observed, what assembled it and which catalogue
   versions were used.
 
+**Speaking the OneAquaHealth project's own profiles.** The project publishes a FHIR
+IG (``hl7-eu/oah``, canonical ``http://hl7.eu/fhir/ig/oah``) with a Location profile
+and an indicator Observation profile coded from its own CodeSystem. The Location
+here conforms to ``location-oah`` and carries the project's site code when the
+check was made at one of its research sites (oah.py). Alongside AquaPlot's panel,
+every indicator the IG has a code for - macroinvertebrates, Diptera, foam/colour/
+smell, riparian vegetation, morphology, hydrology, filamentous algae, invasive
+organisms - becomes an ``observation-indicators-oah`` Observation. That profile
+fixes ``status`` to ``final``, so only evidence a person gave or confirmed goes
+into one; what the model alone saw stays in the preliminary AquaPlot panel.
+
 Entries are addressed by ``urn:uuid`` full URLs derived deterministically from the
 assessment, and every reference inside the bundle uses them, so a receiver can
 resolve the whole graph without a server. The bundles are checked with the
@@ -45,13 +56,40 @@ import re
 import uuid
 from typing import Any
 
-from . import bioindex, habitat, onehealth
+from . import bioindex, habitat, oah, onehealth
 from .assess import Assessment
 from .bioindex import Band
 from .onehealth import Domain, Level
+from .store import site_key
 
 CODE_SYSTEM = "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health"
 NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, CODE_SYSTEM)
+SITE_IDENTIFIER = "https://github.com/BabayoAP/aquaplot/site"
+
+# The OneAquaHealth IG (github.com/hl7-eu/oah): its profiles, its CodeSystem, and the
+# identifier system its examples give project locations.
+OAH_IG = "http://hl7.eu/fhir/ig/oah"
+OAH_CODE_SYSTEM = f"{OAH_IG}/CodeSystem/temporarySystem-oah-eu"
+OAH_INDICATOR_PROFILE = f"{OAH_IG}/StructureDefinition/observation-indicators-oah"
+OAH_LOCATION_PROFILE = f"{OAH_IG}/StructureDefinition/location-oah"
+OAH_LOCATION_ID = "https://oneaquahealth.eu/location-id"
+
+# The codes used from the OAH CodeSystem, with its displays verbatim (typos included:
+# a code is an identifier, and "correcting" one would break it).
+OAH_CODES: dict[str, str] = {
+    "macroinvertebreates": "Benthic Macro invertebrates count",
+    "diptera": "Diptera",
+    "foam": "Foam/colour/smell",
+    "riparianVegetation": "Riparian vegetation",
+    "morophology": "Morphology of the streams",
+    "hydrology": "Hydrology of the stream",
+    "filamentous-algae": "Filamentous algae",
+    "invasiveOrganisms": "Invasive invertebrate, plants and fish",
+    "absent": "Absent",
+    "present": "Present",
+    "extensive": "Extensive",
+}
+ALGAE_EXTENT = {"none": "absent", "patchy": "present", "extensive": "extensive", "bloom": "extensive"}
 
 # HL7 terminology, used unchanged where it applies.
 OBS_CATEGORY = "http://terminology.hl7.org/CodeSystem/observation-category"
@@ -160,12 +198,28 @@ CITIZEN = {"display": "Citizen scientist"}
 
 
 def location_resource(a: Assessment) -> dict[str, Any]:
+    """The monitoring point, as the OneAquaHealth IG's Location profile.
+
+    The profile requires an identifier. AquaPlot's own is the site key its trends
+    are grouped by; when the check was made at one of the project's research sites
+    the project's code is added, which is what lets a receiver join this reading to
+    the laboratory data filed under the same site.
+    """
+    key = site_key(a.region.lat, a.region.lon)
+    identifiers = [{"system": SITE_IDENTIFIER, "value": key or f"check-{a.id}"}]
+    research = oah.research_site_at(a.region.lat, a.region.lon)
+    if research is not None:
+        site, _ = research
+        identifiers.append({"system": OAH_LOCATION_ID, "value": site.code})
     resource: dict[str, Any] = {
         "resourceType": "Location",
         "id": _id("site", a.id),
+        "meta": {"profile": [OAH_LOCATION_PROFILE]},
+        "identifier": identifiers,
         "status": "active",
-        "name": a.site_name or "Unnamed stream site",
-        "description": "Urban freshwater monitoring point recorded by a citizen scientist",
+        "name": a.site_name or (f"{research[0].name} (OneAquaHealth {research[0].code})" if research else "Unnamed stream site"),
+        "description": "Urban freshwater monitoring point recorded by a citizen scientist"
+        + (f"; OneAquaHealth research site {research[0].code}, {research[0].city}" if research else ""),
         "mode": "instance",
         "physicalType": {
             "coding": [{"system": "http://terminology.hl7.org/CodeSystem/location-physical-type", "code": "area", "display": "Area"}]
@@ -313,6 +367,110 @@ def pressure_observation(a: Assessment) -> dict[str, Any]:
     }
 
 
+def _oah(code: str) -> dict[str, Any]:
+    return {"coding": [{"system": OAH_CODE_SYSTEM, "code": code, "display": OAH_CODES[code]}], "text": OAH_CODES[code]}
+
+
+def _answer_component(row: habitat.ScoredReading) -> dict[str, Any]:
+    return _component(
+        _habitat_code(row.key),
+        row.question,
+        valueCodeableConcept=_code(_answer_code(row.key, row.value), row.label, f"{row.label} (reported by the citizen)"),
+    )
+
+
+def _taxon_component(t: bioindex.ScoredTaxon) -> dict[str, Any]:
+    return {"code": _code(_taxon_code(t), f"{t.family or t.group} ({t.plain_name})"), "valueCodeableConcept": _oah("present")}
+
+
+def oah_indicator_observations(a: Assessment) -> list[dict[str, Any]]:
+    """The check's evidence as OneAquaHealth indicator Observations (profile ``observation-indicators-oah``).
+
+    The profile fixes status to ``final``, and a model's unconfirmed guess is not a
+    final observation by anyone, so only what a person gave or confirmed is here:
+    habitat answers with ``source == "citizen"`` and animals marked confirmed.
+    """
+    rows = {k: r for k, r in oah.person_backed(a).items() if r.score is not None}
+    taxa = [t for t in (*a.ecology.scored, *a.ecology.recorded) if t.confirmed]
+    out: list[dict[str, Any]] = []
+
+    def add(code: str, note: str, value: dict[str, Any] | None = None, components: list[dict[str, Any]] | None = None) -> None:
+        out.append(
+            {
+                "resourceType": "Observation",
+                "id": _id("oah", code.lower(), a.id),
+                "meta": {"profile": [OAH_INDICATOR_PROFILE]},
+                "status": "final",
+                "category": [{"coding": [{"system": OBS_CATEGORY, "code": "survey", "display": "Survey"}]}],
+                "code": _oah(code),
+                "subject": _subject(a),
+                "effectiveDateTime": a.created_at,
+                "performer": [CITIZEN],
+                **(value or {}),
+                "component": components or [],
+                "note": [{"text": note}],
+            }
+        )
+
+    if taxa:
+        families = {(t.family or t.group or t.name) for t in taxa}
+        add(
+            "macroinvertebreates",
+            "Families present in one kick sample sorted in a tray and identified by a citizen; a count of families, not of individuals.",
+            {"valueQuantity": _quantity(len(families), "families", "1")},
+            [_taxon_component(t) for t in taxa],
+        )
+    if flies := [t for t in taxa if t.group == "Diptera"]:
+        add(
+            "diptera",
+            "True-fly larvae found in the tray. Culicidae are mosquito larvae; Psychodidae are drain-fly larvae.",
+            {"valueCodeableConcept": _oah("present")},
+            [_taxon_component(t) for t in flies],
+        )
+    if foam := [rows[k] for k in ("water_colour", "foam_or_sheen", "odour") if k in rows]:
+        add(
+            "foam",
+            "Present when any of colour, foam or smell was reported as other than natural.",
+            {"valueCodeableConcept": _oah("present" if any(r.score for r in foam) else "absent")},
+            [_answer_component(r) for r in foam],
+        )
+    if "riparian_vegetation" in rows:
+        r = rows["riparian_vegetation"]
+        add(
+            "riparianVegetation",
+            "Vegetation along both banks, as the citizen described it.",
+            {"valueCodeableConcept": _code(_answer_code(r.key, r.value), r.label)},
+            [_answer_component(rows[k]) for k in ("riparian_vegetation", "shade") if k in rows],
+        )
+    if morphology := [rows[k] for k in ("bank_modification", "substrate", "sediment_deposit") if k in rows]:
+        add("morophology", "Channel, banks and bed, as the citizen described them.", None, [_answer_component(r) for r in morphology])
+    if "flow" in rows:
+        r = rows["flow"]
+        add(
+            "hydrology",
+            "Flow type at the time of the visit.",
+            {"valueCodeableConcept": _code(_answer_code(r.key, r.value), r.label)},
+            [_answer_component(r)],
+        )
+    if "algae" in rows:
+        r = rows["algae"]
+        add(
+            "filamentous-algae",
+            "Visible algae on the bed and in the water; a bloom is recorded as extensive.",
+            {"valueCodeableConcept": _oah(ALGAE_EXTENT[r.value])},
+            [_answer_component(r)],
+        )
+    confirmed_names = {t.name.strip().lower() for t in taxa}
+    if invasive := [i for i in a.invasives if i.name.strip().lower() in confirmed_names]:
+        add(
+            "invasiveOrganisms",
+            "Listed invasive species identified by the citizen.",
+            {"valueCodeableConcept": _oah("present")},
+            [{"code": _oah("invasiveOrganisms"), "valueString": i.listed.summary()} for i in invasive],
+        )
+    return out
+
+
 def domain_observations(a: Assessment) -> list[dict[str, Any]]:
     """One Observation per One Health domain, carrying the rule engine's level."""
     out = []
@@ -417,6 +575,7 @@ def bundle(a: Assessment) -> dict[str, Any]:
         status_observation(a),
         survey_observation(a),
         pressure_observation(a),
+        *oah_indicator_observations(a),
         *domain_observations(a),
         *flags(a),
         provenance(a),

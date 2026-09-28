@@ -274,6 +274,7 @@
       <button type="button" class="ghost" id="reviewagain">Review the details</button>
       <button type="button" class="ghost" id="historybtn" hidden>See this site's history</button>
       <button type="button" class="ghost" id="fhirbtn">Export as FHIR</button>
+      <button type="button" class="ghost" id="oahbtn" title="Your answers in the OneAquaHealth Citizen Science App's own codes">Export for the OneAquaHealth app</button>
       <button type="button" class="ghost" id="again">Check another spot</button>
     </div>
     <div id="rbadges"></div>
@@ -779,6 +780,9 @@ function render(d) {
     ["Confidence in this reading", `${d.certainty}%`],
     ["Where", d.region.place ? d.region.place.display_name : "not resolved"],
   ];
+  if (d.research_site) rows.push(["OneAquaHealth research site",
+    `${d.research_site.code} · ${d.research_site.name}, ${d.research_site.city} (${d.research_site.distance_m} m away). ` +
+    "The project samples here too, so your reading can be compared with its laboratory data."]);
   rows.forEach(([k, v]) => {
     const dt = document.createElement("dt"); dt.textContent = k;
     const dd = document.createElement("dd"); dd.textContent = v;
@@ -792,6 +796,7 @@ function render(d) {
   $("rfoot").textContent = `Assessment ${d.id} · ${d.version} · index ${d.ecology.catalogue_version} · form ${d.pressures.form_version} · read by ${d.observer}`;
 
   $("fhirbtn").onclick = () => window.open(`/api/assess/${d.id}/fhir`, "_blank");
+  $("oahbtn").onclick = () => window.open(`/api/assess/${d.id}/oah-app`, "_blank");
   $("reportbtn").onclick = () => window.open(`/api/assess/${d.id}/report`, "_blank");
   const key = siteKeyOf(d);
   $("historybtn").hidden = !key;

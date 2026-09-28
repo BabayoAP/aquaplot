@@ -1,17 +1,32 @@
 {
   "resourceType": "Bundle",
-  "id": "aquaplot-e062e041e285",
+  "id": "aquaplot-2fc22efc1555",
   "type": "collection",
   "timestamp": "2026-09-27T10:30:00+00:00",
   "entry": [
     {
-      "fullUrl": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb",
+      "fullUrl": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1",
       "resource": {
         "resourceType": "Location",
-        "id": "site-e062e041e285",
+        "id": "site-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/location-oah"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://github.com/BabayoAP/aquaplot/site",
+            "value": "40.193,-8.419"
+          },
+          {
+            "system": "https://oneaquahealth.eu/location-id",
+            "value": "C3"
+          }
+        ],
         "status": "active",
-        "name": "Ribeira de Coselhas (example)",
-        "description": "Urban freshwater monitoring point recorded by a citizen scientist",
+        "name": "Vale das Flores (example)",
+        "description": "Urban freshwater monitoring point recorded by a citizen scientist; OneAquaHealth research site C3, Coimbra",
         "mode": "instance",
         "physicalType": {
           "coding": [
@@ -23,7 +38,7 @@
           ]
         },
         "position": {
-          "latitude": 40.2056,
+          "latitude": 40.1931,
           "longitude": -8.4195
         },
         "address": {
@@ -32,15 +47,15 @@
         },
         "text": {
           "status": "generated",
-          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Ribeira de Coselhas (example)</div>"
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Vale das Flores (example)</div>"
         }
       }
     },
     {
-      "fullUrl": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc",
+      "fullUrl": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38",
       "resource": {
         "resourceType": "Observation",
-        "id": "status-e062e041e285",
+        "id": "status-2fc22efc1555",
         "status": "amended",
         "category": [
           {
@@ -64,7 +79,7 @@
           "text": "Urban stream ecological status, citizen screening"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -198,7 +213,7 @@
               "text": "Visual habitat pressure index, 0 none to 100 severe"
             },
             "valueQuantity": {
-              "value": 41.1,
+              "value": 34.5,
               "unit": "%",
               "system": "http://unitsofmeasure.org",
               "code": "%"
@@ -216,7 +231,7 @@
               "text": "Certainty of this assessment, as evidenced"
             },
             "valueQuantity": {
-              "value": 52.7,
+              "value": 62.3,
               "unit": "%",
               "system": "http://unitsofmeasure.org",
               "code": "%"
@@ -233,7 +248,7 @@
               ],
               "text": "Observations a person confirmed or supplied"
             },
-            "valueInteger": 4
+            "valueInteger": 8
           },
           {
             "code": {
@@ -343,7 +358,7 @@
             "text": "A vision model, shown the sample photograph without the observer's identifications, independently agreed on 1 of them; the observer kept their own identification on 1 after comparing."
           },
           {
-            "text": "Limitations: 8 habitat question(s) went unanswered (water_colour, foam_or_sheen, litter, riparian_vegetation, bank_modification, substrate, sediment_deposit, shade), so the pressure score covers less of the site; 4 of 12 habitat questions were answered; each unanswered one leaves part of the site undescribed"
+            "text": "Limitations: 4 habitat question(s) went unanswered (foam_or_sheen, litter, sediment_deposit, shade), so the pressure score covers less of the site; 8 of 12 habitat questions were answered; each unanswered one leaves part of the site undescribed"
           }
         ],
         "text": {
@@ -353,10 +368,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:0dd4e5a0-76fe-5559-864f-d20f3fd0d4cd",
+      "fullUrl": "urn:uuid:c9752659-7c0a-557b-943b-10b0ce54c40a",
       "resource": {
         "resourceType": "Observation",
-        "id": "survey-e062e041e285",
+        "id": "survey-2fc22efc1555",
         "status": "final",
         "category": [
           {
@@ -380,7 +395,7 @@
           "text": "Benthic macroinvertebrate survey"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -390,7 +405,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "component": [
@@ -464,10 +479,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:5cc6c058-1e3e-5096-a51e-de64e6171726",
+      "fullUrl": "urn:uuid:a37cea7c-b9d1-5c7d-8f8b-c524118a00d4",
       "resource": {
         "resourceType": "Observation",
-        "id": "habitat-e062e041e285",
+        "id": "habitat-2fc22efc1555",
         "status": "final",
         "category": [
           {
@@ -491,7 +506,7 @@
           "text": "Visual stream habitat and pressure assessment"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -501,7 +516,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "component": [
@@ -532,6 +547,28 @@
               "coding": [
                 {
                   "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-water-colour",
+                  "display": "What colour is the water?"
+                }
+              ],
+              "text": "What colour is the water?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "water-colour-natural",
+                  "display": "Natural - clear, or tea-coloured from peat or leaves"
+                }
+              ],
+              "text": "Natural - clear, or tea-coloured from peat or leaves (reported by citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
                   "code": "habitat-algae",
                   "display": "How much algae is there?"
                 }
@@ -554,6 +591,50 @@
               "coding": [
                 {
                   "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-riparian-vegetation",
+                  "display": "What is growing along the banks?"
+                }
+              ],
+              "text": "What is growing along the banks?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "riparian-vegetation-patchy",
+                  "display": "Patchy - gaps between planted areas"
+                }
+              ],
+              "text": "Patchy - gaps between planted areas (reported by citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-bank-modification",
+                  "display": "What are the banks made of?"
+                }
+              ],
+              "text": "What are the banks made of?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "bank-modification-partly-reinforced",
+                  "display": "Partly reinforced - some walls, gabions or rip-rap"
+                }
+              ],
+              "text": "Partly reinforced - some walls, gabions or rip-rap (reported by citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
                   "code": "habitat-flow",
                   "display": "How is the water moving?"
                 }
@@ -569,6 +650,28 @@
                 }
               ],
               "text": "Slow - barely moving (reported by model)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-substrate",
+                  "display": "What is the stream bed made of?"
+                }
+              ],
+              "text": "What is the stream bed made of?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "substrate-gravel",
+                  "display": "Gravel and pebbles"
+                }
+              ],
+              "text": "Gravel and pebbles (reported by citizen)"
             }
           },
           {
@@ -623,10 +726,536 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:c28027b5-494e-54c5-96ce-f8ccf4a0f442",
+      "fullUrl": "urn:uuid:c749f958-5094-5515-ac2c-486d346cb7d4",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-ecosystem-e062e041e285",
+        "id": "oah-macroinvertebreates-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "macroinvertebreates",
+              "display": "Benthic Macro invertebrates count"
+            }
+          ],
+          "text": "Benthic Macro invertebrates count"
+        },
+        "subject": {
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueQuantity": {
+          "value": 3,
+          "unit": "families",
+          "system": "http://unitsofmeasure.org",
+          "code": "1"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-perlidae",
+                  "display": "Perlidae (Stonefly)"
+                }
+              ],
+              "text": "Perlidae (Stonefly)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-chironomidae",
+                  "display": "Chironomidae (Midge larva (bloodworm))"
+                }
+              ],
+              "text": "Chironomidae (Midge larva (bloodworm))"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-culicidae",
+                  "display": "Culicidae (Mosquito larva (wriggler))"
+                }
+              ],
+              "text": "Culicidae (Mosquito larva (wriggler))"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Families present in one kick sample sorted in a tray and identified by a citizen; a count of families, not of individuals."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Benthic Macro invertebrates count</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:fd5c79a8-a567-5c0b-880d-e5b2a73dd219",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "oah-diptera-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "diptera",
+              "display": "Diptera"
+            }
+          ],
+          "text": "Diptera"
+        },
+        "subject": {
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "present",
+              "display": "Present"
+            }
+          ],
+          "text": "Present"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-chironomidae",
+                  "display": "Chironomidae (Midge larva (bloodworm))"
+                }
+              ],
+              "text": "Chironomidae (Midge larva (bloodworm))"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-culicidae",
+                  "display": "Culicidae (Mosquito larva (wriggler))"
+                }
+              ],
+              "text": "Culicidae (Mosquito larva (wriggler))"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+                  "code": "present",
+                  "display": "Present"
+                }
+              ],
+              "text": "Present"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "True-fly larvae found in the tray. Culicidae are mosquito larvae; Psychodidae are drain-fly larvae."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Diptera: Present</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:505c2e11-e637-50f5-9d6c-c8854dafbc38",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "oah-foam-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "foam",
+              "display": "Foam/colour/smell"
+            }
+          ],
+          "text": "Foam/colour/smell"
+        },
+        "subject": {
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "absent",
+              "display": "Absent"
+            }
+          ],
+          "text": "Absent"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-water-colour",
+                  "display": "What colour is the water?"
+                }
+              ],
+              "text": "What colour is the water?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "water-colour-natural",
+                  "display": "Natural - clear, or tea-coloured from peat or leaves"
+                }
+              ],
+              "text": "Natural - clear, or tea-coloured from peat or leaves (reported by the citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-odour",
+                  "display": "What can you smell? (only you can answer this)"
+                }
+              ],
+              "text": "What can you smell? (only you can answer this)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "odour-none",
+                  "display": "Nothing unusual"
+                }
+              ],
+              "text": "Nothing unusual (reported by the citizen)"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Present when any of colour, foam or smell was reported as other than natural."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Foam/colour/smell: Absent</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:d4e62317-92c0-5867-87a1-d2a4a441dbbd",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "oah-riparianvegetation-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "riparianVegetation",
+              "display": "Riparian vegetation"
+            }
+          ],
+          "text": "Riparian vegetation"
+        },
+        "subject": {
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "riparian-vegetation-patchy",
+              "display": "Patchy - gaps between planted areas"
+            }
+          ],
+          "text": "Patchy - gaps between planted areas"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-riparian-vegetation",
+                  "display": "What is growing along the banks?"
+                }
+              ],
+              "text": "What is growing along the banks?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "riparian-vegetation-patchy",
+                  "display": "Patchy - gaps between planted areas"
+                }
+              ],
+              "text": "Patchy - gaps between planted areas (reported by the citizen)"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Vegetation along both banks, as the citizen described it."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Riparian vegetation: Patchy - gaps between planted areas</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:d1e48554-716e-50ce-abbf-ff5cb08c5c5a",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "oah-morophology-2fc22efc1555",
+        "meta": {
+          "profile": [
+            "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
+          ]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.eu/fhir/ig/oah/CodeSystem/temporarySystem-oah-eu",
+              "code": "morophology",
+              "display": "Morphology of the streams"
+            }
+          ],
+          "text": "Morphology of the streams"
+        },
+        "subject": {
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-bank-modification",
+                  "display": "What are the banks made of?"
+                }
+              ],
+              "text": "What are the banks made of?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "bank-modification-partly-reinforced",
+                  "display": "Partly reinforced - some walls, gabions or rip-rap"
+                }
+              ],
+              "text": "Partly reinforced - some walls, gabions or rip-rap (reported by the citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-substrate",
+                  "display": "What is the stream bed made of?"
+                }
+              ],
+              "text": "What is the stream bed made of?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "substrate-gravel",
+                  "display": "Gravel and pebbles"
+                }
+              ],
+              "text": "Gravel and pebbles (reported by the citizen)"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Channel, banks and bed, as the citizen described them."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Morphology of the streams</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:a27a4f26-4100-588e-995c-b715ae7b601c",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "onehealth-ecosystem-2fc22efc1555",
         "status": "final",
         "category": [
           {
@@ -659,7 +1288,7 @@
           "text": "One Health signal: ecosystem health"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -669,7 +1298,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "valueCodeableConcept": {
@@ -731,10 +1360,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:22585432-5b46-528f-b8c1-d07a91c6c183",
+      "fullUrl": "urn:uuid:202b06ec-ab58-595e-adef-3d379d092737",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-human-e062e041e285",
+        "id": "onehealth-human-2fc22efc1555",
         "status": "final",
         "category": [
           {
@@ -767,7 +1396,7 @@
           "text": "One Health signal: human health"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -777,7 +1406,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "valueCodeableConcept": {
@@ -866,10 +1495,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:82b29212-5602-55ba-ab7b-4f953adf04c5",
+      "fullUrl": "urn:uuid:cfc4e78d-05e7-5552-9984-4ba1994be667",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-animal-e062e041e285",
+        "id": "onehealth-animal-2fc22efc1555",
         "status": "final",
         "category": [
           {
@@ -902,7 +1531,7 @@
           "text": "One Health signal: animal health"
         },
         "subject": {
-          "reference": "urn:uuid:5a5acf12-3a18-57a4-bce8-ea131a9c6cdb"
+          "reference": "urn:uuid:7515fb17-32ec-5c1c-9396-9932a21403c1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -912,7 +1541,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "valueCodeableConcept": {
@@ -974,13 +1603,13 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:6bff5679-89ba-54b5-b716-4f8987db0717",
+      "fullUrl": "urn:uuid:8bb1103d-5bc9-5737-8afb-8dc2313393e3",
       "resource": {
         "resourceType": "Provenance",
-        "id": "prov-e062e041e285",
+        "id": "prov-2fc22efc1555",
         "target": [
           {
-            "reference": "urn:uuid:52efa518-f078-51cd-9e16-2628776915dc"
+            "reference": "urn:uuid:a77dc494-a04a-5b58-acb9-e34c95fd9c38"
           }
         ],
         "recorded": "2026-09-27T10:30:00+00:00",

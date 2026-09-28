@@ -16,9 +16,11 @@ readable rule engine then turn the evidence into a Water Framework Directive scr
 visual pressure score and findings for ecosystem, human and animal health, each carrying its
 evidence and its action. A health alert waits for a person to confirm what it rests on. A
 second visit to the same spot becomes a trend, a finding that says "report this" comes with a
-report to send, and every assessment exports as a FHIR R4 Bundle that passes the official HL7
-validator, so an ecosystem reading can reach the health systems on the other side of the One
-Health link.
+report to send, and every assessment exports as a FHIR R4 Bundle that conforms to the
+OneAquaHealth project's own FHIR IG and passes the official HL7 validator, so an ecosystem
+reading can reach the health systems on the other side of the One Health link. A check made at
+one of the project's 106 research sites is linked to it by the project's own site code, and can
+be exported as the project's Citizen Science App submission in the app's own answer codes.
 
 ## Track alignment
 
@@ -66,28 +68,48 @@ and covered by tests.
   early-warning feed of sites whose latest state reached concern; dated dry and stagnant
   findings as the urban drought signal; and an incident report that turns a complaint into
   evidence.
-- **Track 7, Digital Health Standards.** A FHIR R4 export that passes the HL7 validator with no
-  errors or warnings, a published CodeSystem generated from the app's own vocabularies, and no
-  code pretending to be LOINC. See [FHIR.md](FHIR.md).
+- **Track 7, Digital Health Standards.** A FHIR R4 export that conforms to the OneAquaHealth IG
+  ([`hl7-eu/oah`](https://github.com/hl7-eu/oah)): `location-oah` for the site, carrying the
+  project's own site code at a research site, and `observation-indicators-oah` for every IG
+  indicator the check has evidence for, coded from the IG's CodeSystem. It passes the HL7
+  validator with the IG loaded, with no errors or warnings. The profile fixes `status = final`,
+  so only evidence a person gave or confirmed goes into one. What the IG has no code for yet
+  (the WFD band, BMWP, the second opinion) is in a published CodeSystem generated from the
+  app's own vocabularies, and no code pretends to be LOINC. See [FHIR.md](FHIR.md).
 
 ## How it relates to the OneAquaHealth app
 
-The project already has a citizen-science app for stream assessment. AquaPlot is designed to
-sit beside it: the identification check, the One Health read-out, the authority report and the
-FHIR hand-off are the parts it adds, and everything it records leaves as CSV, GeoJSON or FHIR so
-it can feed the project's data rather than compete with it. The field form is modelled on the
-project's published site-characterisation protocol, and the five research cities ship as entry
-points.
+The project's Citizen Science App records a site's channel, banks, flow, water colour,
+habitats, vegetation and an overall Good / Moderate / Poor judgement. It does not ask what lives
+in the water. AquaPlot is designed to sit beside it: the animals and the check on them, the One
+Health read-out, the authority report and the FHIR hand-off are the parts it adds. It meets the
+project in the project's own terms, from a snapshot of the project's public API
+(`api.enora-oah.eu`):
+
+- **Research sites.** The 106 sites in Benevento, Coimbra, Ghent, Oslo and Toulouse are on the
+  map. A check within 200 m of one is linked to it by code on the result page, in the FHIR
+  Location's identifier and in the app export. A citizen reading where the project's laboratory
+  also samples is the one the project can compare against its own data.
+- **The app's submission.** `GET /api/assess/{id}/oah-app` builds the app's
+  `CitizenSubmissionPutDTO` from the answers a person gave or confirmed, in the app's answer
+  codes. Each field names its source, and each answer that did not translate is listed with the
+  reason. AquaPlot does not send it, because submitting needs an app account.
+- **The FHIR IG.** As above.
+
+The field form is modelled on the project's published field sampling protocol
+([Zenodo 20344421](https://zenodo.org/records/20344421)).
 
 ## Against the judging criteria
 
+Weights are from the Devpost rules; each criterion is scored 1–10.
+
 | Criterion | Where to look |
 |---|---|
-| **Impact & alignment with the OneAquaHealth mission** | Benthic macroinvertebrates, the indicator group the project's protocols put first, scored with the index Iberian practice uses where the project's Coimbra pilot is. Mosquito larvae and parasite-host snails carried through to human and animal findings. Every finding ends in an action split between the citizen, the community and the authority, and the authority's action arrives as a document the citizen can send. |
-| **Innovation & creativity** | The model as a *blind second opinion* on the volunteer rather than the identifier: questions ranked by whether the answer changes the band, with the feature that settles each. Plus an alert that waits for a human and a review that supersedes a visit instead of inventing one. |
-| **Architecture** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 210 tests run with no network and no model. The FHIR export is validated against the HL7 validator. The whole system degrades: no model, no place, no coordinates and no photo each cost a named certainty factor instead of an error. |
-| **UX** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks do not have signal. |
-| **Scale** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter; CSV, GeoJSON and FHIR mean the data outlives this deployment. |
+| **Impact & alignment with the OneAquaHealth mission (30%)** | Benthic macroinvertebrates, the indicator group the project's protocols put first, scored with the index Iberian practice uses where the project's Coimbra pilot is. These are exactly what the project's own Citizen Science App does not ask about. Mosquito larvae and parasite-host snails are carried through to human and animal findings. Checks at the project's 106 research sites are linked to them by the project's site code, and every check can leave in the project's own formats: its app's submission and its FHIR IG. Every finding ends in an action split between the citizen, the community and the authority, and the authority's action arrives as a document the citizen can send. |
+| **Innovation & creativity (20%)** | The model as a *blind second opinion* on the volunteer rather than the identifier: questions ranked by whether the answer changes the band, with the feature that settles each. Plus an alert that waits for a human, a review that supersedes a visit instead of inventing one, and one rule applied to every hand-off: only what a person stands behind crosses into the project's formats. |
+| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 222 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The whole system degrades: no model, no place, no coordinates and no photo each cost a named certainty factor instead of an error. |
+| **Usability & UX (15%)** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks do not have signal. |
+| **Feasibility & scalability (15%)** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter. The project's own FHIR IG and app schema are the integration path, not a new one. CSV, GeoJSON and FHIR mean the data outlives this deployment. |
 
 ## Build timeline and prior work
 
@@ -98,13 +120,14 @@ here, in the README and in the first commit message rather than left to be disco
 
 | When | What |
 |---|---|
-| Sep 11–17, 2026 | **Prior work, not part of this submission.** SpeciesGuard: the classification pipeline, the certainty rule and evidence trail, the cached iNaturalist client, pluggable model backends, and the area viewer. Its PRD is at [PRD-SPECIESGUARD.md](PRD-SPECIESGUARD.md) and its own submission notes at [HACKATHON-NEXTSTEP.md](HACKATHON-NEXTSTEP.md). |
+| Sep 16–17, 2026 | **SpeciesGuard, the author's earlier project, built for another hackathon.** The classification pipeline, the certainty rule and evidence trail, the cached iNaturalist client, pluggable model backends, and the area viewer. Its code was committed on Sep 16 and 17, inside this hackathon's development window (Sep 16–30), as [its commit history](https://github.com/BabayoAP/nativeview/commits) shows. Only its PRD (Sep 11) and a two-line README (Sep 14) are older, and neither is code. Its PRD is at [PRD-SPECIESGUARD.md](PRD-SPECIESGUARD.md) and its own submission notes at [HACKATHON-NEXTSTEP.md](HACKATHON-NEXTSTEP.md). |
 | Sep 23, 2026 | **Built for this hackathon.** The freshwater domain: the BMWP/ASPT index and its 53-family catalogue; the visual field form and its vocabulary; the One Health rule engine; the assessment pipeline, its certainty rule and its review loop; the generalised geography and the EU Union-list entries; persistence, site trends, the alert feed and badges; the FHIR R4 exporter; the guided citizen workflow, the dashboard and the AquaPlot layer on the map. |
 | Sep 24, 2026 | The authority report and its printable page; CSV and GeoJSON export; nearby-site detection so a repeat visit joins its series; the per-site history page and its chart; the offline service worker, the IndexedDB outbox and the web manifest; the progress rail, focus management and the searchable ID guide; the field guide; the API reference and the contributing guide. |
 | Sep 27, 2026 | Citizen-first identification and the blind second opinion; the IBMWP index and index choice by country, with the catalogue's scores checked against published tables; the evaluation harness and the iNaturalist test-set builder; the FHIR export brought to zero validator errors and the CodeSystem published. |
+| Sep 28, 2026 | OneAquaHealth interoperability: the 106 research sites and the Citizen Science App's answer codes from the project's public API; a check as the app's submission; the FHIR export brought into conformance with the project's IG (`hl7-eu/oah`) and validated against its profiles; the research sites on the map. |
 
-By `git diff --shortstat` against the imported commit: about 5,900 lines of new Python and
-2,100 of new interface, and 142 of the 210 tests. `git log` separates the imported commit from
+By `git diff --shortstat` against the imported commit: about 6,400 lines of new Python and
+2,100 of new interface, and 154 of the 222 tests. `git log` separates the imported commit from
 everything after it.
 
 ## Submission checklist
@@ -118,6 +141,8 @@ everything after it.
 - [ ] Evaluation run and the results recorded in [EVALUATION.md](EVALUATION.md)
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository)
 - [ ] Demo video, 3–5 minutes
+- [ ] Eligibility confirmed: registered on Devpost, and the Devpost overview says "students
+      only" and "team participation" (the rules page says individuals or teams)
 - [ ] Submitted on Devpost before Oct 4, 2026, 9:00 pm PDT
 
 ## Demo script (for the video)
@@ -140,7 +165,11 @@ everything after it.
    identified the animals and what the independent check found, and states its own limits.
 9. **The trend.** `/site/{key}`: the class plotted across visits, and a site that declined.
 10. **Offline.** Airplane mode, complete a check, show it queued, reconnect, watch it send.
-11. **Interoperability.** `/api/assess/{id}/fhir`, then the validator output: no errors, no
-    warnings. One sentence about not inventing LOINC codes.
-12. **Scale.** `/map`, jump to Coimbra: the same check scores with IBMWP there, because the
-    index is resolved from the coordinates, not hard-coded.
+11. **The project's own terms.** Do the check at Vale das Flores in Coimbra: the result names
+    OneAquaHealth research site C3. Open *Export for the OneAquaHealth app*: the app's own
+    codes, each field's source, and what did not translate and why. Then
+    `/api/assess/{id}/fhir`: the Location carries `C3`, the indicators use the project's IG
+    profiles, and the validator, run with the IG loaded, reports no errors and no warnings.
+    Say it once: only what a person confirmed is marked final.
+12. **Scale.** `/map`, with the 106 research sites shown. Jump to Coimbra: the same check scores
+    with IBMWP there, because the index is resolved from the coordinates, not hard-coded.
