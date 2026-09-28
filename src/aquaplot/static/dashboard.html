@@ -86,6 +86,12 @@
   <h2>Needs attention now</h2>
   <div id="alerts"></div>
 
+  <h2>The next 48 hours</h2>
+  <p class="sub" style="margin-bottom:10px">Each site's latest reading, run through the same rules with the weather
+    forecast for the next two days. Heavy rain where sewage has been seen is when an overflow is likely to run; heat on
+    open, slow water is when oxygen crashes. Both are the moment to plan a re-check.</p>
+  <div id="outlook"><div class="empty">Checking the forecast…</div></div>
+
   <h2>Sites</h2>
   <div id="sites"></div>
 
@@ -195,6 +201,34 @@ Promise.all([
     + "a formal classification needs a standardised kick sample, laboratory identification and a reference-site comparison. "
     + 'Download everything as <a href="/api/export.csv">CSV</a> or <a href="/api/export.geojson">GeoJSON</a>.';
 });
+
+// The outlook depends on a forecast service, so it loads on its own and can fail on its own.
+fetch("/api/outlook").then((r) => r.json()).then((o) => {
+  const box = $("outlook"); box.innerHTML = "";
+  if (!o.available) { box.innerHTML = `<div class="empty">No outlook: ${escape(o.reason)}.</div>`; return; }
+  if (!o.sites.length) {
+    box.innerHTML = `<div class="empty">No heavy rain or heat forecast at any of the ${o.sites_checked} monitored sites.</div>`;
+    return;
+  }
+  o.sites.forEach((s) => {
+    const item = document.createElement("div"); item.className = "alert-item " + s.level;
+    const h = document.createElement("h3");
+    h.innerHTML = `<a href="/site/${encodeURIComponent(s.site_key)}">${escape(s.name)}</a> — ${s.level}`;
+    const ul = document.createElement("ul");
+    s.findings.forEach((f) => {
+      const li = document.createElement("li");
+      li.textContent = `${f.title}: ${f.because.join("; ")}.`;
+      ul.append(li);
+    });
+    const act = document.createElement("p"); act.textContent = s.findings[0].action;
+    const meta = document.createElement("p");
+    meta.textContent = `Last reading ${s.last_seen.slice(0, 10)} · band ${s.band}`;
+    item.append(h, ul, act, meta); box.append(item);
+  });
+  const src = document.createElement("p"); src.className = "foot"; src.style.marginTop = "4px";
+  src.textContent = `Forecast: ${o.source}. Checked ${o.generated_at.slice(0, 16).replace("T", " ")} UTC.`;
+  box.append(src);
+}).catch(() => { $("outlook").innerHTML = '<div class="empty">The forecast could not be reached just now.</div>'; });
 
 function escape(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
 </script>

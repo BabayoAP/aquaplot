@@ -30,6 +30,8 @@ action. `assess.py` then puts that exact observation at the top of the confirmat
 | `human.faecal_contamination` | Sewage smell, sanitary waste on the banks, grey or black water, or persistent white foam | `concern` on one sign, `alert` on two or with contact | Do not enter, wash hands, report to the water company *and* the regulator today with the date and photo |
 | `human.vector_breeding` | Mosquito larvae identified, or water slow or standing | `concern` when larvae + stagnant + warm season, else `watch` | Remove water-holding litter, report standing water; restoring flow is the durable fix, insecticide is not |
 | `human.chemical_exposure` | Rainbow sheen, chemical smell, or orange water | `concern`, `alert` with contact | Keep out, do not disturb the sediment, report it — a fresh sheen is traceable upstream, a weathered one is not |
+| `human.storm_runoff` | 10 mm or more of rain fell at the site in the 48 hours before the visit (Open-Meteo) | `concern` with contact, else `watch` | Stay out and keep dogs out until two dry days have passed; a reading this soon after rain shows the stream at its worst, so re-check in dry weather |
+| `human.rain_ahead` | 10 mm or more of rain is forecast in the next 48 hours | `concern` where sewage signs were recorded, else `watch` | Plan paddling, dog swims and river days for after two dry days; come back within a day of the rain, because a before-and-after pair shows whether an overflow feeds the stream |
 | `human.wellbeing` | Band High or Good *and* pressure under 25 | `ok` | Keep recording it; evidence that a stretch is in good condition is what protects it from the next development proposal |
 
 `human.wellbeing` exists because One Health is not only a list of hazards. A clean, accessible
@@ -51,7 +53,32 @@ that only ever reports what is wrong teaches people that nothing they do helps.
 | `ecosystem.biological_condition` | Always | From the band; capped at `concern` when the sample is provisional | Repeat seasonally when healthy; when not, repeat upstream and downstream — where the invertebrates change is where the problem enters |
 | `ecosystem.habitat_degradation` | Concrete channel, artificial bed, or no vegetated buffer | `concern` on two signs, else `watch` | Water quality alone will not fix this; ask about de-culverting, softening banks, and leaving a margin unmown — the cheapest of those is mowing less |
 | `ecosystem.thermal_resilience` | Fully sun-exposed, or flow stopped or dry | `concern` when dry or stagnant, else `watch` | Date every dry or stagnant finding; bankside trees hold summer temperature down by several degrees |
+| `ecosystem.heat_ahead` | 30 °C or more forecast in the next 48 hours, *and* the water is sun-exposed, slow or standing, or thick with algae | `concern` on two of those, else `watch` | Look again at dawn during the heat; report fish gasping at the surface or dead fish at once, since an oxygen crash can only be mitigated while it is happening |
 | `ecosystem.sedimentation` | Heavy silt or sludge, or turbid water | `concern` on sludge, else `watch` | Look upstream for bare soil, construction or a direct road drain; note whether it rained yesterday — storm turbidity and constant turbidity have different causes |
+
+## Weather: what one visit cannot see
+
+`weather.py` fetches the 48 hours either side of the visit from [Open-Meteo](https://open-meteo.com)
+(free, no key, CC BY 4.0) once, when the check is made, and stores it with the check. A review, a
+report and a FHIR export all reuse the stored numbers, so the rules see the weather the visit
+saw. A failed lookup leaves the check without weather, not without a result, and every rule
+above behaves exactly as before when there is none.
+
+Besides the three rules that exist only because of it, the weather changes the wording of two
+others, because it says *where* a problem came from:
+
+- **Sewage signs** after heavy rain are consistent with a storm overflow, and the authority is
+  asked to check the overflow event records upstream. In dry weather an overflow is unlikely, so
+  the authority is asked to trace misconnected foul drains instead. The level does not change.
+- **Turbid water** after heavy rain is partly storm-driven; in dry weather it has a constant source.
+
+### The outlook
+
+`GET /api/outlook` re-runs the same rules on every monitored site's latest reading with the
+*forecast* for the next 48 hours, and keeps the forward-looking findings (`human.rain_ahead`,
+`ecosystem.heat_ahead`). The dashboard shows it as *The next 48 hours*. A site whose last visit
+found sewage and has heavy rain coming comes first: that is where an overflow is likely to run,
+and where a re-check after the rain is worth the most.
 
 ## Exposure changes the finding
 
