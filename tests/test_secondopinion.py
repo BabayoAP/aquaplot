@@ -84,6 +84,33 @@ def test_a_guessing_model_gets_no_vote():
     assert op.open == []
 
 
+def test_a_model_that_named_nothing_has_not_disagreed_with_the_observer():
+    """An empty reading is a failure to read the tray, not evidence about any animal.
+
+    Compared anyway, every sensitive family the observer got right becomes an
+    "are you sure?", and the read-out goes on to report that the model
+    "independently agreed on 0" - which reads as a model that looked and
+    disagreed. Small local vision models return an empty list on tray photos
+    routinely, so this is the ordinary case on a keyless deployment.
+    """
+    op = compare(mine("Perlidae", "Heptageniidae", "Gammaridae"), model(), bioindex.score)
+    assert not op.available and op.open == []
+    assert "nothing to check" in op.reason
+
+
+def test_a_tray_the_model_only_guessed_at_is_no_second_opinion_either():
+    """Below the confidence floor there is no list, and the raw guess is still recorded."""
+    op = compare(mine("Perlidae"), model(("Baetidae", 0.2)), bioindex.score)
+    assert not op.available and op.open == []
+    assert op.model_taxa == [{"name": "Baetidae", "confidence": 0.2}]
+
+
+def test_a_model_that_saw_something_the_observer_did_not_still_speaks_up():
+    """The guard is about an empty list, not about an observer who recorded nothing."""
+    op = compare(mine(), model(("Baetidae", 0.9)), bioindex.score)
+    assert op.available and [i["kind"] for i in op.open] == ["model_only"]
+
+
 def test_a_dismissed_item_stays_dismissed():
     first = compare(mine("Gammaridae"), model(("Gammaridae", 0.9), ("Hydropsychidae", 0.8)), bioindex.score)
     key = first.open[0]["key"]

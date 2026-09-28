@@ -169,6 +169,23 @@ def compare(
     theirs = [(o, m) for o in model if o.confidence >= MIN_MODEL_CONFIDENCE and (m := resolve(o.name))]
     model_taxa = [{"name": o.name, "confidence": round(o.confidence, 2)} for o in model]
 
+    # A model that named nothing it is sure of has not disagreed with the
+    # observer; it has failed to read the tray, and the two are not the same
+    # evidence. Compared anyway, every sensitive family the observer got right
+    # becomes an "are you sure?", because an unsupported question asks exactly
+    # that - and the read-out would go on to say the model "independently agreed
+    # on 0 of 4", which reads as a model that looked and disagreed. Whether a
+    # specific animal is missing from the model's list is only meaningful once
+    # there is a list. Small local vision models return an empty list on tray
+    # photographs routinely, so this is the ordinary case on a keyless
+    # deployment, not a rare one.
+    if mine and not theirs:
+        return unavailable(
+            "the model did not identify anything it was sure enough of in the sample photo, so there was nothing "
+            "to check the identifications against",
+            model,
+        )
+
     base = score(list(citizen))
     agreed: list[str] = []
     unsupported: list[tuple[TaxonObservation, Match]] = []
