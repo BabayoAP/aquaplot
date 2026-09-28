@@ -1,0 +1,1044 @@
+{
+  "resourceType": "Bundle",
+  "id": "aquaplot-d9e6afe1a303",
+  "type": "collection",
+  "timestamp": "2026-09-27T10:30:00+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d",
+      "resource": {
+        "resourceType": "Location",
+        "id": "site-d9e6afe1a303",
+        "status": "active",
+        "name": "Ribeira de Coselhas (example)",
+        "description": "Urban freshwater monitoring point recorded by a citizen scientist",
+        "mode": "instance",
+        "physicalType": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+              "code": "area",
+              "display": "Area"
+            }
+          ]
+        },
+        "position": {
+          "latitude": 40.2056,
+          "longitude": -8.4195
+        },
+        "address": {
+          "text": "Coimbra, Portugal",
+          "country": "Portugal"
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Ribeira de Coselhas (example)</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "status-d9e6afe1a303",
+        "status": "amended",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "stream-ecological-status",
+              "display": "Urban stream ecological status, citizen screening"
+            }
+          ],
+          "text": "Urban stream ecological status, citizen screening"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "method": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "ibmwp-photo-screening",
+              "display": "IBMWP / IASPT family-level screening from citizen photographs"
+            }
+          ],
+          "text": "IBMWP / IASPT family-level screening from citizen photographs"
+        },
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "wfd-moderate",
+              "display": "Moderate"
+            }
+          ],
+          "text": "Moderate"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "wfd-ecological-status",
+                  "display": "Ecological status class (Water Framework Directive scale)"
+                }
+              ],
+              "text": "Ecological status class (Water Framework Directive scale)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "wfd-moderate",
+                  "display": "Moderate"
+                }
+              ],
+              "text": "Moderate"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "wfd-ecological-status-ordinal",
+                  "display": "Ecological status as an ordinal, 5 high to 1 bad"
+                }
+              ],
+              "text": "Ecological status as an ordinal, 5 high to 1 bad"
+            },
+            "valueInteger": 3
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "ibmwp-total",
+                  "display": "IBMWP total score"
+                }
+              ],
+              "text": "IBMWP total score"
+            },
+            "valueQuantity": {
+              "value": 14.0,
+              "unit": "score"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "iaspt",
+                  "display": "Average Score Per Taxon (IBMWP/families)"
+                }
+              ],
+              "text": "Average Score Per Taxon (IBMWP/families)"
+            },
+            "valueQuantity": {
+              "value": 4.67,
+              "unit": "score"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "scoring-families",
+                  "display": "Number of scoring macroinvertebrate families"
+                }
+              ],
+              "text": "Number of scoring macroinvertebrate families"
+            },
+            "valueInteger": 3
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "ept-families",
+                  "display": "Number of EPT (mayfly, stonefly, caddisfly) families"
+                }
+              ],
+              "text": "Number of EPT (mayfly, stonefly, caddisfly) families"
+            },
+            "valueInteger": 1
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-pressure",
+                  "display": "Visual habitat pressure index, 0 none to 100 severe"
+                }
+              ],
+              "text": "Visual habitat pressure index, 0 none to 100 severe"
+            },
+            "valueQuantity": {
+              "value": 41.1,
+              "unit": "%",
+              "system": "http://unitsofmeasure.org",
+              "code": "%"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "assessment-certainty",
+                  "display": "Certainty of this assessment, as evidenced"
+                }
+              ],
+              "text": "Certainty of this assessment, as evidenced"
+            },
+            "valueQuantity": {
+              "value": 47.5,
+              "unit": "%",
+              "system": "http://unitsofmeasure.org",
+              "code": "%"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "human-confirmations",
+                  "display": "Observations a person confirmed or supplied"
+                }
+              ],
+              "text": "Observations a person confirmed or supplied"
+            },
+            "valueInteger": 4
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxa-identified-by",
+                  "display": "Who identified the macroinvertebrates"
+                }
+              ],
+              "text": "Who identified the macroinvertebrates"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "identified-by-citizen",
+                  "display": "The citizen, with or without a model's second opinion"
+                }
+              ],
+              "text": "The citizen, with or without a model's second opinion"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "ibmwp-total-class",
+                  "display": "IBMWP class from the total (assumes a standardised sample; understates a single tray)"
+                }
+              ],
+              "text": "IBMWP class from the total (assumes a standardised sample; understates a single tray)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "wfd-bad",
+                  "display": "Bad"
+                }
+              ],
+              "text": "Bad"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "second-opinion-independent-agreements",
+                  "display": "Identifications a vision model agreed with, shown the photo without the citizen's answers"
+                }
+              ],
+              "text": "Identifications a vision model agreed with, shown the photo without the citizen's answers"
+            },
+            "valueInteger": 1
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "second-opinion-adopted",
+                  "display": "Identifications the citizen changed to the model's after comparing"
+                }
+              ],
+              "text": "Identifications the citizen changed to the model's after comparing"
+            },
+            "valueInteger": 0
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "second-opinion-kept-own",
+                  "display": "Disagreements where the citizen kept their own identification after comparing"
+                }
+              ],
+              "text": "Disagreements where the citizen kept their own identification after comparing"
+            },
+            "valueInteger": 0
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "second-opinion-unresolved",
+                  "display": "Disagreements with the model not yet settled"
+                }
+              ],
+              "text": "Disagreements with the model not yet settled"
+            },
+            "valueInteger": 1
+          }
+        ],
+        "note": [
+          {
+            "text": "Screening estimate from a photo-based sample using IBMWP family scores (Alba-Tercedor et al. (2002), family scores as in MAGRAMA (2011)), banded on IASPT; not a Water Framework Directive classification. A formal classification needs a standardised kick sample, laboratory identification and comparison against a reference site."
+          },
+          {
+            "text": "Sensitive animals are thinning out. Something is putting the stream under pressure."
+          },
+          {
+            "text": "A vision model, shown the sample photograph without the observer's identifications, independently agreed on 1 of them; 1 difference(s) remain unresolved."
+          },
+          {
+            "text": "Limitations: 8 habitat question(s) went unanswered (water_colour, foam_or_sheen, litter, riparian_vegetation, bank_modification, substrate, sediment_deposit, shade), so the pressure score covers less of the site; 4 of 12 habitat questions were answered; each unanswered one leaves part of the site undescribed; the model disagreed with 1 of your identifications in a way that would change the band, and that has not been settled yet"
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Urban stream ecological status, citizen screening: Moderate</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:470e9a1c-17a7-58b0-b129-413df25bf3d7",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "survey-d9e6afe1a303",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "benthic-macroinvertebrate-survey",
+              "display": "Benthic macroinvertebrate survey"
+            }
+          ],
+          "text": "Benthic macroinvertebrate survey"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "derivedFrom": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-perlidae",
+                  "display": "Perlidae (Stonefly)"
+                }
+              ],
+              "text": "Stonefly: sensitive"
+            },
+            "valueQuantity": {
+              "value": 10.0,
+              "unit": "IBMWP sensitivity score"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-chironomidae",
+                  "display": "Chironomidae (Midge larva (bloodworm))"
+                }
+              ],
+              "text": "Midge larva (bloodworm): tolerant"
+            },
+            "valueQuantity": {
+              "value": 2.0,
+              "unit": "IBMWP sensitivity score"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "taxon-culicidae",
+                  "display": "Culicidae (Mosquito larva (wriggler))"
+                }
+              ],
+              "text": "Mosquito larva (wriggler): tolerant"
+            },
+            "valueQuantity": {
+              "value": 2.0,
+              "unit": "IBMWP sensitivity score"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "1 sensitive family from the mayfly/stonefly/caddisfly groups (Plecoptera) were found. These animals do not persist in polluted water."
+          },
+          {
+            "text": "Tolerant animals outnumber sensitive ones (2 to 1), the usual signature of a stream under continuous pressure rather than a one-off spill."
+          },
+          {
+            "text": "Average sensitivity of the families present (IASPT) is 4.7 out of 10."
+          },
+          {
+            "text": "The IBMWP total is 14. On IBMWP's own scale that is class 'Bad', but that scale assumes a standardised sample across every habitat in the reach; one tray finds far fewer families, so the total reads low. The band above is read from the IASPT instead."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Benthic macroinvertebrate survey</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b2a3add1-f983-5eb7-b4d0-a2ca46105a0b",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "habitat-d9e6afe1a303",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "stream-habitat-assessment",
+              "display": "Visual stream habitat and pressure assessment"
+            }
+          ],
+          "text": "Visual stream habitat and pressure assessment"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "derivedFrom": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-water-clarity",
+                  "display": "How clear is the water?"
+                }
+              ],
+              "text": "How clear is the water?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "water-clarity-slightly-turbid",
+                  "display": "Slightly cloudy"
+                }
+              ],
+              "text": "Slightly cloudy (reported by model)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-algae",
+                  "display": "How much algae is there?"
+                }
+              ],
+              "text": "How much algae is there?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "algae-bloom",
+                  "display": "Mats, scum or a blue-green paint-like bloom"
+                }
+              ],
+              "text": "Mats, scum or a blue-green paint-like bloom (reported by model)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-flow",
+                  "display": "How is the water moving?"
+                }
+              ],
+              "text": "How is the water moving?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "flow-slow",
+                  "display": "Slow - barely moving"
+                }
+              ],
+              "text": "Slow - barely moving (reported by model)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-odour",
+                  "display": "What can you smell? (only you can answer this)"
+                }
+              ],
+              "text": "What can you smell? (only you can answer this)"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "odour-none",
+                  "display": "Nothing unusual"
+                }
+              ],
+              "text": "Nothing unusual (reported by citizen)"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "habitat-access",
+                  "display": "Do people or animals use this water?"
+                }
+              ],
+              "text": "Do people or animals use this water?"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "access-contact",
+                  "display": "People or dogs get into the water"
+                }
+              ],
+              "text": "People or dogs get into the water (reported by citizen)"
+            }
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Visual stream habitat and pressure assessment</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2aab6dce-0c0a-5db8-b697-fa0519179b4f",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "onehealth-ecosystem-d9e6afe1a303",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "exam",
+                "display": "Exam"
+              }
+            ]
+          },
+          {
+            "coding": [
+              {
+                "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                "code": "one-health",
+                "display": "One Health assessment"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "one-health-ecosystem",
+              "display": "One Health signal: ecosystem health"
+            }
+          ],
+          "text": "One Health signal: ecosystem health"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "derivedFrom": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "level-watch",
+              "display": "watch"
+            }
+          ],
+          "text": "watch"
+        },
+        "interpretation": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                "code": "A",
+                "display": "Abnormal"
+              }
+            ]
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "rule-ecosystem-biological-condition",
+                  "display": "One Health rule: ecosystem health, biological condition"
+                }
+              ],
+              "text": "Biological condition: Moderate"
+            },
+            "valueString": "Sensitive animals are thinning out. Something is putting the stream under pressure.; 3 scoring families were identified, average sensitivity (IASPT) 4.7, of which 1 are mayflies, stoneflies or caddisflies",
+            "interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "A",
+                    "display": "Abnormal"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "note": [
+          {
+            "text": "Biological condition: Moderate: Repeat this check at the same spot each season. A single reading is a snapshot; a series is evidence."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">One Health signal: ecosystem health: watch</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:7344504a-3c89-5a89-9525-d5f9cd315366",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "onehealth-human-d9e6afe1a303",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "exam",
+                "display": "Exam"
+              }
+            ]
+          },
+          {
+            "coding": [
+              {
+                "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                "code": "one-health",
+                "display": "One Health assessment"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "one-health-human",
+              "display": "One Health signal: human health"
+            }
+          ],
+          "text": "One Health signal: human health"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "derivedFrom": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "level-concern",
+              "display": "concern"
+            }
+          ],
+          "text": "concern"
+        },
+        "interpretation": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                "code": "H",
+                "display": "High"
+              }
+            ]
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "rule-human-cyanobacteria",
+                  "display": "One Health rule: human health, cyanobacteria"
+                }
+              ],
+              "text": "Possible harmful algal bloom - avoid contact with the water"
+            },
+            "valueString": "a surface bloom, scum or paint-like mat was recorded; people or dogs get into the water here; held below alert level because no person has confirmed the observation behind it",
+            "interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "H",
+                    "display": "High"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "rule-human-vector-breeding",
+                  "display": "One Health rule: human health, vector breeding"
+                }
+              ],
+              "text": "Conditions suit mosquito breeding"
+            },
+            "valueString": "mosquito larvae were identified in the sample; the water was barely moving",
+            "interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "H",
+                    "display": "High"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "note": [
+          {
+            "text": "Possible harmful algal bloom - avoid contact with the water: Keep out of the water and keep children and dogs out, including from spray. Do not let animals drink it. Report the bloom to your local environmental agency - only a laboratory can confirm whether it is toxin-producing cyanobacteria. Confirm the observation in the app to raise this to a full alert."
+          },
+          {
+            "text": "Conditions suit mosquito breeding: Remove containers and litter that hold water near the bank, and tell the municipality about standing water that does not drain. Restoring flow is the durable fix; insecticide is not, and it removes the stream's own insect life along with the mosquitoes."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">One Health signal: human health: concern</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:351157e1-ca80-5ac2-8255-9b54d1538410",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "onehealth-animal-d9e6afe1a303",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "exam",
+                "display": "Exam"
+              }
+            ]
+          },
+          {
+            "coding": [
+              {
+                "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                "code": "one-health",
+                "display": "One Health assessment"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "one-health-animal",
+              "display": "One Health signal: animal health"
+            }
+          ],
+          "text": "One Health signal: animal health"
+        },
+        "subject": {
+          "reference": "urn:uuid:6b27b684-2e22-5c64-8331-9f371f76041d"
+        },
+        "effectiveDateTime": "2026-09-27T10:30:00+00:00",
+        "performer": [
+          {
+            "display": "Citizen scientist"
+          }
+        ],
+        "derivedFrom": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+              "code": "level-concern",
+              "display": "concern"
+            }
+          ],
+          "text": "concern"
+        },
+        "interpretation": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                "code": "H",
+                "display": "High"
+              }
+            ]
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "rule-animal-drinking-water",
+                  "display": "One Health rule: animal health, drinking water"
+                }
+              ],
+              "text": "Do not let animals drink here or swim"
+            },
+            "valueString": "a surface algal bloom, which can produce toxins that kill dogs within hours of drinking or swimming",
+            "interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "H",
+                    "display": "High"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "note": [
+          {
+            "text": "Do not let animals drink here or swim: Keep dogs on a lead past this stretch and carry water for them. Warn other owners; a sign at the access point works."
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">One Health signal: animal health: concern</div>"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2d001b4a-af1f-5bae-b9ff-100fecb1fc79",
+      "resource": {
+        "resourceType": "Provenance",
+        "id": "prov-d9e6afe1a303",
+        "target": [
+          {
+            "reference": "urn:uuid:d61a3e8e-60f6-54bb-a894-a55383a36966"
+          }
+        ],
+        "recorded": "2026-09-27T10:30:00+00:00",
+        "agent": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/provenance-participant-type",
+                  "code": "author",
+                  "display": "Author"
+                }
+              ]
+            },
+            "who": {
+              "display": "Citizen scientist"
+            }
+          },
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/provenance-participant-type",
+                  "code": "assembler",
+                  "display": "Assembler"
+                }
+              ]
+            },
+            "who": {
+              "display": "AquaPlot aquaplot-assess-v2 (vision model: example-model)"
+            }
+          }
+        ],
+        "entity": [
+          {
+            "role": "source",
+            "what": {
+              "display": "Bioindicator catalogue bio-2026-09-27 (IBMWP / IASPT)"
+            }
+          },
+          {
+            "role": "source",
+            "what": {
+              "display": "Habitat form habitat-2026-09-23"
+            }
+          },
+          {
+            "role": "source",
+            "what": {
+              "display": "iNaturalist API (taxonomy, establishment means, administrative places)"
+            }
+          }
+        ],
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Provenance</div>"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,777 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "stream-health",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">AquaPlot stream health codes (provisional), 189 concepts.</div>"
+  },
+  "url": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+  "version": "bio-2026-09-27+habitat-2026-09-23",
+  "name": "AquaPlotStreamHealth",
+  "title": "AquaPlot stream health (provisional)",
+  "status": "draft",
+  "experimental": true,
+  "publisher": "AquaPlot",
+  "description": "Provisional project codes for citizen stream-health screening: biotic index components, macroinvertebrate taxa, visual habitat indicators and One Health rule findings. Not a standard terminology; see docs/FHIR.md for the path to LOINC or an environmental terminology.",
+  "caseSensitive": true,
+  "content": "complete",
+  "count": 189,
+  "concept": [
+    {
+      "code": "access-contact",
+      "display": "People or dogs get into the water"
+    },
+    {
+      "code": "access-none",
+      "display": "Fenced off or inaccessible"
+    },
+    {
+      "code": "access-path-only",
+      "display": "A path runs alongside"
+    },
+    {
+      "code": "access-play-or-drinking",
+      "display": "Children play in it, or animals drink from it"
+    },
+    {
+      "code": "algae-bloom",
+      "display": "Mats, scum or a blue-green paint-like bloom"
+    },
+    {
+      "code": "algae-extensive",
+      "display": "Extensive - long strands or most stones covered"
+    },
+    {
+      "code": "algae-none",
+      "display": "None or a thin film on stones"
+    },
+    {
+      "code": "algae-patchy",
+      "display": "Patchy green growth"
+    },
+    {
+      "code": "aspt",
+      "display": "Average Score Per Taxon (BMWP/families)"
+    },
+    {
+      "code": "assessment-certainty",
+      "display": "Certainty of this assessment, as evidenced"
+    },
+    {
+      "code": "bank-modification-fully-channelised",
+      "display": "Fully concrete or culverted"
+    },
+    {
+      "code": "bank-modification-natural",
+      "display": "Natural earth, stone or vegetation"
+    },
+    {
+      "code": "bank-modification-partly-reinforced",
+      "display": "Partly reinforced - some walls, gabions or rip-rap"
+    },
+    {
+      "code": "benthic-macroinvertebrate-survey",
+      "display": "Benthic macroinvertebrate survey"
+    },
+    {
+      "code": "bmwp-photo-screening",
+      "display": "BMWP / ASPT family-level screening from citizen photographs"
+    },
+    {
+      "code": "bmwp-total",
+      "display": "BMWP total score"
+    },
+    {
+      "code": "ept-families",
+      "display": "Number of EPT (mayfly, stonefly, caddisfly) families"
+    },
+    {
+      "code": "flow-dry",
+      "display": "Dry bed"
+    },
+    {
+      "code": "flow-fast",
+      "display": "Fast, broken and splashing over stones"
+    },
+    {
+      "code": "flow-moderate",
+      "display": "Steady and visibly moving"
+    },
+    {
+      "code": "flow-slow",
+      "display": "Slow - barely moving"
+    },
+    {
+      "code": "flow-stagnant",
+      "display": "Standing pools, no flow"
+    },
+    {
+      "code": "foam-or-sheen-natural-foam",
+      "display": "Tan-coloured foam below a fall, which breaks up"
+    },
+    {
+      "code": "foam-or-sheen-none",
+      "display": "Neither"
+    },
+    {
+      "code": "foam-or-sheen-oil-sheen",
+      "display": "Rainbow film on the surface"
+    },
+    {
+      "code": "foam-or-sheen-white-foam",
+      "display": "Persistent white or soapy foam"
+    },
+    {
+      "code": "habitat-access",
+      "display": "Do people or animals use this water?"
+    },
+    {
+      "code": "habitat-algae",
+      "display": "How much algae is there?"
+    },
+    {
+      "code": "habitat-bank-modification",
+      "display": "What are the banks made of?"
+    },
+    {
+      "code": "habitat-flow",
+      "display": "How is the water moving?"
+    },
+    {
+      "code": "habitat-foam-or-sheen",
+      "display": "Is there foam or an oily film?"
+    },
+    {
+      "code": "habitat-litter",
+      "display": "How much litter can you see?"
+    },
+    {
+      "code": "habitat-odour",
+      "display": "What can you smell? (only you can answer this)"
+    },
+    {
+      "code": "habitat-pressure",
+      "display": "Visual habitat pressure index, 0 none to 100 severe"
+    },
+    {
+      "code": "habitat-riparian-vegetation",
+      "display": "What is growing along the banks?"
+    },
+    {
+      "code": "habitat-sediment-deposit",
+      "display": "Is there sludge or heavy silt on the bed?"
+    },
+    {
+      "code": "habitat-shade",
+      "display": "How shaded is the water?"
+    },
+    {
+      "code": "habitat-substrate",
+      "display": "What is the stream bed made of?"
+    },
+    {
+      "code": "habitat-water-clarity",
+      "display": "How clear is the water?"
+    },
+    {
+      "code": "habitat-water-colour",
+      "display": "What colour is the water?"
+    },
+    {
+      "code": "human-confirmations",
+      "display": "Observations a person confirmed or supplied"
+    },
+    {
+      "code": "iaspt",
+      "display": "Average Score Per Taxon (IBMWP/families)"
+    },
+    {
+      "code": "ibmwp-photo-screening",
+      "display": "IBMWP / IASPT family-level screening from citizen photographs"
+    },
+    {
+      "code": "ibmwp-total",
+      "display": "IBMWP total score"
+    },
+    {
+      "code": "ibmwp-total-class",
+      "display": "IBMWP class from the total (assumes a standardised sample; understates a single tray)"
+    },
+    {
+      "code": "identified-by-citizen",
+      "display": "The citizen, with or without a model's second opinion"
+    },
+    {
+      "code": "identified-by-model",
+      "display": "A vision model, as proposals for a person to confirm"
+    },
+    {
+      "code": "identified-by-none",
+      "display": "No macroinvertebrates were identified"
+    },
+    {
+      "code": "level-alert",
+      "display": "alert"
+    },
+    {
+      "code": "level-concern",
+      "display": "concern"
+    },
+    {
+      "code": "level-ok",
+      "display": "ok"
+    },
+    {
+      "code": "level-watch",
+      "display": "watch"
+    },
+    {
+      "code": "litter-heavy",
+      "display": "A lot, or trapped in rafts"
+    },
+    {
+      "code": "litter-none",
+      "display": "None"
+    },
+    {
+      "code": "litter-sanitary",
+      "display": "Wet wipes, sanitary items or toilet paper on the banks"
+    },
+    {
+      "code": "litter-scattered",
+      "display": "A few items"
+    },
+    {
+      "code": "odour-chemical",
+      "display": "Chemical, solvent or fuel"
+    },
+    {
+      "code": "odour-earthy",
+      "display": "Earthy or vegetation"
+    },
+    {
+      "code": "odour-musty",
+      "display": "Musty or stagnant"
+    },
+    {
+      "code": "odour-none",
+      "display": "Nothing unusual"
+    },
+    {
+      "code": "odour-not-recorded",
+      "display": "I did not check"
+    },
+    {
+      "code": "odour-sewage",
+      "display": "Sewage or rotten eggs"
+    },
+    {
+      "code": "one-health",
+      "display": "One Health assessment"
+    },
+    {
+      "code": "one-health-animal",
+      "display": "One Health signal: animal health"
+    },
+    {
+      "code": "one-health-ecosystem",
+      "display": "One Health signal: ecosystem health"
+    },
+    {
+      "code": "one-health-human",
+      "display": "One Health signal: human health"
+    },
+    {
+      "code": "riparian-vegetation-bare-or-paved",
+      "display": "Bare ground, paving or wall"
+    },
+    {
+      "code": "riparian-vegetation-continuous-natural",
+      "display": "Continuous trees, shrubs or tall plants"
+    },
+    {
+      "code": "riparian-vegetation-mown-grass",
+      "display": "Mown grass right to the water"
+    },
+    {
+      "code": "riparian-vegetation-patchy",
+      "display": "Patchy - gaps between planted areas"
+    },
+    {
+      "code": "rule-animal-drinking-water",
+      "display": "One Health rule: animal health, drinking water"
+    },
+    {
+      "code": "rule-animal-invasive-species",
+      "display": "One Health rule: animal health, invasive species"
+    },
+    {
+      "code": "rule-animal-parasite-hosts",
+      "display": "One Health rule: animal health, parasite hosts"
+    },
+    {
+      "code": "rule-ecosystem-biological-condition",
+      "display": "One Health rule: ecosystem health, biological condition"
+    },
+    {
+      "code": "rule-ecosystem-habitat-degradation",
+      "display": "One Health rule: ecosystem health, habitat degradation"
+    },
+    {
+      "code": "rule-ecosystem-sedimentation",
+      "display": "One Health rule: ecosystem health, sedimentation"
+    },
+    {
+      "code": "rule-ecosystem-thermal-resilience",
+      "display": "One Health rule: ecosystem health, thermal resilience"
+    },
+    {
+      "code": "rule-human-chemical-exposure",
+      "display": "One Health rule: human health, chemical exposure"
+    },
+    {
+      "code": "rule-human-cyanobacteria",
+      "display": "One Health rule: human health, cyanobacteria"
+    },
+    {
+      "code": "rule-human-faecal-contamination",
+      "display": "One Health rule: human health, faecal contamination"
+    },
+    {
+      "code": "rule-human-vector-breeding",
+      "display": "One Health rule: human health, vector breeding"
+    },
+    {
+      "code": "rule-human-wellbeing",
+      "display": "One Health rule: human health, wellbeing"
+    },
+    {
+      "code": "scoring-families",
+      "display": "Number of scoring macroinvertebrate families"
+    },
+    {
+      "code": "second-opinion-adopted",
+      "display": "Identifications the citizen changed to the model's after comparing"
+    },
+    {
+      "code": "second-opinion-independent-agreements",
+      "display": "Identifications a vision model agreed with, shown the photo without the citizen's answers"
+    },
+    {
+      "code": "second-opinion-kept-own",
+      "display": "Disagreements where the citizen kept their own identification after comparing"
+    },
+    {
+      "code": "second-opinion-unresolved",
+      "display": "Disagreements with the model not yet settled"
+    },
+    {
+      "code": "sediment-deposit-heavy",
+      "display": "Thick silt, or black sludge that smells when disturbed"
+    },
+    {
+      "code": "sediment-deposit-light",
+      "display": "A light dusting of silt"
+    },
+    {
+      "code": "sediment-deposit-none",
+      "display": "No, the stones are clean"
+    },
+    {
+      "code": "shade-open",
+      "display": "Fully open to the sun"
+    },
+    {
+      "code": "shade-partial",
+      "display": "Dappled - some shade"
+    },
+    {
+      "code": "shade-shaded",
+      "display": "Mostly shaded by trees"
+    },
+    {
+      "code": "stream-ecological-status",
+      "display": "Urban stream ecological status, citizen screening"
+    },
+    {
+      "code": "stream-habitat-assessment",
+      "display": "Visual stream habitat and pressure assessment"
+    },
+    {
+      "code": "substrate-boulders-cobbles",
+      "display": "Boulders and cobbles"
+    },
+    {
+      "code": "substrate-concrete",
+      "display": "Concrete or artificial lining"
+    },
+    {
+      "code": "substrate-gravel",
+      "display": "Gravel and pebbles"
+    },
+    {
+      "code": "substrate-not-visible",
+      "display": "I cannot see the bed"
+    },
+    {
+      "code": "substrate-sand",
+      "display": "Sand"
+    },
+    {
+      "code": "substrate-silt",
+      "display": "Silt or soft mud"
+    },
+    {
+      "code": "taxa-identified-by",
+      "display": "Who identified the macroinvertebrates"
+    },
+    {
+      "code": "taxon-aeshnidae",
+      "display": "Aeshnidae (Dragonfly nymph (hawker))"
+    },
+    {
+      "code": "taxon-amphipoda",
+      "display": "Amphipoda (identified to order only)"
+    },
+    {
+      "code": "taxon-ancylidae",
+      "display": "Ancylidae (River limpet)"
+    },
+    {
+      "code": "taxon-annelida",
+      "display": "Annelida (identified to order only)"
+    },
+    {
+      "code": "taxon-asellidae",
+      "display": "Asellidae (Water hoglouse (water slater))"
+    },
+    {
+      "code": "taxon-astacidae",
+      "display": "Astacidae (Crayfish (native))"
+    },
+    {
+      "code": "taxon-baetidae",
+      "display": "Baetidae (Mayfly (swimmer))"
+    },
+    {
+      "code": "taxon-bivalvia",
+      "display": "Bivalvia (identified to order only)"
+    },
+    {
+      "code": "taxon-caenidae",
+      "display": "Caenidae (Mayfly (small square-gill))"
+    },
+    {
+      "code": "taxon-calopterygidae",
+      "display": "Calopterygidae (Damselfly nymph (demoiselle))"
+    },
+    {
+      "code": "taxon-cambaridae",
+      "display": "Cambaridae (Crayfish (American))"
+    },
+    {
+      "code": "taxon-chironomidae",
+      "display": "Chironomidae (Midge larva (bloodworm))"
+    },
+    {
+      "code": "taxon-coenagrionidae",
+      "display": "Coenagrionidae (Damselfly nymph)"
+    },
+    {
+      "code": "taxon-coleoptera",
+      "display": "Coleoptera (identified to order only)"
+    },
+    {
+      "code": "taxon-corixidae",
+      "display": "Corixidae (Water boatman)"
+    },
+    {
+      "code": "taxon-culicidae",
+      "display": "Culicidae (Mosquito larva (wriggler))"
+    },
+    {
+      "code": "taxon-decapoda",
+      "display": "Decapoda (identified to order only)"
+    },
+    {
+      "code": "taxon-diptera",
+      "display": "Diptera (identified to order only)"
+    },
+    {
+      "code": "taxon-dreissenidae",
+      "display": "Dreissenidae (Zebra mussel)"
+    },
+    {
+      "code": "taxon-dytiscidae",
+      "display": "Dytiscidae (Diving beetle)"
+    },
+    {
+      "code": "taxon-elmidae",
+      "display": "Elmidae (Riffle beetle)"
+    },
+    {
+      "code": "taxon-ephemerellidae",
+      "display": "Ephemerellidae (Mayfly (crawler))"
+    },
+    {
+      "code": "taxon-ephemeridae",
+      "display": "Ephemeridae (Mayfly (burrowing))"
+    },
+    {
+      "code": "taxon-ephemeroptera",
+      "display": "Ephemeroptera (identified to order only)"
+    },
+    {
+      "code": "taxon-erpobdellidae",
+      "display": "Erpobdellidae (Leech)"
+    },
+    {
+      "code": "taxon-gammaridae",
+      "display": "Gammaridae (Freshwater shrimp (gammarus))"
+    },
+    {
+      "code": "taxon-gastropoda",
+      "display": "Gastropoda (identified to order only)"
+    },
+    {
+      "code": "taxon-gerridae",
+      "display": "Gerridae (Pond skater)"
+    },
+    {
+      "code": "taxon-glossiphoniidae",
+      "display": "Glossiphoniidae (Leech (flat))"
+    },
+    {
+      "code": "taxon-goeridae",
+      "display": "Goeridae (Caddisfly (stone case))"
+    },
+    {
+      "code": "taxon-gyrinidae",
+      "display": "Gyrinidae (Whirligig beetle)"
+    },
+    {
+      "code": "taxon-hemiptera",
+      "display": "Hemiptera (identified to order only)"
+    },
+    {
+      "code": "taxon-heptageniidae",
+      "display": "Heptageniidae (Mayfly (flat-headed))"
+    },
+    {
+      "code": "taxon-hirudinea",
+      "display": "Hirudinea (identified to order only)"
+    },
+    {
+      "code": "taxon-hydrobiidae",
+      "display": "Hydrobiidae (Spire snail)"
+    },
+    {
+      "code": "taxon-hydrophilidae",
+      "display": "Hydrophilidae (Water scavenger beetle)"
+    },
+    {
+      "code": "taxon-hydropsychidae",
+      "display": "Hydropsychidae (Caddisfly (net-spinner))"
+    },
+    {
+      "code": "taxon-isopoda",
+      "display": "Isopoda (identified to order only)"
+    },
+    {
+      "code": "taxon-leptoceridae",
+      "display": "Leptoceridae (Caddisfly (long-horned))"
+    },
+    {
+      "code": "taxon-leptophlebiidae",
+      "display": "Leptophlebiidae (Mayfly (prong-gilled))"
+    },
+    {
+      "code": "taxon-leuctridae",
+      "display": "Leuctridae (Stonefly (needle fly))"
+    },
+    {
+      "code": "taxon-libellulidae",
+      "display": "Libellulidae (Dragonfly nymph (darter))"
+    },
+    {
+      "code": "taxon-limnephilidae",
+      "display": "Limnephilidae (Caddisfly (cased))"
+    },
+    {
+      "code": "taxon-lymnaeidae",
+      "display": "Lymnaeidae (Pond snail)"
+    },
+    {
+      "code": "taxon-megaloptera",
+      "display": "Megaloptera (identified to order only)"
+    },
+    {
+      "code": "taxon-nemouridae",
+      "display": "Nemouridae (Stonefly (brown))"
+    },
+    {
+      "code": "taxon-neritidae",
+      "display": "Neritidae (Nerite snail)"
+    },
+    {
+      "code": "taxon-notonectidae",
+      "display": "Notonectidae (Backswimmer)"
+    },
+    {
+      "code": "taxon-odonata",
+      "display": "Odonata (identified to order only)"
+    },
+    {
+      "code": "taxon-odontoceridae",
+      "display": "Odontoceridae (Caddisfly (hard sand case))"
+    },
+    {
+      "code": "taxon-oligochaeta",
+      "display": "Oligochaeta (Sludge worm)"
+    },
+    {
+      "code": "taxon-perlidae",
+      "display": "Perlidae (Stonefly)"
+    },
+    {
+      "code": "taxon-perlodidae",
+      "display": "Perlodidae (Stonefly)"
+    },
+    {
+      "code": "taxon-physidae",
+      "display": "Physidae (Bladder snail)"
+    },
+    {
+      "code": "taxon-planariidae",
+      "display": "Planariidae (Flatworm)"
+    },
+    {
+      "code": "taxon-planorbidae",
+      "display": "Planorbidae (Ramshorn snail)"
+    },
+    {
+      "code": "taxon-plecoptera",
+      "display": "Plecoptera (identified to order only)"
+    },
+    {
+      "code": "taxon-polycentropodidae",
+      "display": "Polycentropodidae (Caddisfly (net-spinner))"
+    },
+    {
+      "code": "taxon-psychodidae",
+      "display": "Psychodidae (Drain fly larva)"
+    },
+    {
+      "code": "taxon-rhyacophilidae",
+      "display": "Rhyacophilidae (Caddisfly (no case))"
+    },
+    {
+      "code": "taxon-sericostomatidae",
+      "display": "Sericostomatidae (Caddisfly (sand case))"
+    },
+    {
+      "code": "taxon-sialidae",
+      "display": "Sialidae (Alderfly larva)"
+    },
+    {
+      "code": "taxon-simuliidae",
+      "display": "Simuliidae (Blackfly larva)"
+    },
+    {
+      "code": "taxon-sphaeriidae",
+      "display": "Sphaeriidae (Pea clam)"
+    },
+    {
+      "code": "taxon-syrphidae",
+      "display": "Syrphidae (Rat-tailed maggot)"
+    },
+    {
+      "code": "taxon-tipulidae",
+      "display": "Tipulidae (Cranefly larva (leatherjacket))"
+    },
+    {
+      "code": "taxon-trichoptera",
+      "display": "Trichoptera (identified to order only)"
+    },
+    {
+      "code": "taxon-turbellaria",
+      "display": "Turbellaria (identified to order only)"
+    },
+    {
+      "code": "taxon-unionidae",
+      "display": "Unionidae (Freshwater mussel)"
+    },
+    {
+      "code": "water-clarity-clear",
+      "display": "Clear - I can see the bed"
+    },
+    {
+      "code": "water-clarity-opaque",
+      "display": "Opaque - I cannot see in at all"
+    },
+    {
+      "code": "water-clarity-slightly-turbid",
+      "display": "Slightly cloudy"
+    },
+    {
+      "code": "water-clarity-turbid",
+      "display": "Cloudy - the bed disappears in shallow water"
+    },
+    {
+      "code": "water-colour-black",
+      "display": "Black"
+    },
+    {
+      "code": "water-colour-brown",
+      "display": "Brown or muddy"
+    },
+    {
+      "code": "water-colour-green",
+      "display": "Green"
+    },
+    {
+      "code": "water-colour-grey",
+      "display": "Grey or milky"
+    },
+    {
+      "code": "water-colour-natural",
+      "display": "Natural - clear, or tea-coloured from peat or leaves"
+    },
+    {
+      "code": "water-colour-orange",
+      "display": "Orange or rust-red"
+    },
+    {
+      "code": "water-colour-unusual",
+      "display": "An unusual colour I cannot place"
+    },
+    {
+      "code": "wfd-bad",
+      "display": "Bad"
+    },
+    {
+      "code": "wfd-ecological-status",
+      "display": "Ecological status class (Water Framework Directive scale)"
+    },
+    {
+      "code": "wfd-ecological-status-ordinal",
+      "display": "Ecological status as an ordinal, 5 high to 1 bad"
+    },
+    {
+      "code": "wfd-good",
+      "display": "Good"
+    },
+    {
+      "code": "wfd-high",
+      "display": "High"
+    },
+    {
+      "code": "wfd-moderate",
+      "display": "Moderate"
+    },
+    {
+      "code": "wfd-poor",
+      "display": "Poor"
+    }
+  ]
+}

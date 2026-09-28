@@ -344,6 +344,12 @@ def assessment_as_fhir(assessment_id: str):
     return fhir.bundle(_rehydrate(stored))
 
 
+@app.get("/api/fhir/CodeSystem/stream-health", tags=["interoperability"])
+def fhir_code_system():
+    """The project CodeSystem every non-standard code in an exported bundle belongs to."""
+    return fhir.code_system()
+
+
 @app.get("/api/assess/{assessment_id}/report", response_class=HTMLResponse, tags=["assessment"], include_in_schema=True)
 def assessment_report(assessment_id: str):
     """A printable incident report for a water authority or environmental regulator.

@@ -180,10 +180,38 @@ def test_every_resource_id_is_a_legal_fhir_id(assessment):
 
 
 def test_observations_hang_off_the_location_not_a_fabricated_patient(assessment):
-    for entry in fhir.bundle(assessment)["entry"]:
+    bundle = fhir.bundle(assessment)
+    by_url = {e["fullUrl"]: e["resource"]["resourceType"] for e in bundle["entry"]}
+    for entry in bundle["entry"]:
         resource = entry["resource"]
         if "subject" in resource:
-            assert resource["subject"]["reference"].startswith("Location/")
+            assert by_url[resource["subject"]["reference"]] == "Location"
+
+
+def test_every_reference_resolves_inside_the_bundle(assessment):
+    bundle = fhir.bundle(assessment)
+    urls = {e["fullUrl"] for e in bundle["entry"]}
+    assert all(re.fullmatch(r"urn:uuid:[0-9a-f-]{36}", u) for u in urls)
+    refs = re.findall(r"'reference': '([^']+)'", str(bundle))
+    assert refs and set(refs) <= urls
+
+
+def test_the_same_assessment_exports_the_same_identifiers(assessment):
+    """A receiver that imports twice must see one resource, not two."""
+    first, second = fhir.bundle(assessment), fhir.bundle(assessment)
+    assert [e["fullUrl"] for e in first["entry"]] == [e["fullUrl"] for e in second["entry"]]
+
+
+def test_every_project_code_is_defined_in_the_published_code_system(assessment):
+    defined = {c["code"] for c in fhir.code_system()["concept"]}
+    used = set(re.findall(r"'system': '" + re.escape(fhir.CODE_SYSTEM) + r"', 'code': '([^']+)'", str(fhir.bundle(assessment))))
+    assert used and used <= defined, used - defined
+
+
+def test_no_empty_arrays_reach_the_export():
+    """FHIR forbids them; a check with no animals and no findings used to produce several."""
+    text = str(fhir._prune({"a": [], "b": {"c": []}, "d": [1]}))
+    assert text == "{'d': [1]}"
 
 
 def test_the_panel_carries_the_index_numbers_as_components(assessment):
@@ -198,7 +226,7 @@ def test_alert_findings_become_flags_a_receiving_system_can_act_on(assessment):
     assert flags
     for flag in flags:
         assert flag["status"] == "active"
-        assert flag["subject"]["reference"].startswith("Location/")
+        assert flag["subject"]["reference"].startswith("urn:uuid:")
         assert flag["code"]["text"]
 
 
@@ -206,7 +234,8 @@ def test_provenance_records_the_model_the_catalogues_and_the_human_confirmations
     prov = next(e["resource"] for e in fhir.bundle(assessment)["entry"] if e["resource"]["resourceType"] == "Provenance")
     agents = " ".join(a["who"]["display"] for a in prov["agent"])
     assert "Citizen scientist" in agents and "claude" in agents
-    confirmations = next(x for x in prov["extension"] if x["url"].endswith("human-confirmations"))
+    panel = next(e["resource"] for e in fhir.bundle(assessment)["entry"] if e["resource"]["id"].startswith("status-"))
+    confirmations = next(c for c in panel["component"] if c["code"]["coding"][0]["code"] == "human-confirmations")
     assert confirmations["valueInteger"] == 3
 
 

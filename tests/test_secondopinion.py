@@ -200,8 +200,10 @@ def test_the_second_opinion_survives_the_review_the_report_and_the_fhir_export(c
     md = client.get(f"/api/assess/{reviewed['id']}/report.md").text
     assert "Independent check" in md and "kept their own identification on 1" in md
 
-    prov = [e["resource"] for e in client.get(f"/api/assess/{reviewed['id']}/fhir").json()["entry"] if e["resource"]["resourceType"] == "Provenance"][0]
-    exts = {e["url"].rsplit("/", 1)[-1]: e for e in prov["extension"]}
-    assert exts["taxa-identified-by"]["valueCode"] == "citizen"
-    kept = {e["url"]: e["valueInteger"] for e in exts["model-second-opinion"]["extension"]}
-    assert kept["keptOwn"] == 1 and kept["independentAgreements"] == 1
+    panel = next(
+        e["resource"] for e in client.get(f"/api/assess/{reviewed['id']}/fhir").json()["entry"] if e["resource"]["id"].startswith("status-")
+    )
+    comps = {c["code"]["coding"][0]["code"]: c for c in panel["component"]}
+    assert comps["taxa-identified-by"]["valueCodeableConcept"]["coding"][0]["code"] == "identified-by-citizen"
+    assert comps["second-opinion-kept-own"]["valueInteger"] == 1
+    assert comps["second-opinion-independent-agreements"]["valueInteger"] == 1
