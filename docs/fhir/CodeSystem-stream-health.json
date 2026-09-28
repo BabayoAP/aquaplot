@@ -3,7 +3,7 @@
   "id": "stream-health",
   "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">AquaPlot stream health codes (provisional), 189 concepts.</div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">AquaPlot stream health codes (provisional), 192 concepts.</div>"
   },
   "url": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
   "version": "bio-2026-09-27+habitat-2026-09-23",
@@ -15,7 +15,7 @@
   "description": "Provisional project codes for citizen stream-health screening: biotic index components, macroinvertebrate taxa, visual habitat indicators and One Health rule findings. Not a standard terminology; see docs/FHIR.md for the path to LOINC or an environmental terminology.",
   "caseSensitive": true,
   "content": "complete",
-  "count": 189,
+  "count": 192,
   "concept": [
     {
       "code": "access-contact",
@@ -318,6 +318,10 @@
       "display": "One Health rule: ecosystem health, habitat degradation"
     },
     {
+      "code": "rule-ecosystem-heat-ahead",
+      "display": "One Health rule: ecosystem health, heat ahead"
+    },
+    {
       "code": "rule-ecosystem-sedimentation",
       "display": "One Health rule: ecosystem health, sedimentation"
     },
@@ -336,6 +340,14 @@
     {
       "code": "rule-human-faecal-contamination",
       "display": "One Health rule: human health, faecal contamination"
+    },
+    {
+      "code": "rule-human-rain-ahead",
+      "display": "One Health rule: human health, rain ahead"
+    },
+    {
+      "code": "rule-human-storm-runoff",
+      "display": "One Health rule: human health, storm runoff"
     },
     {
       "code": "rule-human-vector-breeding",

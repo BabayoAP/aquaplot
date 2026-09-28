@@ -108,6 +108,14 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
     lines += [
         f"- **Observed:** {a.created_at}",
         f"- **Photographs taken:** {a.photos}",
+        *(
+            [
+                f"- **Weather:** {a.weather.rain_past_48h_mm:g} mm of rain in the 48 hours before the visit, "
+                f"{a.weather.rain_next_48h_mm:g} mm forecast in the 48 hours after (Open-Meteo)"
+            ]
+            if a.weather
+            else []
+        ),
         f"- **Reference:** AquaPlot assessment `{a.id}` ({a.version})",
         "",
         "## What is being reported",

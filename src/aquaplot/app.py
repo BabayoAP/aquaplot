@@ -34,19 +34,22 @@ and cheap for a script to hit; ``AQUAPLOT_CLASSIFY_LIMIT=0`` disables it.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
 import os
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from importlib import resources
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
@@ -56,13 +59,15 @@ from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
-from .observe import select_observer
+from .observe import load_samples, select_observer
 from .pipeline import PIPELINE_VERSION, Pipeline
 from .places import PlaceResolver, pilot_sites
 from .schema import Classification
+from .schema import Region as _Region
 from .secondopinion import SecondOpinion
 from .status import StatusResolver
 from .store import Store, site_key
+from .weather import WeatherResolver
 
 STATIC_DIR = Path(__file__).parent / "static"
 CLASSIFY_LIMIT = int(os.environ.get("AQUAPLOT_CLASSIFY_LIMIT", "20"))  # requests per client per window
@@ -98,7 +103,32 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Fill an empty store with the labelled demo data when ``AQUAPLOT_SEED_DEMO=1``.
+
+    A free host's disk is wiped on every restart, and a judge who opens the live link
+    once must not land on an empty dashboard (demo.py). Seeding runs in the
+    background so the app answers immediately, and a failure only costs the demo data.
+    """
+    task = None
+    if os.environ.get("AQUAPLOT_SEED_DEMO", "").lower() in ("1", "true", "yes"):
+        from . import demo
+
+        async def run():
+            try:
+                await demo.seed(app.state.assessor, app.state.store)
+            except Exception:  # the demo data is a courtesy; the app must start without it
+                pass
+
+        task = asyncio.create_task(run())
+    yield
+    if task is not None and not task.done():
+        task.cancel()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="AquaPlot",
     version=ASSESSMENT_VERSION,
     description=(
@@ -120,6 +150,7 @@ app.state.assessor = StreamAssessor(
     observer=select_observer(),
     status=StatusResolver(app.state.area.inat),
     places=PlaceResolver(app.state.area.inat),
+    weather=None if os.environ.get("AQUAPLOT_WEATHER", "on").lower() == "off" else WeatherResolver(),
 )
 
 
@@ -471,6 +502,64 @@ def insights():
     return app.state.store.summary()
 
 
+OUTLOOK_RULES = ("human.rain_ahead", "ecosystem.heat_ahead")
+OUTLOOK_TTL_SECONDS = 1800
+OUTLOOK_SITES = 50
+
+
+@app.get("/api/outlook", tags=["insight"])
+async def outlook():
+    """The next 48 hours at every monitored site: the early warning that looks forward.
+
+    Each site's most recent reading is run through the same One Health rules again,
+    this time with Open-Meteo's forecast for the next 48 hours, and only the
+    forward-looking findings are kept. A site whose last visit found sewage signs
+    and has heavy rain coming is the one to watch, and to re-check after the rain.
+    Cached for half an hour, and one request to Open-Meteo covers every site.
+    """
+    resolver = app.state.assessor.weather
+    if resolver is None:
+        return {"available": False, "reason": "weather lookups are switched off on this server", "sites": []}
+    cached = getattr(app.state, "outlook_cache", None)
+    if cached and cached[0] > time.monotonic():
+        return cached[1]
+    sites = app.state.store.sites(limit=OUTLOOK_SITES)
+    ahead = await resolver.ahead([(s["lat"], s["lon"]) for s in sites])
+    out = []
+    for site, weather in zip(sites, ahead):
+        if weather is None:
+            continue
+        latest = app.state.store.history(site["site_key"], limit=1)[0]
+        stored = app.state.store.get(latest["id"])
+        findings = [f for f in onehealth.evaluate(_rules_context(stored, weather)).findings if f.rule in OUTLOOK_RULES]
+        if not findings:
+            continue
+        worst = max(findings, key=lambda f: f.level.rank)
+        out.append(
+            {
+                "site_key": site["site_key"],
+                "name": site["name"],
+                "lat": site["lat"],
+                "lon": site["lon"],
+                "band": site["band"],
+                "last_seen": site["last_seen"],
+                "level": worst.level.value,
+                "weather": weather.as_dict(),
+                "findings": [f.as_dict() for f in findings],
+            }
+        )
+    out.sort(key=lambda s: (-onehealth.Level(s["level"]).rank, s["name"]))
+    body = {
+        "available": True,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "source": "Open-Meteo forecast, CC BY 4.0",
+        "sites_checked": len(sites),
+        "sites": out,
+    }
+    app.state.outlook_cache = (time.monotonic() + OUTLOOK_TTL_SECONDS, body)
+    return body
+
+
 @app.get("/api/alerts", tags=["insight"])
 def alerts(days: int = Query(default=30, ge=1, le=365)):
     """Sites whose most recent assessment reached concern or alert: the early-warning feed."""
@@ -576,6 +665,33 @@ def pilots():
     return pilot_sites()
 
 
+@app.get("/api/samples", tags=["reference"])
+def samples():
+    """The sample check: two openly licensed photos whose model reading was recorded once.
+
+    Submitting these photos to ``/api/assess`` replays the recording instead of calling
+    a model, so the blind second opinion can be tried on a server with no model key.
+    Any other photo is read live, and the assessment's ``observer`` says which happened.
+    """
+    return load_samples().as_dict()
+
+
+def _rules_context(stored: dict[str, Any], weather) -> onehealth.Context:
+    """What the rules read, rebuilt from a stored assessment's observations, with the given weather."""
+    from .assess import readings_of, taxa_of, warm_season
+
+    index = bioindex.INDICES.get(stored.get("ecology", {}).get("index_key", "bmwp"), bioindex.BMWP)
+    region = _Region.model_validate(stored["region"])
+    return onehealth.Context(
+        status=bioindex.score(taxa_of(stored), index),
+        habitat=habitat.assess(readings_of(stored)),
+        invasives=tuple(i["name"] for i in stored.get("invasives", [])),
+        site_name=stored.get("site_name"),
+        warm_season=warm_season(region.lat, datetime.fromisoformat(stored["created_at"])),
+        weather=weather,
+    )
+
+
 def _rehydrate(stored: dict[str, Any]) -> "Assessment":
     """Rebuild an Assessment object from a stored payload, for the FHIR exporter.
 
@@ -585,26 +701,19 @@ def _rehydrate(stored: dict[str, Any]) -> "Assessment":
     stored ``band`` and ``certainty`` stay authoritative for the row; this rebuild
     is for export, and the version that produced the row travels with it.
     """
-    from .assess import Assessment, InvasiveHit, readings_of, taxa_of
-    from .schema import Region as _Region
+    from .assess import Assessment, InvasiveHit
+    from .weather import Weather
 
-    index = bioindex.INDICES.get(stored.get("ecology", {}).get("index_key", "bmwp"), bioindex.BMWP)
-    ecology = bioindex.score(taxa_of(stored), index)
-    pressures = habitat.assess(readings_of(stored))
-    signal = onehealth.evaluate(
-        onehealth.Context(
-            status=ecology,
-            habitat=pressures,
-            invasives=tuple(i["name"] for i in stored.get("invasives", [])),
-            site_name=stored.get("site_name"),
-        )
-    )
+    weather = Weather.from_dict(stored.get("weather"))
+    ctx = _rules_context(stored, weather)
+    ecology, pressures, region = ctx.status, ctx.habitat, _Region.model_validate(stored["region"])
+    signal = onehealth.evaluate(ctx)
     seeded = {e.summary(): e for e in app.state.assessor.listed}
     return Assessment(
         id=stored["id"],
         created_at=stored["created_at"],
         site_name=stored.get("site_name"),
-        region=_Region.model_validate(stored["region"]),
+        region=region,
         photos=stored.get("photos", 0),
         photo_kinds=stored.get("photo_kinds", []),
         ecology=ecology,
@@ -631,6 +740,7 @@ def _rehydrate(stored: dict[str, Any]) -> "Assessment":
         version=stored.get("version", ASSESSMENT_VERSION),
         identified_by=stored.get("identified_by", "model"),
         second_opinion=SecondOpinion.from_dict(stored["second_opinion"]) if stored.get("second_opinion") else None,
+        weather=weather,
     )
 
 
@@ -693,6 +803,18 @@ def area_listed():
 def index() -> FileResponse:
     """The guided stream check. This is the product; everything else supports it."""
     return FileResponse(STATIC_DIR / "check.html")
+
+
+@app.get("/about", include_in_schema=False)
+def about_page() -> FileResponse:
+    """AquaPlot in two minutes: the problem, the moment worth seeing, and what is and is not claimed."""
+    return FileResponse(STATIC_DIR / "about.html")
+
+
+@app.get("/try", include_in_schema=False)
+def try_it() -> RedirectResponse:
+    """Straight into the sample check: the one link to give someone with two minutes."""
+    return RedirectResponse("/?sample=1", status_code=307)
 
 
 @app.get("/dashboard", include_in_schema=False)

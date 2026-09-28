@@ -221,8 +221,12 @@ class OllamaObserver:
 
 def select_observer(env: dict[str, str] | None = None) -> StreamObserver:
     """``AQUAPLOT_OBSERVER`` (claude | ollama | none) forces a backend; otherwise Claude
-    if a key is present, else a local Ollama vision model, else none."""
-    env = os.environ if env is None else env
+    if a key is present, else a local Ollama vision model, else none. Whichever it is,
+    the bundled sample photos are answered from their recording (``SampleReplay``)."""
+    return SampleReplay(_live_observer(os.environ if env is None else env))
+
+
+def _live_observer(env) -> StreamObserver:
     forced = env.get("AQUAPLOT_OBSERVER", env.get("AQUAPLOT_IDENTIFIER", "")).lower()
     if forced == "none":
         return NullObserver()
@@ -234,3 +238,122 @@ def select_observer(env: dict[str, str] | None = None) -> StreamObserver:
     if model:
         return OllamaObserver(model=model)
     return NullObserver()
+
+
+# ---- the sample check --------------------------------------------------------
+#
+# A judge, a teacher or a council officer opening the app for the first time is
+# rarely standing in a stream, and a public deployment may have no model key at
+# all. Either way they would never see the second opinion, which is the part of
+# AquaPlot worth seeing. So the app ships two openly licensed photographs, and a
+# vision model's answer to each, recorded once with the same prompt and replayed
+# whenever those exact photographs come back. The replay is labelled as a
+# recording everywhere it surfaces (``Assessment.observer``, the model notes, the
+# report and the FHIR Provenance); it is never passed off as a live reading, and
+# any other photograph goes to the live observer untouched.
+
+
+class RecordedObservation(StreamObservation):
+    """A model's answer to a bundled sample photo, recorded earlier and replayed."""
+
+    recorded_by: str
+    recorded_on: str
+    sample: str
+
+
+def image_fingerprint(image: Image.Image) -> int:
+    """A 64-bit difference hash: survives re-encoding and resizing, not a different photo."""
+    small = image.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
+    px = small.tobytes()  # one byte per pixel in mode L, row by row
+    bits = 0
+    for row in range(8):
+        for col in range(8):
+            bits = (bits << 1) | (px[row * 9 + col] > px[row * 9 + col + 1])
+    return bits
+
+
+FINGERPRINT_TOLERANCE = 6  # differing bits allowed out of 64
+
+
+@dataclass(frozen=True, slots=True)
+class Sample:
+    file: str
+    title: str
+    credit: str
+    licence: str
+    source: str
+    observation: dict[str, Any]
+    fingerprint: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "url": f"/static/samples/{self.file}",
+            "file": self.file,
+            "title": self.title,
+            "credit": self.credit,
+            "licence": self.licence,
+            "source": self.source,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SampleSet:
+    recorded_by: str
+    recorded_on: str
+    how: str
+    location: dict[str, Any]
+    samples: tuple[Sample, ...]
+
+    def match(self, image: Image.Image) -> Sample | None:
+        fp = image_fingerprint(image)
+        return next((s for s in self.samples if (fp ^ s.fingerprint).bit_count() <= FINGERPRINT_TOLERANCE), None)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "recorded_by": self.recorded_by,
+            "recorded_on": self.recorded_on,
+            "how": self.how,
+            "location": self.location,
+            "photos": [s.as_dict() for s in self.samples],
+        }
+
+
+def load_samples() -> SampleSet:
+    """``data/samples.json`` plus the photographs in ``static/samples``, fingerprinted at load."""
+    from importlib import resources
+    from pathlib import Path
+
+    raw = json.loads(resources.files("aquaplot.data").joinpath("samples.json").read_text(encoding="utf-8"))
+    folder = Path(__file__).parent / "static" / "samples"
+    samples = []
+    for s in raw["samples"]:
+        StreamObservation.model_validate(s["observation"])  # a recording that no longer fits the schema is a bug
+        with Image.open(folder / s["file"]) as img:
+            fp = image_fingerprint(img)
+        samples.append(
+            Sample(s["file"], s["title"], s["credit"], s["licence"], s["source"], s["observation"], fp)
+        )
+    return SampleSet(raw["recorded_by"], raw["recorded_on"], raw["how"], raw["location"], tuple(samples))
+
+
+class SampleReplay:
+    """Answers the bundled sample photos from their recording and everything else live."""
+
+    def __init__(self, live: StreamObserver, samples: SampleSet | None = None):
+        self.live = live
+        self.samples = samples if samples is not None else load_samples()
+
+    @property
+    def name(self) -> str:
+        return self.live.name
+
+    async def observe(self, image, description, region) -> StreamObservation:
+        sample = self.samples.match(image) if image is not None else None
+        if sample is None:
+            return await self.live.observe(image, description, region)
+        return RecordedObservation(
+            **sample.observation,
+            recorded_by=self.samples.recorded_by,
+            recorded_on=self.samples.recorded_on,
+            sample=sample.file,
+        )

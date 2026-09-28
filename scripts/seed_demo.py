@@ -26,71 +26,7 @@ import sys
 
 import httpx
 
-# Each entry is one visit. Sites that appear twice are the point of the exercise:
-# they are what turns a reading into a trend, and one of them declines.
-VISITS: list[dict] = [
-    {
-        "who": "demo-oslo",
-        "site_name": "Hovinbekken, Oslo (demo data)",
-        "lat": 59.9245, "lon": 10.7890,
-        "answers": {"water_clarity": "clear", "water_colour": "natural", "algae": "none", "foam_or_sheen": "natural_foam",
-                    "litter": "scattered", "riparian_vegetation": "continuous_natural", "bank_modification": "natural",
-                    "flow": "fast", "substrate": "boulders_cobbles", "sediment_deposit": "none", "shade": "shaded",
-                    "odour": "earthy", "access": "path_only"},
-        "taxa": ["Perlidae", "Heptageniidae", "Leptoceridae", "Rhyacophilidae", "Goeridae", "Gammaridae", "Elmidae", "Ancylidae"],
-    },
-    {
-        "who": "demo-coimbra",
-        "site_name": "Ribeira da Fonte, Coimbra (demo data)",
-        "lat": 40.2038, "lon": -8.4194,
-        "answers": {"water_clarity": "slightly_turbid", "water_colour": "natural", "algae": "patchy", "foam_or_sheen": "none",
-                    "litter": "scattered", "riparian_vegetation": "patchy", "bank_modification": "partly_reinforced",
-                    "flow": "moderate", "substrate": "gravel", "sediment_deposit": "light", "shade": "partial",
-                    "odour": "none", "access": "contact"},
-        "taxa": ["Baetidae", "Hydropsychidae", "Gammaridae", "Elmidae", "Ancylidae", "Limnephilidae"],
-    },
-    {
-        # The same stretch, a month later, after a dry spell and a discharge.
-        "who": "demo-coimbra",
-        "site_name": "Ribeira da Fonte, Coimbra (demo data)",
-        "lat": 40.2039, "lon": -8.4195,
-        "answers": {"water_clarity": "turbid", "water_colour": "grey", "algae": "extensive", "foam_or_sheen": "white_foam",
-                    "litter": "heavy", "riparian_vegetation": "patchy", "bank_modification": "partly_reinforced",
-                    "flow": "slow", "substrate": "silt", "sediment_deposit": "heavy", "shade": "partial",
-                    "odour": "sewage", "access": "contact"},
-        "taxa": ["Asellidae", "Chironomidae", "Oligochaeta", "Erpobdellidae", "Physidae"],
-    },
-    {
-        "who": "demo-ghent",
-        "site_name": "Leie side channel, Ghent (demo data)",
-        "lat": 51.0489, "lon": 3.7255,
-        "answers": {"water_clarity": "slightly_turbid", "water_colour": "green", "algae": "extensive", "foam_or_sheen": "none",
-                    "litter": "scattered", "riparian_vegetation": "mown_grass", "bank_modification": "fully_channelised",
-                    "flow": "slow", "substrate": "silt", "sediment_deposit": "light", "shade": "open",
-                    "odour": "musty", "access": "contact"},
-        "taxa": ["Baetidae", "Gammaridae", "Asellidae", "Chironomidae", "Physidae", "Dreissenidae"],
-    },
-    {
-        "who": "demo-toulouse",
-        "site_name": "Hers-Mort tributary, Toulouse (demo data)",
-        "lat": 43.5966, "lon": 1.4722,
-        "answers": {"water_clarity": "clear", "water_colour": "natural", "algae": "patchy", "foam_or_sheen": "none",
-                    "litter": "none", "riparian_vegetation": "continuous_natural", "bank_modification": "natural",
-                    "flow": "stagnant", "substrate": "sand", "sediment_deposit": "light", "shade": "open",
-                    "odour": "none", "access": "play_or_drinking"},
-        "taxa": ["Culicidae", "Chironomidae", "Baetidae", "Corixidae", "Lymnaeidae", "Coenagrionidae"],
-    },
-    {
-        "who": "demo-benevento",
-        "site_name": "Torrente San Nicola, Benevento (demo data)",
-        "lat": 41.1268, "lon": 14.7715,
-        "answers": {"water_clarity": "clear", "water_colour": "natural", "algae": "patchy", "foam_or_sheen": "none",
-                    "litter": "scattered", "riparian_vegetation": "patchy", "bank_modification": "partly_reinforced",
-                    "flow": "moderate", "substrate": "gravel", "sediment_deposit": "light", "shade": "partial",
-                    "odour": "none", "access": "contact"},
-        "taxa": ["Baetidae", "Caenidae", "Hydropsychidae", "Gammaridae", "Elmidae", "Procambarus clarkii"],
-    },
-]
+from aquaplot.demo import VISITS  # one dataset, shared with AQUAPLOT_SEED_DEMO
 
 
 def main() -> int:
@@ -98,6 +34,8 @@ def main() -> int:
     parser.add_argument("--url", default="http://127.0.0.1:8000", help="base URL of a running AquaPlot")
     args = parser.parse_args()
 
+    # Over HTTP a visit is dated when it arrives, so the series here are compressed
+    # into one moment; AQUAPLOT_SEED_DEMO=1 seeds in-process with real dates instead.
     with httpx.Client(base_url=args.url.rstrip("/"), timeout=60) as client:
         try:
             health = client.get("/api/health").json()

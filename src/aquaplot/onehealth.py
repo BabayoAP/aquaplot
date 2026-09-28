@@ -36,6 +36,7 @@ from typing import Any, Callable
 
 from .bioindex import Band, EcologicalStatus
 from .habitat import HabitatPressure
+from .weather import Weather
 
 DISCLAIMER = (
     "AquaPlot is a citizen-science screening tool. It is not a medical, water-quality or "
@@ -142,6 +143,7 @@ class Context:
     invasives: tuple[str, ...] = ()  # listed invasive species recognised at the site
     site_name: str | None = None
     warm_season: bool = True  # mosquito development is temperature-driven
+    weather: Weather | None = None  # the 48 hours either side of the visit, when they could be had
 
     def answer(self, key: str) -> str | None:
         return self.habitat.value(key)
@@ -219,6 +221,17 @@ def faecal_contamination(ctx: Context) -> Finding | None:
         return None
     level = Level.CONCERN if len(evidence) == 1 else Level.ALERT
     level = _escalate(level, ctx, Level.ALERT)
+    # The weather does not make the sewage more or less real; it says where it came from.
+    w = ctx.weather
+    if w is not None and w.heavy_rain_before:
+        evidence.append(
+            f"{w.rain_past_48h_mm:g} mm of rain fell in the 48 hours before, which is consistent with a storm overflow"
+        )
+    elif w is not None and w.dry_before:
+        evidence.append(
+            "it had not rained in the 48 hours before, so an overflow is unlikely; a misconnected drain or a leak is the "
+            "more likely source"
+        )
     return Finding(
         rule="human.faecal_contamination",
         domain=Domain.HUMAN,
@@ -288,6 +301,56 @@ def chemical_sheen(ctx: Context) -> Finding | None:
             "fresh sheen is traceable upstream to its outfall, an old one is not."
         ),
         confirmed=ctx.confirmed("foam_or_sheen") or ctx.confirmed("odour"),
+    )
+
+
+@rule
+def storm_runoff(ctx: Context) -> Finding | None:
+    """The first flush: an urban stream is at its dirtiest in the days after heavy rain."""
+    w = ctx.weather
+    if w is None or not w.heavy_rain_before:
+        return None
+    return Finding(
+        rule="human.storm_runoff",
+        domain=Domain.HUMAN,
+        level=Level.CONCERN if ctx.contact else Level.WATCH,
+        title="Heavy rain has just washed the streets into this stream",
+        because=(
+            f"{w.rain_past_48h_mm:g} mm of rain fell here in the 48 hours before this check (Open-Meteo)",
+            "after heavy rain an urban stream carries road run-off and, where sewers are combined, overflow; "
+            "bacteria stay high for one to three days",
+            *(("people or dogs get into the water here",) if ctx.contact else ()),
+        ),
+        action=(
+            "Stay out of the water, keep dogs out, and wash hands after any contact until two dry days have passed. "
+            "A reading taken this soon after rain shows the stream at its worst: check it again in dry weather "
+            "before drawing conclusions from the difference."
+        ),
+    )
+
+
+@rule
+def rain_ahead(ctx: Context) -> Finding | None:
+    """The early warning: heavy rain is forecast, so contact with the water should be planned around it."""
+    w = ctx.weather
+    if w is None or not w.heavy_rain_ahead:
+        return None
+    # A site that has already shown sewage is the one where rain is most likely to set an overflow running.
+    sewage_seen = ctx.answer("odour") == "sewage" or ctx.answer("litter") == "sanitary"
+    return Finding(
+        rule="human.rain_ahead",
+        domain=Domain.HUMAN,
+        level=Level.CONCERN if sewage_seen else Level.WATCH,
+        title="Heavy rain is forecast - plan water contact around it",
+        because=(
+            f"{w.rain_next_48h_mm:g} mm of rain is forecast here in the next 48 hours (Open-Meteo)",
+            *(("sewage signs have been recorded here, so rain is likely to set an overflow running",) if sewage_seen else ()),
+        ),
+        action=(
+            "Put off paddling, dog swims and river-day kick samples until two dry days after the rain. If you can, "
+            "come back within a day of it: a before-and-after pair at the same spot is the clearest evidence of "
+            "whether an overflow feeds this stream."
+        ),
     )
 
 
@@ -470,6 +533,35 @@ def thermal_and_drought(ctx: Context) -> Finding | None:
 
 
 @rule
+def heat_ahead(ctx: Context) -> Finding | None:
+    """A hot spell on water that is open, slow or choked with algae is an oxygen crash waiting for a still night."""
+    w = ctx.weather
+    if w is None or not w.heat_ahead:
+        return None
+    exposed = []
+    if ctx.answer("shade") == "open":
+        exposed.append("the water is fully exposed to the sun")
+    if ctx.answer("flow") in ("slow", "stagnant"):
+        exposed.append("the water is barely moving")
+    if ctx.answer("algae") in ("extensive", "bloom"):
+        exposed.append("there is a lot of algae, which uses up oxygen overnight")
+    if not exposed:
+        return None
+    return Finding(
+        rule="ecosystem.heat_ahead",
+        domain=Domain.ECOSYSTEM,
+        level=Level.CONCERN if len(exposed) >= 2 else Level.WATCH,
+        title="A hot spell is forecast and this water has little defence against it",
+        because=(f"up to {w.max_temp_next_48h_c:g} °C is forecast here in the next 48 hours (Open-Meteo)", *exposed),
+        action=(
+            "If you can, look again at dawn during the heat, when oxygen is lowest: fish gasping at the surface or "
+            "dead fish should be reported to the environmental agency at once, because an oxygen crash can be "
+            "mitigated only while it is happening."
+        ),
+    )
+
+
+@rule
 def sedimentation(ctx: Context) -> Finding | None:
     if ctx.answer("sediment_deposit") != "heavy" and ctx.answer("water_clarity") not in ("turbid", "opaque"):
         return None
@@ -478,6 +570,10 @@ def sedimentation(ctx: Context) -> Finding | None:
         because.append("thick silt or black sludge covers the bed, so the spaces sensitive larvae live in are filled")
     if ctx.answer("water_clarity") in ("turbid", "opaque"):
         because.append(f"the water was {ctx.answer('water_clarity').replace('_', ' ')}")
+        if ctx.weather is not None and ctx.weather.heavy_rain_before:
+            because.append(f"{ctx.weather.rain_past_48h_mm:g} mm of rain fell in the previous 48 hours, so some of the cloudiness is storm-driven")
+        elif ctx.weather is not None and ctx.weather.dry_before:
+            because.append("it had not rained in the previous 48 hours, so the cloudiness has a constant source")
     return Finding(
         rule="ecosystem.sedimentation",
         domain=Domain.ECOSYSTEM,
@@ -570,7 +666,13 @@ def _community_actions(ctx: Context, findings: list[Finding]) -> list[str]:
 def _authority_actions(ctx: Context, findings: list[Finding]) -> list[str]:
     out: list[str] = []
     if any(f.rule == "human.faecal_contamination" for f in findings):
-        out.append("Trace the sewer network upstream of this point for misconnections and overflow activations around this date.")
+        w = ctx.weather
+        if w is not None and w.heavy_rain_before:
+            out.append("Check the overflow event records for outfalls upstream of this point: the sewage signs followed heavy rain.")
+        elif w is not None and w.dry_before:
+            out.append("Trace the surface-water network upstream for misconnected foul drains: the sewage signs appeared in dry weather, when overflows should not be running.")
+        else:
+            out.append("Trace the sewer network upstream of this point for misconnections and overflow activations around this date.")
     if any(f.rule == "human.cyanobacteria" for f in findings):
         out.append("Sample for cyanobacteria and toxins, and sign the access points until results are back.")
     if any(f.rule == "human.chemical_exposure" for f in findings):

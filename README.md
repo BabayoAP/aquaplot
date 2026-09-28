@@ -4,6 +4,21 @@
 
 **The citizen identifies. The AI double-checks, blind. The rules decide.**
 
+**The problem.** The animals living in a stream are the best evidence of its health, and the
+hardest thing for a volunteer to name: a flat-headed mayfly and a stonefly look alike to a
+beginner, and one wrong name can move a stream's reading. Letting an AI identify them instead
+teaches nobody anything, hides the AI's mistakes, and puts a machine's guess in a health record.
+The hackathon's Track 3 names the problem directly: *citizen observations can be inconsistent
+and error-prone.*
+
+**Try it in 90 seconds:** run it (below) and open `/try`: real photographs are pre-loaded, you
+name the animal, and the AI, which never saw your answer, asks you to count its tails.
+`/about` is the two-minute version of this page.
+
+| You identify | The AI asks, blind | The reading | The trend |
+|---|---|---|---|
+| ![Picking the animal](docs/screenshots/1-identify.png) | ![The second opinion](docs/screenshots/2-second-opinion.png) | ![The result](docs/screenshots/3-result.png) | ![A site declining](docs/screenshots/5-site-trend.png) |
+
 A citizen scoops gravel from a shallow, fast patch of an urban stream into a pale tray,
 photographs it, and picks what they see from a guide organised by shape — "three tails",
 "a case made of sand". A vision model looks at the same photograph **without seeing their
@@ -23,6 +38,7 @@ tray photo ──▶ citizen picks the animals ───────────
                                                           whether the answer changes the band
 reach photo ─▶ observe.py ─▶ habitat.py   visual pressures; a citizen answer beats the model's
 coords ─────▶ places.py                   which municipality, which country, which index
+     └──────▶ weather.py                  rain before the visit, rain and heat in the next 48 h
                  └─▶ bioindex.py          BMWP/ASPT, or IBMWP/IASPT in Portugal and Spain
                  └─▶ status.py            is any of this on an invasive list, here?
                         └─▶ onehealth.py  rules → ecosystem / human / animal findings + actions
@@ -122,18 +138,28 @@ answer ("some kind of stonefly") is scored from the group median and flagged, no
 An animal an index does not score (mosquito larvae under BMWP) is recorded, not scored, and
 still feeds the health rules.
 
-**The One Health rules.** Twelve rules over the index, the pressures, the invasive check and
-the exposure answer: harmful algal blooms, sewage indicators, chemical sheen, mosquito
+**The One Health rules.** Fifteen rules over the index, the pressures, the invasive check, the
+exposure answer and the weather either side of the visit: harmful algal blooms, sewage indicators, chemical sheen, mosquito
 breeding, parasite-host snails, invasive biosecurity, habitat degradation, thermal and
-drought resilience, sedimentation, and the wellbeing a stream in good condition provides.
+drought resilience, sedimentation, storm run-off after heavy rain, heavy rain and heat ahead,
+and the wellbeing a stream in good condition provides.
 Exposure escalates: the same water quality is a different finding where children paddle.
+
+**The weather a visit cannot see** (`weather.py`). The 48 hours either side of a check come
+from Open-Meteo (free, no key) and are stored with it. Rain just before a visit means the stream
+is at its dirtiest and a paddle can wait; sewage signs after rain point at a storm overflow and
+in dry weather at a misconnected drain, and the authority is asked to look in the right place.
+Heavy rain or heat in the forecast is the early warning. A failed lookup costs the context,
+never the result.
 
 **Trends and early warning** (`/dashboard`, `/map`, `/site/{key}`). Assessments are keyed to a
 ~100 m site grid, so a second visit to roughly the same spot extends a series instead of
 dropping a new pin — and when you locate yourself near somewhere you have been, the app asks
 whether it is the same spot rather than deciding for you. Each site has its own page with the
 ecological class plotted over every visit. The dashboard leads with where the water stands,
-which sites declined since their last visit, and what needs a budget. A review *replaces* a
+which sites declined since their last visit, what needs a budget, and **the next 48 hours**:
+every site's latest reading re-run through the same rules with the forecast, so the site that
+showed sewage and has heavy rain coming is flagged before the rain arrives. A review *replaces* a
 visit rather than adding one, so the volunteers who check the model's work most carefully
 cannot manufacture trends by doing so.
 
@@ -173,6 +199,13 @@ opinion would catch, and how many questions a correct list still draws. A starte
 openly licensed larva and nymph photos comes from iNaturalist with `scripts/fetch_inat_eval.py`.
 See [docs/EVALUATION.md](docs/EVALUATION.md).
 
+**A sample check anyone can try** (`/`, *Use the sample photos*). Two openly licensed
+photographs, a reach and a tray with one nymph in it, placed at OneAquaHealth research site C3.
+A vision model's reading of each was recorded once, with the same prompt, and is replayed when
+those photographs come back, so the blind second opinion can be seen on a server with no model
+key. The replay is labelled as a recording on the page, in the result, the report and the FHIR
+Provenance; any other photo is read live. Credits are in `data/samples.json`.
+
 **It works with no model at all.** With no API key and no local model, nothing is read off
 the photos, nobody double-checks the identifications, and the citizen answers the form
 themselves — and the band, the pressure score, the findings, the actions, the trends and the
@@ -186,18 +219,20 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 222 tests, no network, no model
+.venv/bin/python -m pytest                       # 247 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
-Open `/` to check a stream, `/site/{key}` for one spot's history, `/dashboard` for the
+Open `/about` for the two-minute tour, `/try` for the sample check, `/` to check a stream, `/site/{key}` for one spot's history, `/dashboard` for the
 insights, `/map` for the map, `/field-guide` for the sampling protocol, `/docs` for the
 interactive API reference.
 
 A fresh install has an empty dashboard, which is the worst first impression of a tool whose
-argument is that a *series* is worth more than one reading. `scripts/seed_demo.py` posts a
-small, clearly-labelled demo dataset across the five research cities — including a site that
-declines between visits — through the public API:
+argument is that a *series* is worth more than one reading. Start with `AQUAPLOT_SEED_DEMO=1`
+and an empty database is filled at startup with a small, clearly-labelled demo dataset across
+the five research cities, dated over five months, with one site that declines and one that
+improves (`src/aquaplot/demo.py`; the Render blueprint sets it, because a free instance's disk
+is wiped on every restart). Or post the same visits to a running server through the public API:
 
 ```sh
 .venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000
@@ -214,13 +249,13 @@ declines between visits — through the public API:
 `AQUAPLOT_OBSERVER=claude|ollama|none` forces a choice and `/api/health` reports which is
 active. `AQUAPLOT_DB` sets the SQLite path (default `aquaplot.db`). `AQUAPLOT_CLASSIFY_LIMIT`
 caps assessments per client address per 10 minutes (default 20, `0` disables) so a public
-demo cannot drain an API key.
+demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookups.
 
 ## Where things live
 
 | Path | What |
 |---|---|
-| `src/aquaplot/observe.py` | The vision model's only job: photo → structured observations. Three backends, one schema. |
+| `src/aquaplot/observe.py` | The vision model's only job: photo → structured observations. Three backends, one schema, and the labelled replay for the sample photos. |
 | `src/aquaplot/secondopinion.py` | The citizen's list against the model's blind one: questions, the feature that settles each, the band at stake. |
 | `src/aquaplot/bioindex.py` | BMWP/ASPT and IBMWP/IASPT, index choice by country, WFD bands, the effort cap, the coarse-identification rule. |
 | `src/aquaplot/habitat.py` | The visual field form: scoring, validation, model-vs-citizen precedence. |
@@ -228,6 +263,8 @@ demo cannot drain an API key.
 | `src/aquaplot/assess.py` | Composes the stages; the certainty rule; the confirmation queue; `reassess` for review. |
 | `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
+| `src/aquaplot/weather.py` | The 48 hours either side of a visit and the 48-hour outlook, from Open-Meteo. Injectable, stored with the check. |
+| `src/aquaplot/demo.py` | The labelled demo dataset, seeded into an empty store at startup with `AQUAPLOT_SEED_DEMO=1`. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
 | `src/aquaplot/fhir.py` | FHIR R4 Bundle export, conforming to the OneAquaHealth IG profiles, and the project CodeSystem. |
 | `src/aquaplot/oah.py` | The OneAquaHealth research sites, and a check as the project's Citizen Science App submission. |
@@ -239,6 +276,7 @@ demo cannot drain an API key.
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
 | `src/aquaplot/data/oah_reference.json` | Snapshot of the OneAquaHealth public API: 106 research sites and the Citizen Science App's answer codes. Refresh with `scripts/fetch_oah_reference.py`. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
+| `src/aquaplot/static/about.html` | AquaPlot in two minutes, at `/about`: the problem, the moment worth seeing, what is and is not claimed. `/try` opens the sample check. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
@@ -254,7 +292,8 @@ demo cannot drain an API key.
 - [docs/EVALUATION.md](docs/EVALUATION.md) — how the second opinion is measured, and how to read the numbers honestly.
 - [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md) — every rule, its trigger, its evidence and its action.
 - [docs/FHIR.md](docs/FHIR.md) — the resources, the codes, validating it yourself, and what would have to happen to make it standard.
-- [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, and the build timeline.
+- [docs/HACKATHON.md](docs/HACKATHON.md) — track alignment, the judging criteria, the build timeline and the timed demo script.
+- [docs/DEVPOST.md](docs/DEVPOST.md) — the submission text, section by section.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to correct a rule, add a family, or swap in a country-specific index.
 - [docs/AREA-VIEWER.md](docs/AREA-VIEWER.md), [docs/CLASSIFIER.md](docs/CLASSIFIER.md) — the inherited features.
 
@@ -269,7 +308,7 @@ blind second opinion, both biotic indices, the field form, the One Health rule e
 assessment pipeline and its review loop, persistence and trends, the authority report, FHIR
 and tabular export, the evaluation harness, the generalised geography, the offline field app,
 and every page except the classifier. By `git diff --shortstat` against the imported commit:
-about 6,400 lines of new Python and 2,100 of new interface, and 154 of the 222 tests. SpeciesGuard's
+about 6,900 lines of new Python and 2,100 of new interface, and 179 of the 247 tests. SpeciesGuard's
 code was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's PRD is kept at
 [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
@@ -310,6 +349,8 @@ on the record rather than implied.
 | IBMWP family scores (Alba-Tercedor et al. 2002; MAGRAMA 2011) | The index in Portugal and Spain | Published methodology; checked against the tables in the `biomonitoR` R package |
 | EU Regulation (EU) 1143/2014 Union list | Invasive species of Union concern | Public |
 | Cal-IPC Inventory, CDFW, USGS NAS, UC IPM | Inherited Californian invasive entries | Public lists |
+| [Open-Meteo](https://open-meteo.com) | Rain and temperature either side of a visit, and the 48-hour outlook | Free, no key, CC BY 4.0 |
+| Sample photos: John Rostron (geograph.org.uk, CC BY-SA 2.0); Johan Kjær Prehn (iNaturalist, CC BY 4.0) | The sample check | Credited in `data/samples.json` and on the page |
 | [OneAquaHealth field protocols](https://zenodo.org/records/20344421) | The shape of the site-characterisation form | CC, cited |
 | [Global Forest Watch](https://www.globalforestwatch.org/) (Hansen/UMD/Google/USGS/NASA) | Tree-cover loss tiles | CC BY 4.0 |
 | Esri World Imagery and Reference | Basemap and labels | Esri attribution |

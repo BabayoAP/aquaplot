@@ -137,6 +137,7 @@
       <a href="/dashboard">Dashboard</a>
       <a href="/map">Map</a>
       <a href="#" id="guidebtn">ID guide</a>
+      <a href="/about">About</a>
     </nav>
   </div>
 </header>
@@ -175,6 +176,14 @@
     <label for="sitename">What do people call this spot? (optional)</label>
     <input type="text" id="sitename" placeholder="e.g. the brook behind the station" maxlength="120">
     <div class="row"><button type="button" class="primary wide" data-go="step2">Next</button></div>
+
+    <div class="nearby" id="samplecard">
+      <b>Not at a stream right now?</b>
+      <p class="sub">Try a sample check with two real photographs: a reach, and a tray with one nymph in it. Identify the
+        animal yourself in step 3 (a stonefly, perhaps?) and see what the model's blind second opinion says. The model's
+        reading of these two photos was recorded once and is replayed, so this works even where no model is configured.</p>
+      <div class="row"><button type="button" class="ghost" id="samplebtn">Use the sample photos</button></div>
+    </div>
   </section>
 
   <!-- Step 2 -->
@@ -332,7 +341,7 @@ api("/api/health").then((r) => r.json()).then((h) => {
     $("notice").hidden = false;
     $("notice").textContent = "No vision model is configured on this server, so nothing is read from your photos and nobody " +
       "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself; the " +
-      "reading works exactly the same.";
+      "reading works exactly the same. (The sample photos below are the exception: their model reading was recorded.)";
   }
 }).catch(() => {});
 
@@ -478,6 +487,30 @@ async function checkNearby() {
     card.append(b, sub, row); box.append(card);
   } catch (e) { /* a missing suggestion must never block the check */ }
 }
+
+// ---- the sample check: real photos, a recorded model reading, labelled as such
+$("samplebtn").addEventListener("click", async () => {
+  const btn = $("samplebtn"); btn.disabled = true;
+  try {
+    const set = await (await api("/api/samples")).json();
+    state.files = await Promise.all(set.photos.map(async (p) =>
+      new File([await (await fetch(p.url)).blob()], p.file, { type: "image/jpeg" })));
+    drawThumbs();
+    state.lat = set.location.lat; state.lon = set.location.lon;
+    $("sitename").value = set.location.site_name;
+    $("locstatus").textContent = `Set: ${set.location.lat.toFixed(4)}, ${set.location.lon.toFixed(4)}`;
+    const credits = set.photos.map((p) => `${p.title} (${p.credit}, ${p.licence})`).join("; ");
+    $("notice").hidden = false;
+    $("notice").textContent = `Sample check. ${set.location.explanation} Photos: ${credits}. What the model sees in them `
+      + `was recorded from ${set.recorded_by} on ${set.recorded_on} and is replayed; any photo of your own is read live.`;
+    show("step2");
+  } catch (e) {
+    $("locstatus").textContent = "The sample photos could not be loaded.";
+  } finally { btn.disabled = false; }
+});
+
+// /try lands here with ?sample=1: start the sample check without making anyone hunt for it.
+if (new URLSearchParams(location.search).has("sample")) $("samplebtn").click();
 
 // ---- photos
 $("camerabtn").addEventListener("click", () => $("camera").click());
@@ -783,6 +816,9 @@ function render(d) {
   if (d.research_site) rows.push(["OneAquaHealth research site",
     `${d.research_site.code} · ${d.research_site.name}, ${d.research_site.city} (${d.research_site.distance_m} m away). ` +
     "The project samples here too, so your reading can be compared with its laboratory data."]);
+  if (d.weather) rows.push(["Weather either side of this check",
+    `${d.weather.rain_past_48h_mm} mm of rain in the 48 hours before, ${d.weather.rain_next_48h_mm} mm forecast in the next 48` +
+    (d.weather.max_temp_next_48h_c === null ? "" : `, up to ${d.weather.max_temp_next_48h_c} °C`) + ` (${d.weather.source})`]);
   rows.forEach(([k, v]) => {
     const dt = document.createElement("dt"); dt.textContent = k;
     const dd = document.createElement("dd"); dd.textContent = v;

@@ -1,5 +1,11 @@
 # Render Blueprint: one-click deploy for the hackathon live link.
 # https://render.com/docs/blueprint-spec
+#
+# Free plan, so no persistent disk: the database lives in the container and is
+# emptied on every restart and redeploy. AQUAPLOT_SEED_DEMO refills it with the
+# labelled demo sites at startup, so the dashboard, map and outlook are never
+# empty when someone opens the link. For a deployment that keeps citizens' data,
+# use a paid instance with a disk and point AQUAPLOT_DB at it.
 services:
   - type: web
     name: aquaplot
@@ -7,22 +13,16 @@ services:
     plan: free
     healthCheckPath: /api/health
     autoDeploy: true
-    disk:
-      # Assessments are the product: a free-tier container filesystem is wiped on
-      # every deploy, which would delete the trends citizens contributed.
-      name: aquaplot-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
-      # Paste the key in the Render dashboard when prompted. Without it nothing is
-      # read from photographs automatically and the citizen fills the form by hand;
-      # every band, finding, trend and export is otherwise identical.
+      # Optional. Without a key, photos are not read automatically and the citizen
+      # fills the form by hand; the sample check still shows the second opinion,
+      # because its model reading is recorded. Everything else is identical.
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: CLAUDE_MODEL
         value: claude-opus-5
-      - key: AQUAPLOT_DB
-        value: /data/aquaplot.db
+      - key: AQUAPLOT_SEED_DEMO
+        value: "1"
       # Assessments per client address per 10 minutes; protects the key.
       - key: AQUAPLOT_CLASSIFY_LIMIT
         value: "20"

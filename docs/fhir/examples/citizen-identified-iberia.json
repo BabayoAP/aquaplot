@@ -1,14 +1,14 @@
 {
   "resourceType": "Bundle",
-  "id": "aquaplot-5e5261890710",
+  "id": "aquaplot-4ab81bc47289",
   "type": "collection",
   "timestamp": "2026-09-27T10:30:00+00:00",
   "entry": [
     {
-      "fullUrl": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b",
+      "fullUrl": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af",
       "resource": {
         "resourceType": "Location",
-        "id": "site-5e5261890710",
+        "id": "site-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/location-oah"
@@ -52,10 +52,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab",
+      "fullUrl": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302",
       "resource": {
         "resourceType": "Observation",
-        "id": "status-5e5261890710",
+        "id": "status-4ab81bc47289",
         "status": "amended",
         "category": [
           {
@@ -79,7 +79,7 @@
           "text": "Urban stream ecological status, citizen screening"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -368,10 +368,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:49b37897-5407-5037-b8e1-f50e50fb2dfe",
+      "fullUrl": "urn:uuid:96e76ec7-996d-5fcd-ac19-d15d92469fac",
       "resource": {
         "resourceType": "Observation",
-        "id": "survey-5e5261890710",
+        "id": "survey-4ab81bc47289",
         "status": "final",
         "category": [
           {
@@ -395,7 +395,7 @@
           "text": "Benthic macroinvertebrate survey"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -405,7 +405,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "component": [
@@ -479,10 +479,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:f778ed72-5307-5bba-b9b8-aaaf03892d9e",
+      "fullUrl": "urn:uuid:ac944feb-31b5-57ff-b05a-014cf76c6f59",
       "resource": {
         "resourceType": "Observation",
-        "id": "habitat-5e5261890710",
+        "id": "habitat-4ab81bc47289",
         "status": "final",
         "category": [
           {
@@ -506,7 +506,7 @@
           "text": "Visual stream habitat and pressure assessment"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -516,7 +516,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "component": [
@@ -726,10 +726,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:677f74c9-2bd4-5840-9ee5-7386a4d32149",
+      "fullUrl": "urn:uuid:b9114bd5-9082-5072-a925-65605f9c9d4e",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-macroinvertebreates-5e5261890710",
+        "id": "oah-macroinvertebreates-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -758,7 +758,7 @@
           "text": "Benthic Macro invertebrates count"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -852,10 +852,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:d902038e-3610-5dee-b5f3-baa2a83ca71c",
+      "fullUrl": "urn:uuid:6434e839-f323-59d2-8555-e6c4f15ea9bf",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-diptera-5e5261890710",
+        "id": "oah-diptera-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -884,7 +884,7 @@
           "text": "Diptera"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -960,10 +960,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:2167a152-43e1-5502-8a51-8d103a671143",
+      "fullUrl": "urn:uuid:2712a959-98d8-5ca7-85e1-218024b4be9f",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-foam-5e5261890710",
+        "id": "oah-foam-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -992,7 +992,7 @@
           "text": "Foam/colour/smell"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1068,10 +1068,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:b502f9e7-a2fe-563c-996f-bffbea086cee",
+      "fullUrl": "urn:uuid:cc00e874-199e-503a-b090-e3a3c4ad65b8",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-riparianvegetation-5e5261890710",
+        "id": "oah-riparianvegetation-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -1100,7 +1100,7 @@
           "text": "Riparian vegetation"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1154,10 +1154,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:ced189bf-2bd2-5d15-89cc-ecd2bc385fff",
+      "fullUrl": "urn:uuid:2ebc60b3-a5c4-586b-bff6-f1d5f680a68f",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-morophology-5e5261890710",
+        "id": "oah-morophology-4ab81bc47289",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -1186,7 +1186,7 @@
           "text": "Morphology of the streams"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1252,10 +1252,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:39d4eb0b-307f-508d-9428-96f155664752",
+      "fullUrl": "urn:uuid:efa11c98-e5a0-5424-bb7c-add8a7a12cb2",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-ecosystem-5e5261890710",
+        "id": "onehealth-ecosystem-4ab81bc47289",
         "status": "final",
         "category": [
           {
@@ -1288,7 +1288,7 @@
           "text": "One Health signal: ecosystem health"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1298,7 +1298,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "valueCodeableConcept": {
@@ -1360,10 +1360,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:3b0b67bd-6fdf-54ad-9226-54b3f5acbaec",
+      "fullUrl": "urn:uuid:1bd6c6bd-a0ea-5c85-b4b2-7b0ddb7004b5",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-human-5e5261890710",
+        "id": "onehealth-human-4ab81bc47289",
         "status": "final",
         "category": [
           {
@@ -1396,7 +1396,7 @@
           "text": "One Health signal: human health"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1406,7 +1406,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "valueCodeableConcept": {
@@ -1478,6 +1478,30 @@
                 ]
               }
             ]
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health",
+                  "code": "rule-human-rain-ahead",
+                  "display": "One Health rule: human health, rain ahead"
+                }
+              ],
+              "text": "Heavy rain is forecast - plan water contact around it"
+            },
+            "valueString": "22 mm of rain is forecast here in the next 48 hours (Open-Meteo)",
+            "interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "A",
+                    "display": "Abnormal"
+                  }
+                ]
+              }
+            ]
           }
         ],
         "note": [
@@ -1486,6 +1510,9 @@
           },
           {
             "text": "Conditions suit mosquito breeding: Remove containers and litter that hold water near the bank, and tell the municipality about standing water that does not drain. Restoring flow is the durable fix; insecticide is not, and it removes the stream's own insect life along with the mosquitoes."
+          },
+          {
+            "text": "Heavy rain is forecast - plan water contact around it: Put off paddling, dog swims and river-day kick samples until two dry days after the rain. If you can, come back within a day of it: a before-and-after pair at the same spot is the clearest evidence of whether an overflow feeds this stream."
           }
         ],
         "text": {
@@ -1495,10 +1522,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:22ce8099-79f5-52bd-a8df-6cc28e5c037b",
+      "fullUrl": "urn:uuid:1183c187-140b-5f0c-aed1-ae391dd3095b",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-animal-5e5261890710",
+        "id": "onehealth-animal-4ab81bc47289",
         "status": "final",
         "category": [
           {
@@ -1531,7 +1558,7 @@
           "text": "One Health signal: animal health"
         },
         "subject": {
-          "reference": "urn:uuid:5ec8c3da-ed0e-5158-85af-fcba845a632b"
+          "reference": "urn:uuid:99c70b00-9f27-5145-a1ac-e342605c97af"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -1541,7 +1568,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "valueCodeableConcept": {
@@ -1603,13 +1630,13 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:9fc98927-2a12-577c-800e-3bc9179b3b33",
+      "fullUrl": "urn:uuid:dd332ad6-0e7c-5fdb-9bab-f93a53294ec9",
       "resource": {
         "resourceType": "Provenance",
-        "id": "prov-5e5261890710",
+        "id": "prov-4ab81bc47289",
         "target": [
           {
-            "reference": "urn:uuid:e4733c29-da5d-5c18-9a20-191bf421a0ab"
+            "reference": "urn:uuid:e7df3530-2968-5735-81e3-d92424935302"
           }
         ],
         "recorded": "2026-09-27T10:30:00+00:00",
@@ -1639,7 +1666,7 @@
               ]
             },
             "who": {
-              "display": "AquaPlot aquaplot-assess-v2 (vision model: example-model)"
+              "display": "AquaPlot aquaplot-assess-v3 (vision model: example-model)"
             }
           }
         ],

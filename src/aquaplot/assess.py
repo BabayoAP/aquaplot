@@ -42,13 +42,14 @@ from . import bioindex, habitat, oah, onehealth, secondopinion
 from .area import ListedTaxon, load_seed, match_listed
 from .identify import IdentifyError
 from .inputs import DecodedImage
-from .observe import StreamObservation, StreamObserver
+from .observe import RecordedObservation, StreamObservation, StreamObserver
 from .places import PlaceResolver
 from .schema import Label, Region
 from .secondopinion import SecondOpinion
 from .status import StatusResolver
+from .weather import Weather, WeatherResolver
 
-ASSESSMENT_VERSION = "aquaplot-assess-v2"
+ASSESSMENT_VERSION = "aquaplot-assess-v3"  # v3: weather either side of the visit enters the rules
 
 # Certainty factors. Priors, not measured calibration.
 FACTOR_PLACE_UNKNOWN = 0.9  # the band does not depend on the place; the invasive check does
@@ -121,6 +122,7 @@ class Assessment:
     version: str = ASSESSMENT_VERSION
     identified_by: str = "model"  # "citizen" when the person identified the animals themselves
     second_opinion: SecondOpinion | None = None
+    weather: Weather | None = None  # the 48 hours either side of the visit, stored so a review sees the same
 
     def as_dict(self) -> dict[str, Any]:
         research = oah.research_site_at(self.region.lat, self.region.lon)
@@ -128,6 +130,7 @@ class Assessment:
             "research_site": research[0].as_dict(research[1]) if research else None,
             "identified_by": self.identified_by,
             "second_opinion": self.second_opinion.as_dict() if self.second_opinion else None,
+            "weather": self.weather.as_dict() if self.weather else None,
             "id": self.id,
             "created_at": self.created_at,
             "site_name": self.site_name,
@@ -169,6 +172,7 @@ class StreamAssessor:
     observer: StreamObserver
     status: StatusResolver | None = None
     places: PlaceResolver | None = None
+    weather: WeatherResolver | None = None
 
     def __post_init__(self) -> None:
         self.seed_version, self.listed = load_seed()
@@ -195,12 +199,15 @@ class StreamAssessor:
         photo_kinds: list[str] = []
         notes: list[str] = []
         declined: set[str] = set()  # indicators the model looked at and would not guess
+        recorded: list[RecordedObservation] = []  # sample photos answered from their recording
         for image in submission.photos:
             try:
                 seen = await self.observer.observe(image.image, submission.description, region)
             except IdentifyError as exc:
                 penalties.append(f"one photo could not be read by the vision model ({exc}); it contributed nothing")
                 continue
+            if isinstance(seen, RecordedObservation):
+                recorded.append(seen)
             photo_kinds.append(seen.photo_kind)
             if seen.reasoning:
                 notes.append(seen.reasoning)
@@ -236,7 +243,7 @@ class StreamAssessor:
         citizen_led = bool(submission.taxa)
         if citizen_led:
             scored_taxa = list(submission.taxa)
-            second = self._second_opinion(submission.taxa, model_taxa, photo_kinds, index)
+            second = self._second_opinion(submission.taxa, model_taxa, photo_kinds, index, bool(recorded))
         else:
             scored_taxa = [*model_taxa]
             second = None
@@ -248,7 +255,10 @@ class StreamAssessor:
         if second is not None:
             _flag_invasive_suggestions(second, self.listed)
 
-        # 6. One Health rules over all of it.
+        # 6. One Health rules over all of it, with the weather either side of the visit.
+        weather = None
+        if self.weather is not None and region.lat is not None and region.lon is not None:
+            weather = await self.weather.around(region.lat, region.lon, when)
         signal = onehealth.evaluate(
             onehealth.Context(
                 status=ecology,
@@ -256,11 +266,24 @@ class StreamAssessor:
                 invasives=tuple(i.listed.summary() for i in invasives),
                 site_name=submission.site_name,
                 warm_season=warm_season(region.lat, when),
+                weather=weather,
             )
         )
 
         certainty, more = certainty_of(region, pressures, ecology, bool(photo_kinds), second)
         penalties.extend(more)
+
+        observer = self.observer.name
+        if recorded:
+            by = recorded[0].recorded_by
+            observer = f"{by}, recorded" if len(recorded) == len(photo_kinds) else f"{observer} and {by}, recorded"
+            notes.insert(
+                0,
+                f"{len(recorded)} of the photos {'is a' if len(recorded) == 1 else 'are'} bundled sample"
+                f"{'' if len(recorded) == 1 else 's'}. What the model saw in "
+                f"{'it' if len(recorded) == 1 else 'them'} was recorded from {by} on {recorded[0].recorded_on} "
+                "and replayed, not read live.",
+            )
 
         return Assessment(
             id=uuid.uuid4().hex[:12],
@@ -276,11 +299,12 @@ class StreamAssessor:
             certainty=certainty,
             penalties=_dedupe(penalties),
             needs_confirmation=_confirmation_queue(ecology, pressures, signal, open_to_person, second),
-            observer=self.observer.name,
+            observer=observer,
             model_notes=notes,
             confirmations=_confirmations(pressures, ecology),
             identified_by="citizen" if citizen_led else ("model" if model_taxa else "none"),
             second_opinion=second,
+            weather=weather,
         )
 
     def _second_opinion(
@@ -289,8 +313,9 @@ class StreamAssessor:
         model: list[bioindex.TaxonObservation],
         photo_kinds: list[str],
         index: bioindex.BioticIndex,
+        replayed: bool = False,
     ) -> SecondOpinion:
-        if self.observer.name == "none":
+        if self.observer.name == "none" and not replayed:
             return secondopinion.unavailable("no vision model is configured, so nobody double-checked the identifications")
         if not SAMPLE_KINDS & set(photo_kinds):
             return secondopinion.unavailable(
@@ -585,6 +610,7 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
     when = datetime.fromisoformat(previous["created_at"])
     still_listed = [i for i in previous.get("invasives", []) if i.get("reported_as", "").strip().lower() not in rejected]
     seeded = {entry.summary(): entry for entry in load_seed()[1]}
+    weather = Weather.from_dict(previous.get("weather"))  # the visit's weather, never refetched
 
     signal = onehealth.evaluate(
         onehealth.Context(
@@ -593,6 +619,7 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
             invasives=tuple(i["name"] for i in still_listed),
             site_name=review.site_name or previous.get("site_name"),
             warm_season=warm_season(region.lat, when),
+            weather=weather,
         )
     )
     # The second opinion is recomputed from the model's stored list, never by asking
@@ -653,6 +680,7 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
         needs_confirmation=_confirmation_queue(ecology, pressures, signal, second=second),
         identified_by=previous.get("identified_by", "model"),
         second_opinion=second,
+        weather=weather,
         observer=previous.get("observer", "none"),
         model_notes=list(previous.get("model_notes", [])),
         confirmations=_confirmations(pressures, ecology),

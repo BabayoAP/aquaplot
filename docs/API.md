@@ -38,8 +38,11 @@ curl -X POST http://localhost:8000/api/assess \
 ```
 
 The response is the full assessment: `band`, `ecology`, `pressures`, `one_health`,
-`invasives`, `certainty`, `penalties`, `needs_confirmation`, `region`, `identified_by`
-and `second_opinion`. See [ASSESSMENT.md](ASSESSMENT.md) for what each number means.
+`invasives`, `certainty`, `penalties`, `needs_confirmation`, `region`, `identified_by`,
+`second_opinion` and `weather` (rain in the 48 hours before and forecast for the 48 after,
+from Open-Meteo; `null` with no coordinates, for a visit entered long afterwards, or when the
+lookup fails; `AQUAPLOT_WEATHER=off` disables it). `observer` names the model backend, or says
+`recorded` when the photos were the bundled samples (`GET /api/samples`). See [ASSESSMENT.md](ASSESSMENT.md) for what each number means.
 
 `ecology` names its index (`index`, `index_key`, `total_label`, `mean_label`,
 `citation`). For historical reasons `ecology.bmwp` and `ecology.aspt` hold the total
@@ -122,6 +125,7 @@ The stored assessment, exactly as produced.
 | `POST /api/sites/{site_key}/name` | `{"name": "..."}` — let people call a stretch what they call it. |
 | `GET /api/insights` | The dashboard's headline numbers, band and level distributions, monthly activity. |
 | `GET /api/alerts?days=30` | Sites whose **latest** assessment reached concern or alert. The early-warning feed. |
+| `GET /api/outlook` | The next 48 hours: each site's latest reading re-run through the rules with Open-Meteo's forecast, keeping the forward-looking findings (heavy rain ahead, heat ahead). Worst first; cached for 30 minutes; one forecast request covers every site. |
 | `GET /api/me/progress` | One contributor's record and badges. Requires `X-AquaPlot-Contributor`; returns an empty record without it. |
 
 A `site_key` is `lat,lon` rounded to three decimals — roughly a hundred metres,
@@ -137,6 +141,7 @@ anyone else can build against the same vocabulary.
 | `GET /api/form` | The visual field form: every indicator, its question, its options, its `why`, and whether a photograph can answer it. |
 | `GET /api/guide` | The bioindicator catalogue: 53 families with their BMWP and IBMWP scores (`null` where an index does not score the family), sensitivity, what to look for and what finding it means. |
 | `GET /api/field-guide.md` | The sampling protocol as Markdown. Rendered for printing at `/field-guide`. |
+| `GET /api/samples` | The sample check: two openly licensed photos (URLs, credits, licences), where the sample is placed, and who recorded the model's reading of them. Posting these photos to `/api/assess` replays the recording instead of calling a model. |
 | `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
 | `GET /api/oah/sites` | The OneAquaHealth project's 106 research sites (code, name, city, coordinates), from a snapshot of its public API, and the radius within which a check is linked to one. |
 | `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |

@@ -1,0 +1,57 @@
+{
+  "note": "The sample check. Two openly licensed photographs and a vision model's answer to each, recorded once and replayed by observe.SampleReplay whenever those photographs are submitted, so the blind second opinion can be seen without a model key. Every other photograph goes to the live observer. The recording must validate against observe.StreamObservation.",
+  "recorded_by": "claude-opus-5-5",
+  "recorded_on": "2026-09-27",
+  "how": "Each photograph was shown to Claude Opus 5.5 with AquaPlot's observer system prompt (observe.SYSTEM_PROMPT) and no identifications from anyone, in a Claude Code session rather than through observe.ClaudeObserver's API call. Its answers are stored here verbatim.",
+  "location": {
+    "lat": 40.19307,
+    "lon": -8.41945,
+    "site_name": "Sample check at Vale das Flores",
+    "explanation": "Placed at OneAquaHealth research site C3 (Vale das Flores, Coimbra) so the sample shows how a check links to the project's sites and why the Iberian index is used there. The photographs were not taken there."
+  },
+  "samples": [
+    {
+      "file": "reach.jpg",
+      "title": "The reach: kick-sampling in the River Roding",
+      "credit": "John Rostron, via geograph.org.uk and Wikimedia Commons",
+      "licence": "CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Kick-sampling_in_the_river_Roding_-_geograph.org.uk_-_1430583.jpg",
+      "observation": {
+        "photo_kind": "stream_scene",
+        "habitat": [
+          {"key": "water_clarity", "value": "clear", "confidence": 0.85},
+          {"key": "water_colour", "value": "natural", "confidence": 0.85},
+          {"key": "algae", "value": "none", "confidence": 0.6},
+          {"key": "foam_or_sheen", "value": "none", "confidence": 0.8},
+          {"key": "litter", "value": "none", "confidence": 0.75},
+          {"key": "riparian_vegetation", "value": "continuous_natural", "confidence": 0.8},
+          {"key": "bank_modification", "value": "natural", "confidence": 0.8},
+          {"key": "flow", "value": "moderate", "confidence": 0.7},
+          {"key": "substrate", "value": "gravel", "confidence": 0.7},
+          {"key": "shade", "value": "open", "confidence": 0.8}
+        ],
+        "taxa": [],
+        "subject_box": [],
+        "reasoning": "Clear, shallow water over visible gravel with surface ripples; both banks are unmodified and lined with tall grasses and reeds, with no tree canopy over the channel. The wader is the person taking the sample, so the photo says nothing about how the water is normally used.",
+        "cannot_tell": ["sediment_deposit", "access"]
+      }
+    },
+    {
+      "file": "tray.jpg",
+      "title": "The tray: one nymph from the kick sample",
+      "credit": "Johan Kjær Prehn, via iNaturalist (observation 134089411)",
+      "licence": "CC BY 4.0",
+      "source": "https://www.inaturalist.org/observations/134089411",
+      "observation": {
+        "photo_kind": "specimen",
+        "habitat": [],
+        "taxa": [
+          {"name": "Heptageniidae", "common_name": "flat-headed mayfly", "rank": "family", "confidence": 0.8, "count": 1}
+        ],
+        "subject_box": [0.29, 0.24, 0.82, 0.76],
+        "reasoning": "One flattened nymph in a pale tray with three long tails and gill filaments along the sides of the abdomen; the broad, flat head and flattened, banded legs are typical of flat-headed mayflies.",
+        "cannot_tell": []
+      }
+    }
+  ]
+}

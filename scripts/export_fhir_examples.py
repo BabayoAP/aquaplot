@@ -24,6 +24,7 @@ from aquaplot.bioindex import TaxonObservation
 from aquaplot.habitat import Reading
 from aquaplot.observe import HabitatCall, NullObserver, SeenTaxon, StreamObservation
 from aquaplot.schema import PlaceRef, Region
+from aquaplot.weather import Weather
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "fhir"
 WHEN = datetime(2026, 9, 27, 10, 30, tzinfo=UTC)
@@ -56,6 +57,16 @@ class Scripted:
         return self.photos.pop(0)
 
 
+class Recorded:
+    """Stands in for Open-Meteo: the weather either side of the example visit."""
+
+    def __init__(self, weather: Weather):
+        self.weather = weather
+
+    async def around(self, lat, lon, when):
+        return self.weather
+
+
 class Photo:
     image = None
     gps = None
@@ -78,7 +89,9 @@ async def build() -> dict[str, object]:
         photo_kind="specimen",
         taxa=[SeenTaxon(name="Baetidae", confidence=0.8), SeenTaxon(name="Chironomidae", confidence=0.9)],
     )
-    iberian = await StreamAssessor(observer=Scripted(scene, tray)).assess(
+    rain_coming = Weather(rain_past_48h_mm=0.4, rain_next_48h_mm=22.0, max_temp_next_48h_c=24.0, at=WHEN.isoformat())
+    dry_spell = Weather(rain_past_48h_mm=0.0, rain_next_48h_mm=0.0, max_temp_next_48h_c=19.0, at=WHEN.isoformat())
+    iberian = await StreamAssessor(observer=Scripted(scene, tray), weather=Recorded(rain_coming)).assess(
         Submission(
             photos=(Photo(), Photo()),
             region=COIMBRA,
@@ -98,7 +111,7 @@ async def build() -> dict[str, object]:
     disagreement = iberian.second_opinion.open[0]
     reviewed = await reassess(iberian.as_dict(), Review(dismissed=(disagreement["key"],)))
     reviewed.created_at = WHEN.isoformat()
-    by_hand = await StreamAssessor(observer=NullObserver()).assess(
+    by_hand = await StreamAssessor(observer=NullObserver(), weather=Recorded(dry_spell)).assess(
         Submission(
             region=GHENT,
             site_name="Coupure, Gent (example)",
