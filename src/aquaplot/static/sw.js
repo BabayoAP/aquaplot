@@ -13,7 +13,7 @@
  * somebody walked to a stream to collect.
  */
 
-const VERSION = "aquaplot-v1";
+const VERSION = "aquaplot-v2";
 const SHELL = `${VERSION}-shell`;
 const DATA = `${VERSION}-data`;
 

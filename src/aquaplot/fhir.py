@@ -289,6 +289,22 @@ def provenance(a: Assessment) -> dict[str, Any]:
         "extension": [
             {"url": f"{CODE_SYSTEM}/human-confirmations", "valueInteger": a.confirmations},
             {"url": f"{CODE_SYSTEM}/assessment-certainty-percent", "valueDecimal": round(a.certainty, 1)},
+            {"url": f"{CODE_SYSTEM}/taxa-identified-by", "valueCode": a.identified_by},
+            *(
+                [
+                    {
+                        "url": f"{CODE_SYSTEM}/model-second-opinion",
+                        "extension": [
+                            {"url": "independentAgreements", "valueInteger": len(s.agreed) - len(s.adopted)},
+                            {"url": "adopted", "valueInteger": len(s.adopted)},
+                            {"url": "keptOwn", "valueInteger": len(s.dismissed)},
+                            {"url": "unresolved", "valueInteger": len(s.open)},
+                        ],
+                    }
+                ]
+                if (s := a.second_opinion) is not None and s.available
+                else []
+            ),
         ],
     }
 

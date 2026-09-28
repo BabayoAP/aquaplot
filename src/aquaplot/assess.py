@@ -38,22 +38,27 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from . import bioindex, habitat, onehealth
+from . import bioindex, habitat, onehealth, secondopinion
 from .area import ListedTaxon, load_seed, match_listed
 from .identify import IdentifyError
 from .inputs import DecodedImage
 from .observe import StreamObservation, StreamObserver
 from .places import PlaceResolver
 from .schema import Label, Region
+from .secondopinion import SecondOpinion
 from .status import StatusResolver
 
-ASSESSMENT_VERSION = "aquaplot-assess-v1"
+ASSESSMENT_VERSION = "aquaplot-assess-v2"
 
 # Certainty factors. Priors, not measured calibration.
 FACTOR_PLACE_UNKNOWN = 0.9  # the band does not depend on the place; the invasive check does
 FACTOR_NO_COORDS = 0.85
 FACTOR_NO_PHOTO = 0.95  # a hand-filled form is evidence, just without a picture to re-check
 COVERAGE_FLOOR = 0.6  # how much a completely unanswered habitat form can drag the number down
+FACTOR_OPEN_DISAGREEMENT = 0.9  # per open second-opinion item that would change the band
+DISAGREEMENT_FLOOR = 0.7
+
+SAMPLE_KINDS = frozenset({"specimen", "single_organism"})
 
 
 def warm_season(lat: float | None, when: datetime) -> bool:
@@ -114,9 +119,13 @@ class Assessment:
     confirmations: int = 0
     supersedes: str | None = None  # the assessment this one replaces after a human review
     version: str = ASSESSMENT_VERSION
+    identified_by: str = "model"  # "citizen" when the person identified the animals themselves
+    second_opinion: SecondOpinion | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
+            "identified_by": self.identified_by,
+            "second_opinion": self.second_opinion.as_dict() if self.second_opinion else None,
             "id": self.id,
             "created_at": self.created_at,
             "site_name": self.site_name,
@@ -213,12 +222,24 @@ class StreamAssessor:
                 f"({', '.join(open_to_person)}) and said so rather than guessing; they are waiting for you"
             )
 
-        # 4. Biological index over model and citizen identifications together.
-        ecology = bioindex.score([*model_taxa, *submission.taxa])
+        # 4. Biological index. When the person identified the animals themselves,
+        #    their list is what is scored and the model's list becomes a second
+        #    opinion that can only raise questions. Otherwise the model's list is a
+        #    proposal, scored unconfirmed and queued for the person to check.
+        citizen_led = bool(submission.taxa)
+        if citizen_led:
+            scored_taxa = list(submission.taxa)
+            second = self._second_opinion(submission.taxa, model_taxa, photo_kinds)
+        else:
+            scored_taxa = [*model_taxa]
+            second = None
+        ecology = bioindex.score(scored_taxa)
         penalties.extend(ecology.penalties)
 
         # 5. Is anything here on an invasive list for this jurisdiction?
-        invasives = await self._invasives([*model_taxa, *submission.taxa], locality)
+        invasives = await self._invasives(scored_taxa, locality)
+        if second is not None:
+            _flag_invasive_suggestions(second, self.listed)
 
         # 6. One Health rules over all of it.
         signal = onehealth.evaluate(
@@ -231,7 +252,7 @@ class StreamAssessor:
             )
         )
 
-        certainty, more = certainty_of(region, pressures, ecology, bool(photo_kinds))
+        certainty, more = certainty_of(region, pressures, ecology, bool(photo_kinds), second)
         penalties.extend(more)
 
         return Assessment(
@@ -247,12 +268,29 @@ class StreamAssessor:
             invasives=invasives,
             certainty=certainty,
             penalties=_dedupe(penalties),
-            needs_confirmation=_confirmation_queue(ecology, pressures, signal, open_to_person),
+            needs_confirmation=_confirmation_queue(ecology, pressures, signal, open_to_person, second),
             observer=self.observer.name,
             model_notes=notes,
             confirmations=len([r for r in pressures.readings if r.source == "citizen"])
             + len([t for t in ecology.scored if t.confirmed]),
+            identified_by="citizen" if citizen_led else ("model" if model_taxa else "none"),
+            second_opinion=second,
         )
+
+    def _second_opinion(
+        self,
+        citizen: tuple[bioindex.TaxonObservation, ...],
+        model: list[bioindex.TaxonObservation],
+        photo_kinds: list[str],
+    ) -> SecondOpinion:
+        if self.observer.name == "none":
+            return secondopinion.unavailable("no vision model is configured, so nobody double-checked the identifications")
+        if not SAMPLE_KINDS & set(photo_kinds):
+            return secondopinion.unavailable(
+                "there was no photo of the sample tray, so the model had nothing to compare your identifications against",
+                model,
+            )
+        return secondopinion.compare(citizen, model, bioindex.score)
 
     async def _invasives(self, taxa: list[bioindex.TaxonObservation], locality) -> list[InvasiveHit]:
         """Check every reported name against the seed list, and confirm species-rank hits upstream.
@@ -288,7 +326,11 @@ class StreamAssessor:
 
 
 def certainty_of(
-    region: Region, pressures: habitat.HabitatPressure, ecology: bioindex.EcologicalStatus, had_photo: bool
+    region: Region,
+    pressures: habitat.HabitatPressure,
+    ecology: bioindex.EcologicalStatus,
+    had_photo: bool,
+    second: SecondOpinion | None = None,
 ) -> tuple[float, list[str]]:
     """How much of this assessment is actually evidenced, as a percentage.
 
@@ -315,7 +357,29 @@ def certainty_of(
     biology = (ecology.confidence / 100) if ecology.families else 0.4
     if not ecology.families:
         penalties.append("no invertebrates were identified, so the biological half of the assessment is missing")
-    return round(100 * biology * coverage * place_factor * photo_factor, 1), penalties
+    disagreement = 1.0
+    if second is not None:
+        decisive = [i for i in second.open if i["changes_band"]]
+        if decisive:
+            disagreement = max(DISAGREEMENT_FLOOR, FACTOR_OPEN_DISAGREEMENT ** len(decisive))
+            penalties.append(
+                f"the model disagreed with {len(decisive)} of your identifications in a way that would change the band, "
+                "and that has not been settled yet"
+            )
+    return round(100 * biology * coverage * place_factor * photo_factor * disagreement, 1), penalties
+
+
+def _flag_invasive_suggestions(second: SecondOpinion, listed: list[ListedTaxon]) -> None:
+    """A suggestion the model made that is a listed invasive goes to the top of the queue.
+
+    It is still only a question: nothing enters the invasive check until a person says it was there.
+    """
+    for item in second.items:
+        if item["model_name"] and (hit := match_listed(item["model_name"], listed)):
+            item["invasive"] = hit.summary()
+            item["priority"] = 1
+            item["question"] += f" It may be {hit.summary()}, a listed invasive species."
+    second.items.sort(key=lambda i: i["priority"])
 
 
 def _readings_from(seen: StreamObservation) -> list[habitat.Reading]:
@@ -357,6 +421,7 @@ def _confirmation_queue(
     pressures: habitat.HabitatPressure,
     signal: onehealth.Signal,
     declined: list[str] | None = None,
+    second: SecondOpinion | None = None,
 ) -> list[dict[str, Any]]:
     """The human-in-the-loop queue, ordered by how much confirming each item would change.
 
@@ -364,6 +429,8 @@ def _confirmation_queue(
     a third mayfly family, and the app should ask for it first.
     """
     queue: list[dict[str, Any]] = []
+    if second is not None:
+        queue.extend({**item, "kind": "second_opinion", "check": item["kind"]} for item in second.open)
 
     blocking_keys = {k for f in signal.findings if not f.confirmed for k in RULE_EVIDENCE.get(f.rule, ())}
     for row in pressures.readings:
@@ -470,6 +537,7 @@ class Review:
     confirmed_taxa: tuple[str, ...] = ()
     rejected_taxa: tuple[str, ...] = ()
     added_taxa: tuple[str, ...] = ()
+    dismissed: tuple[str, ...] = ()  # second-opinion items the person looked at and kept their own answer
     site_name: str | None = None
 
 
@@ -507,8 +575,36 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
             warm_season=warm_season(region.lat, when),
         )
     )
+    # The second opinion is recomputed from the model's stored list, never by asking
+    # the model again. What the person settled stays settled: keeping their own
+    # answer dismisses the item, and switching to the model's makes the two agree.
+    second = None
+    stored_second = previous.get("second_opinion")
+    if previous.get("identified_by") == "citizen" and stored_second:
+        model = [
+            bioindex.TaxonObservation(name=t["name"], confidence=t.get("confidence", 0.0))
+            for t in stored_second.get("model_taxa", [])
+        ]
+        if stored_second.get("available"):
+            took_models = [
+                secondopinion.label(m)
+                for name in review.added_taxa
+                if (m := bioindex.resolve(name))
+                and any((o := bioindex.resolve(t.name)) and secondopinion.compatible(m, o) for t in model)
+            ]
+            second = secondopinion.compare(
+                taxa,
+                model,
+                bioindex.score,
+                dismissed=[*stored_second.get("dismissed", []), *review.dismissed],
+                adopted=[*stored_second.get("adopted", []), *took_models],
+            )
+            _flag_invasive_suggestions(second, load_seed()[1])
+        else:
+            second = secondopinion.unavailable(stored_second.get("reason", ""), model)
+
     penalties = _dedupe([*pressures.penalties, *ecology.penalties])
-    certainty, more = certainty_of(region, pressures, ecology, bool(previous.get("photo_kinds")))
+    certainty, more = certainty_of(region, pressures, ecology, bool(previous.get("photo_kinds")), second)
     hits = [
         InvasiveHit(
             name=i.get("reported_as", i["name"]),
@@ -534,7 +630,9 @@ async def reassess(previous: dict[str, Any], review: Review) -> Assessment:
         invasives=hits,
         certainty=certainty,
         penalties=penalties + more,
-        needs_confirmation=_confirmation_queue(ecology, pressures, signal),
+        needs_confirmation=_confirmation_queue(ecology, pressures, signal, second=second),
+        identified_by=previous.get("identified_by", "model"),
+        second_opinion=second,
         observer=previous.get("observer", "none"),
         model_notes=list(previous.get("model_notes", [])),
         confirmations=len([r for r in pressures.readings if r.source == "citizen"])

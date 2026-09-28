@@ -144,6 +144,8 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
             level = t.family or f"{t.group} (order only)"
             lines.append(f"| {level} | {t.score:.0f} | {t.sensitivity} | {who} |")
         lines.append("")
+    if a.second_opinion is not None:
+        lines += [f"**Independent check:** {a.second_opinion.summary()}", ""]
     for signal in a.ecology.signals:
         lines.append(f"> {signal}")
         lines.append("")

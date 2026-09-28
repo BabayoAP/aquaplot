@@ -59,6 +59,8 @@
                     padding: 8px 11px; border-radius: 20px; font-size: 14px; text-align: left; }
   .choices button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .why { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .choices.pick button { border-radius: 10px; flex: 1 1 100%; }
+  .choices.pick button[aria-pressed=true] .why { color: inherit; opacity: .85; }
   .band { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
   .band.High { color: var(--high); } .band.Good { color: var(--good); } .band.Moderate { color: var(--moderate); }
   .band.Poor { color: var(--poor); } .band.Bad { color: var(--bad); }
@@ -109,7 +111,12 @@
   .outbox { background: var(--soft); border: 1px solid var(--accent); border-radius: 10px;
             padding: 10px 12px; font-size: 14px; margin-bottom: 12px; display: flex; gap: 10px;
             align-items: center; flex-wrap: wrap; }
+  .outbox[hidden] { display: none; }
   .outbox button { padding: 6px 12px; font-size: 14px; }
+  details.group { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+  details.group summary { font-weight: 600; font-size: 15px; padding: 4px 0; }
+  details.group summary .n { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .stake { margin-top: 6px; }
   .nearby { border: 1px solid var(--accent); background: var(--soft); border-radius: 11px; padding: 12px; margin-top: 12px; }
   .nearby b { display: block; }
   .nearby .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
@@ -136,15 +143,17 @@
 
 <main>
   <h1>Check a stream</h1>
-  <p class="sub">Four short steps at the water's edge. You get a health reading for the stream and what it means for the
-    people and animals around it. No account, and it works with or without a signal.</p>
+  <p class="sub">A few short steps at the water's edge. You identify what lives there, a model double-checks you, and you
+    get a health reading for the stream and what it means for the people and animals around it. No account, and it works
+    with or without a signal.</p>
 
   <ol class="steps" id="steps" aria-label="Progress">
     <li data-step="1"><b></b>Where</li>
     <li data-step="2"><b></b>Photos</li>
-    <li data-step="3"><b></b>Your senses</li>
-    <li data-step="4"><b></b>Check</li>
-    <li data-step="5"><b></b>Result</li>
+    <li data-step="3"><b></b>Animals</li>
+    <li data-step="4"><b></b>Senses</li>
+    <li data-step="5"><b></b>Check</li>
+    <li data-step="6"><b></b>Result</li>
   </ol>
 
   <div class="outbox" id="outbox" hidden></div>
@@ -165,7 +174,7 @@
 
     <label for="sitename">What do people call this spot? (optional)</label>
     <input type="text" id="sitename" placeholder="e.g. the brook behind the station" maxlength="120">
-    <div class="row"><button type="button" class="primary wide" data-go="2">Next</button></div>
+    <div class="row"><button type="button" class="primary wide" data-go="step2">Next</button></div>
   </section>
 
   <!-- Step 2 -->
@@ -174,7 +183,8 @@
     <h2>Two photographs</h2>
     <p class="hint"><b>One of the water</b>, taken from the bank, showing the channel and the margin.
       <b>One of what lives in it</b>: scoop gravel and leaves from a fast, shallow patch into a pale tray or tub of
-      water, let it settle for a minute, and photograph what moves. Put everything back afterwards.
+      water, let it settle for a minute, and photograph what moves. Put everything back afterwards. The tray photo is
+      what lets the model double-check your identifications in the next step.
       <a href="/field-guide" target="_blank" rel="noopener">Full instructions and safety</a>.</p>
     <div class="row">
       <button type="button" class="ghost" id="camerabtn">Take a photo</button>
@@ -186,14 +196,31 @@
     <label for="description">Anything else worth writing down? (optional)</label>
     <textarea id="description" placeholder="e.g. a pipe discharging under the far bank; the water was much lower than last month"></textarea>
     <div class="row">
-      <button type="button" class="ghost" data-go="1">Back</button>
-      <button type="button" class="primary wide" data-go="3">Next</button>
+      <button type="button" class="ghost" data-go="step1">Back</button>
+      <button type="button" class="primary wide" data-go="animals">Next</button>
     </div>
   </section>
 
-  <!-- Step 3 -->
+  <!-- Step 3: the citizen identifies -->
+  <section class="step" id="animals" hidden>
+    <div class="steptag">Step 3 · Animals</div>
+    <h2>What did you find in the tray?</h2>
+    <p class="hint">Tap each kind of animal you can see. Go by shape: count the tails, look for legs, a case, a shell.
+      Not sure of the exact kind? Pick "some kind of…" for its group; that still counts. The model looks at your tray
+      photo on its own, without seeing your answers, and tells you afterwards if it saw something different.</p>
+    <input type="text" class="search" id="picksearch" placeholder="Search — try 'three tails', 'case', 'shell', 'red worm'" aria-label="Search the animals">
+    <p class="hint" id="picked" aria-live="polite">Nothing picked yet.</p>
+    <div id="picker"></div>
+    <div class="row">
+      <button type="button" class="ghost" data-go="step2">Back</button>
+      <button type="button" class="ghost" id="letmodel">I can't tell — let the model suggest</button>
+      <button type="button" class="primary wide" data-go="step3">Next</button>
+    </div>
+  </section>
+
+  <!-- Step 4 -->
   <section class="step" id="step3" hidden>
-    <div class="steptag">Step 3 · Your senses</div>
+    <div class="steptag">Step 4 · Your senses</div>
     <h2>What only you can tell</h2>
     <p class="hint">A camera cannot smell, and it does not know who uses this water. These two answers change the
       result more than anything else on this page.</p>
@@ -204,16 +231,16 @@
       <div id="restquestions"></div>
     </details>
     <div class="row">
-      <button type="button" class="ghost" data-go="2">Back</button>
+      <button type="button" class="ghost" data-go="animals">Back</button>
       <button type="button" class="primary wide" id="submit">See the result</button>
     </div>
     <p class="err" id="error" hidden></p>
   </section>
 
-  <!-- Step 4: review -->
+  <!-- Step 5: review -->
   <section class="step" id="step4" hidden>
-    <div class="steptag">Step 4 · Check the model</div>
-    <h2>Confirm or correct what it saw</h2>
+    <div class="steptag">Step 5 · Check</div>
+    <h2>Where you and the model differ</h2>
     <p class="hint" id="reviewintro"></p>
     <div id="queue"></div>
     <div class="row">
@@ -273,12 +300,14 @@ function who() {
   return id;
 }
 
-let state = { lat: null, lon: null, files: [], answers: {}, form: null, assessment: null, review: { answers: {}, confirmed_taxa: [], rejected_taxa: [] } };
+let state = { lat: null, lon: null, files: [], answers: {}, taxa: [], form: null, assessment: null, review: emptyReview() };
+
+function emptyReview() { return { answers: {}, confirmed_taxa: [], rejected_taxa: [], decisions: {} }; }
 
 // ---- navigation
-document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show("step" + b.dataset.go)));
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
 
-const PANELS = ["step1", "step2", "step3", "step4", "result"];
+const PANELS = ["step1", "step2", "animals", "step3", "step4", "result"];
 function show(id) {
   PANELS.forEach((s) => { $(s).hidden = s !== id; });
   const index = PANELS.indexOf(id) + 1;
@@ -300,8 +329,9 @@ show("step1");
 api("/api/health").then((r) => r.json()).then((h) => {
   if (h.observer === "none") {
     $("notice").hidden = false;
-    $("notice").textContent = "No vision model is configured on this server, so nothing is read from your photos automatically. " +
-      "Answer the questions in step 3 yourself and everything else works exactly the same.";
+    $("notice").textContent = "No vision model is configured on this server, so nothing is read from your photos and nobody " +
+      "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself; the " +
+      "reading works exactly the same.";
   }
 }).catch(() => {});
 
@@ -508,6 +538,7 @@ $("submit").addEventListener("click", async () => {
   if ($("sitename").value.trim()) fields.site_name = $("sitename").value.trim();
   if (state.lat !== null) { fields.lat = String(state.lat); fields.lon = String(state.lon); }
   if (Object.keys(state.answers).length) fields.answers = JSON.stringify(state.answers);
+  if (state.taxa.length) fields.taxa = JSON.stringify(state.taxa);
 
   const body = new FormData();
   for (const [k, v] of Object.entries(fields)) body.append(k, v);
@@ -546,13 +577,71 @@ $("submit").addEventListener("click", async () => {
 // ---- step 4: the human loop
 function openReview() {
   const d = state.assessment;
-  state.review = { answers: {}, confirmed_taxa: [], rejected_taxa: [] };
-  $("reviewintro").textContent = d.observer === "none"
-    ? "A few questions are still open. Answering them sharpens the reading."
-    : "The model proposed these. Confirming or correcting them changes the result — the ones at the top change it most.";
+  state.review = emptyReview();
+  $("reviewintro").textContent = d.identified_by === "citizen" && d.second_opinion && d.second_opinion.available
+    ? "You identified the animals yourself. The model looked at your tray photo separately, without seeing your answers. "
+      + "Below is where it saw something different, plus anything still unanswered. You decide; the ones at the top matter most."
+    : d.observer === "none"
+      ? "A few questions are still open. Answering them sharpens the reading."
+      : "The model proposed these. Confirming or correcting them changes the result — the ones at the top change it most.";
   const q = $("queue"); q.innerHTML = "";
-  d.needs_confirmation.slice(0, 8).forEach((item) => q.append(item.kind === "taxon" ? taxonCard(item) : habitatCard(item)));
+  d.needs_confirmation.slice(0, 8).forEach((item) => q.append(
+    item.kind === "second_opinion" ? secondCard(item) : item.kind === "taxon" ? taxonCard(item) : habitatCard(item)));
   show("step4");
+}
+
+// One disagreement between the citizen and the model. Two buttons, two outcomes,
+// and each maps onto the review the server already understands: keeping your own
+// answer dismisses the question, taking the model's swaps the animal.
+function secondCard(item) {
+  const card = document.createElement("div"); card.className = "taxon";
+  const name = document.createElement("div"); name.className = "name"; name.textContent = item.question;
+  card.append(name);
+  const tell = document.createElement("p"); tell.className = "why";
+  tell.textContent = (item.check === "model_only" ? "What to look for: " : "How to tell: ") + item.how_to_tell;
+  card.append(tell);
+  if (item.changes_band) {
+    const stake = document.createElement("div"); stake.className = "meta stake";
+    stake.textContent = `This one decides the reading: if the model is right, the stream reads ${item.band_if_model_right} instead.`;
+    card.append(stake);
+  }
+  const options = {
+    disagree: [
+      [`Mine is right (${item.citizen_label})`, { dismiss: [item.key] }],
+      [`It's ${item.model_label}`, { reject: [item.citizen_name], add: [item.model_name] }],
+    ],
+    model_only: [
+      ["Yes, add it", { add: [item.model_name] }],
+      ["No, it's not there", { dismiss: [item.key] }],
+    ],
+    unsupported: [
+      ["Yes, I'm sure", { dismiss: [item.key] }],
+      ["No, remove it", { reject: [item.citizen_name] }],
+    ],
+  }[item.check] || [];
+  const row = document.createElement("div"); row.className = "row";
+  const buttons = options.map(([label, decision]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "ghost"; b.textContent = label;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      state.review.decisions[item.key] = decision;
+      buttons.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    });
+    return b;
+  });
+  row.append(...buttons); card.append(row);
+  return card;
+}
+
+function reviewBody() {
+  const r = state.review;
+  const body = { answers: r.answers, confirmed_taxa: r.confirmed_taxa, rejected_taxa: [...r.rejected_taxa], added_taxa: [], dismissed: [] };
+  Object.values(r.decisions).forEach((d) => {
+    body.rejected_taxa.push(...(d.reject || []));
+    body.added_taxa.push(...(d.add || []));
+    body.dismissed.push(...(d.dismiss || []));
+  });
+  return body;
 }
 
 function habitatCard(item) {
@@ -608,7 +697,7 @@ $("applyreview").addEventListener("click", async () => {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Updating…';
   try {
     const res = await api(`/api/assess/${state.assessment.id}/review`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state.review),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reviewBody()),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.statusText);
@@ -679,6 +768,7 @@ function render(d) {
 
   const kv = $("rnumbers"); kv.innerHTML = "";
   const rows = [
+    ["Identified by", identifiedBy(d)],
     ["Families found", `${d.ecology.families} (${d.ecology.ept_families} mayfly/stonefly/caddisfly)`],
     ["Average sensitivity (ASPT)", d.ecology.aspt === null ? "not calculated" : `${d.ecology.aspt} out of 10`],
     ["BMWP total", d.ecology.bmwp],
@@ -705,6 +795,17 @@ function render(d) {
   if (key) $("historybtn").onclick = () => (window.location.href = `/site/${encodeURIComponent(key)}`);
   show("result");
   loadBadges();
+}
+
+function identifiedBy(d) {
+  const s = d.second_opinion;
+  if (d.identified_by !== "citizen") return d.identified_by === "model" ? "The model, as proposals for you to confirm" : "Nobody yet";
+  if (!s || !s.available) return `You. No second opinion: ${s ? s.reason : "none was asked for"}.`;
+  let text = `You, double-checked by the model: it independently agreed on ${s.independent_agreements} of ${d.ecology.families}`;
+  if (s.adopted.length) text += `; you took its answer on ${s.adopted.length}`;
+  if (s.dismissed.length) text += `; you kept your own answer on ${s.dismissed.length}`;
+  if (s.open.length) text += `; ${s.open.length} still open`;
+  return text + ".";
 }
 
 // Mirrors store.site_key: coordinates rounded to ~100 m are what group visits.
@@ -738,8 +839,8 @@ function loadBadges() {
 }
 
 function resetForm() {
-  state.files = []; state.answers = {}; state.assessment = null;
-  drawThumbs();
+  state.files = []; state.answers = {}; state.taxa = []; state.assessment = null;
+  drawThumbs(); drawPicker();
   document.querySelectorAll(".choices button").forEach((b) => b.setAttribute("aria-pressed", "false"));
   $("description").value = "";
   show("step1");
@@ -750,13 +851,95 @@ $("again").addEventListener("click", resetForm);
 
 // ---- ID guide
 let guideFamilies = [];
+const guideReady = api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawPicker(); })
+  .catch(() => { $("picked").textContent = "The animal list could not load. You can still continue and let the model suggest."; });
 
 $("guidebtn").addEventListener("click", (e) => {
   e.preventDefault();
   $("guide").hidden = false;
   $("guidesearch").focus();
-  if (guideFamilies.length) return;
-  api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawGuide(""); });
+  guideReady.then(() => drawGuide($("guidesearch").value));
+});
+
+// ---- step 3: the citizen identifies
+//
+// Grouped by shape family ("mayflies", "snails"), most sensitive group first, with a
+// "some kind of..." chip per group. An honest group-level answer is scored from the
+// group's median and flagged, which beats a guessed family.
+const GROUP_WORDS = {
+  Ephemeroptera: "mayfly", Plecoptera: "stonefly", Trichoptera: "caddisfly", Odonata: "dragonfly or damselfly",
+  Coleoptera: "water beetle", Diptera: "fly larva", Gastropoda: "snail", Bivalvia: "clam or mussel",
+  Hirudinea: "leech", Amphipoda: "freshwater shrimp", Isopoda: "water hoglouse", Decapoda: "crayfish",
+  Annelida: "worm", Megaloptera: "alderfly larva", Hemiptera: "water bug", Turbellaria: "flatworm",
+};
+const GROUP_HEADINGS = {
+  Ephemeroptera: "Mayflies", Plecoptera: "Stoneflies", Trichoptera: "Caddisflies", Odonata: "Dragonflies and damselflies",
+  Coleoptera: "Water beetles", Diptera: "Fly larvae", Gastropoda: "Snails and limpets", Bivalvia: "Clams and mussels",
+  Hirudinea: "Leeches", Amphipoda: "Freshwater shrimps", Isopoda: "Water hoglice", Decapoda: "Crayfish",
+  Annelida: "Worms", Megaloptera: "Alderflies", Hemiptera: "Water bugs", Turbellaria: "Flatworms",
+};
+
+function togglePick(name, on) {
+  state.taxa = on ? [...new Set([...state.taxa, name])] : state.taxa.filter((n) => n !== name);
+  const labels = state.taxa.map((n) => {
+    const f = guideFamilies.find((x) => x.family === n);
+    return f ? f.plain_name : `some kind of ${GROUP_WORDS[n] || n}`;
+  });
+  $("picked").textContent = labels.length ? `${labels.length} picked: ${labels.join(", ")}.` : "Nothing picked yet.";
+}
+
+function chip(name, label, detail) {
+  const b = document.createElement("button");
+  b.type = "button"; b.setAttribute("aria-pressed", String(state.taxa.includes(name)));
+  const strong = document.createElement("b"); strong.textContent = label;
+  b.append(strong);
+  if (detail) { const s = document.createElement("span"); s.className = "why"; s.style.display = "block"; s.textContent = detail; b.append(s); }
+  b.addEventListener("click", () => {
+    const on = b.getAttribute("aria-pressed") !== "true";
+    b.setAttribute("aria-pressed", String(on));
+    togglePick(name, on);
+    const count = b.closest("details") && b.closest("details").querySelector(".n");
+    if (count) {
+      const picks = b.closest("details").querySelectorAll("button[aria-pressed=true]").length;
+      count.textContent = count.textContent.replace(/ · \d+ picked$/, "") + (picks ? ` · ${picks} picked` : "");
+    }
+  });
+  return b;
+}
+
+function drawPicker() {
+  const box = $("picker"); box.innerHTML = "";
+  const q = $("picksearch").value.trim().toLowerCase();
+  const groups = [];
+  guideFamilies.forEach((f) => { if (!groups.includes(f.group)) groups.push(f.group); });  // already most-sensitive first
+  groups.forEach((group) => {
+    const members = guideFamilies.filter((f) => f.group === group && (!q ||
+      [f.plain_name, f.common_name, f.family, f.group, f.look_for, GROUP_WORDS[f.group]].some((v) => (v || "").toLowerCase().includes(q))));
+    if (!members.length) return;
+    // One collapsed row per group keeps the list to a screen or two; a search, or
+    // anything already picked in the group, opens it.
+    const picked = state.taxa.filter((n) => n === group || members.some((f) => f.family === n)).length;
+    const det = document.createElement("details"); det.className = "group";
+    det.open = Boolean(q) || picked > 0;
+    const sum = document.createElement("summary");
+    const n = document.createElement("span"); n.className = "n";
+    n.textContent = ` · ${members.length} kind${members.length === 1 ? "" : "s"}` + (picked ? ` · ${picked} picked` : "");
+    sum.append(document.createTextNode(GROUP_HEADINGS[group] || group), n);
+    const choices = document.createElement("div"); choices.className = "choices pick";
+    choices.append(chip(group, `Some kind of ${GROUP_WORDS[group] || group} (not sure which)`));
+    members.forEach((f) => choices.append(chip(f.family, f.plain_name, f.look_for)));
+    det.append(sum, choices);
+    box.append(det);
+  });
+  if (!box.children.length && q) {
+    const p = document.createElement("p"); p.className = "hint"; p.textContent = `Nothing matches "${q}". Try a shape or a colour.`;
+    box.append(p);
+  }
+}
+
+$("picksearch").addEventListener("input", drawPicker);
+$("letmodel").addEventListener("click", () => {
+  state.taxa = []; togglePick("", false); drawPicker(); show("step3");
 });
 
 function drawGuide(query) {

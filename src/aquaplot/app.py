@@ -60,6 +60,7 @@ from .observe import select_observer
 from .pipeline import PIPELINE_VERSION, Pipeline
 from .places import PlaceResolver, pilot_sites
 from .schema import Classification
+from .secondopinion import SecondOpinion
 from .status import StatusResolver
 from .store import Store, site_key
 
@@ -189,6 +190,9 @@ class ReviewBody(BaseModel):
     confirmed_taxa: list[str] = Field(default_factory=list, description="Names the person confirmed.")
     rejected_taxa: list[str] = Field(default_factory=list, description="Names the person says are wrong; removed from the index.")
     added_taxa: list[str] = Field(default_factory=list, description="Animals the person found that the model missed.")
+    dismissed: list[str] = Field(
+        default_factory=list, description="Second-opinion item keys the person looked at and answered 'keep mine' or 'not there'."
+    )
     site_name: str | None = None
 
 
@@ -317,6 +321,7 @@ async def review_assessment(assessment_id: str, body: ReviewBody, request: Reque
             confirmed_taxa=tuple(body.confirmed_taxa),
             rejected_taxa=tuple(body.rejected_taxa),
             added_taxa=tuple(body.added_taxa),
+            dismissed=tuple(body.dismissed),
             site_name=body.site_name,
         ),
     )
@@ -584,6 +589,8 @@ def _rehydrate(stored: dict[str, Any]) -> "Assessment":
         confirmations=stored.get("confirmations", 0),
         supersedes=stored.get("supersedes"),
         version=stored.get("version", ASSESSMENT_VERSION),
+        identified_by=stored.get("identified_by", "model"),
+        second_opinion=SecondOpinion.from_dict(stored["second_opinion"]) if stored.get("second_opinion") else None,
     )
 
 
