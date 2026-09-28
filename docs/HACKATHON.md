@@ -148,7 +148,11 @@ everything after it.
 - [x] Track alignment stated (above)
 - [x] Project description (this file and the README)
 - [x] Prior work disclosed
-- [ ] Evaluation run and the results recorded in [EVALUATION.md](EVALUATION.md)
+- [ ] Evaluation run and the results recorded in [EVALUATION.md](EVALUATION.md). With no API key,
+      one option is to have Claude Code run it by looking at the iNaturalist photos with the labels
+      hidden, disclosed as exactly that rather than as `observe.ClaudeObserver` API calls; decide first
+- [ ] Before judging opens (Oct 1): open the live link so the free instance is awake, and try
+      *Use the sample photos* on it once
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository)
 - [ ] Demo video, 3–5 minutes (the sample check on step 1 makes it possible without a stream)
 - [ ] Eligibility confirmed: registered on Devpost, and the Devpost overview says "students
