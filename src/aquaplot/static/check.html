@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/static/theme.js"></script>
 <title>AquaPlot — check a stream</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0f6b7a">
 <style>
   :root {
+    color-scheme: light;
     --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
     --accent: #0f6b7a; --accent-ink: #fff; --soft: #e8f1f3;
     --high: #1a7f5a; --good: #4f9d46; --moderate: #b8860b; --poor: #c2662a; --bad: #a5342b;
@@ -16,12 +18,17 @@
     --warn-bg: #fff4e5; --warn-ink: #7a4a00;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+    :root:not([data-theme="light"]) { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
             --accent: #56b6c2; --accent-ink: #0b1216; --soft: #1e2b31;
             --high: #56c596; --good: #8ec96f; --moderate: #d9b45a; --poor: #e3925f; --bad: #e8756a;
             --ok: #56c596; --watch: #d9b45a; --concern: #e3925f; --alert: #e8756a;
-            --warn-bg: #33291a; --warn-ink: #f0d9a0; }
+            --warn-bg: #33291a; --warn-ink: #f0d9a0; color-scheme: dark; }
   }
+  :root[data-theme="dark"] { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --accent-ink: #0b1216; --soft: #1e2b31;
+            --high: #56c596; --good: #8ec96f; --moderate: #d9b45a; --poor: #e3925f; --bad: #e8756a;
+            --ok: #56c596; --watch: #d9b45a; --concern: #e3925f; --alert: #e8756a;
+            --warn-bg: #33291a; --warn-ink: #f0d9a0; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -30,6 +37,8 @@
   .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
   .brand span { color: var(--accent); }
   nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .bar { position: relative; padding-right: 84px; }
+  .bar .theme-switch { position: absolute; top: 13px; right: 16px; }
   nav a { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
@@ -39,6 +48,8 @@
        mid-word - and the last two, the ID guide and About, could not be reached at all by
        anyone who did not think to swipe a row of buttons. A second row costs about 34px of
        a sticky header; an unreachable page costs more. */
+    .bar { padding-right: 16px; }
+    .bar .theme-switch { top: 10px; }
     nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
     nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
@@ -168,6 +179,7 @@
       <a href="#" id="guidebtn">ID guide</a>
       <a href="/about">About</a>
     </nav>
+    <span data-theme-switch></span>
   </div>
 </header>
 

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/static/theme.js"></script>
 <title>AquaPlot in two minutes</title>
 <meta name="description" content="Volunteers identify what lives in their stream, and an AI checks their answers without seeing them. Published indices and readable rules turn that into a health reading for the water, people and animals.">
 <link rel="icon" href="/icon.svg">
@@ -15,19 +16,24 @@
 </script>
 <style>
   :root {
+    color-scheme: light;
     --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
     --accent: #0f6b7a; --soft: #e8f1f3; --warn: #c2662a;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
-            --accent: #56b6c2; --soft: #1e2b31; --warn: #e3925f; }
+    :root:not([data-theme="light"]) { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31; --warn: #e3925f; color-scheme: dark; }
   }
+  :root[data-theme="dark"] { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31; --warn: #e3925f; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { background: var(--card); border-bottom: 1px solid var(--line); }
   .bar { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
   nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .bar { position: relative; padding-right: 84px; }
+  .bar .theme-switch { position: absolute; top: 13px; right: 16px; }
   nav a { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
@@ -35,6 +41,8 @@
     /* Wrap rather than scroll sideways: the scrollbar was hidden, so a link cut off
        mid-word was the only hint there was more, and the last ones could not be
        reached at all by anyone who did not think to swipe a row of buttons. */
+    .bar { padding-right: 16px; }
+    .bar .theme-switch { top: 10px; }
     nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
     nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
@@ -93,7 +101,7 @@
 <body>
 <header><div class="bar">
   <a class="brand" href="/about">AquaPlot<span>.</span></a>
-  <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/docs">API</a></nav>
+  <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/docs">API</a></nav><span data-theme-switch></span>
 </div></header>
 <section class="hero">
   <div class="scene" id="scene" aria-hidden="true"><canvas id="water"></canvas></div>
@@ -399,12 +407,13 @@ async function start() {
 
   // Colours come from the page's own palette, so the scene follows light and dark mode.
   const dark = matchMedia("(prefers-color-scheme: dark)");
+  const isDark = () => (window.aquaplotTheme ? window.aquaplotTheme.current() === "dark" : dark.matches);
   function applyPalette() {
     const css = getComputedStyle(document.documentElement);
     const bg = new THREE.Color(css.getPropertyValue("--bg").trim());
     const accent = new THREE.Color(css.getPropertyValue("--accent").trim());
     const u = uniforms, c = (hex) => new THREE.Color(hex);
-    if (dark.matches) {
+    if (isDark()) {
       u.uDeep.value.copy(c("#07262d")); u.uShallow.value.copy(accent).lerp(c("#0c3a42"), 0.55);
       u.uSky.value.copy(bg).lerp(accent, 0.34); u.uSun.value.copy(c("#d9f6f8"));
       u.uBedA.value.copy(c("#3a4a4c")); u.uBedB.value.copy(c("#5d5a4e")); u.uGap.value.copy(c("#1a2426"));
@@ -476,7 +485,7 @@ async function start() {
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; update(); }).observe(host);
   document.addEventListener("visibilitychange", update);
   still.addEventListener("change", update);
-  dark.addEventListener("change", () => { applyPalette(); if (!running) draw(0); });
+  addEventListener("aquaplot:theme", () => { applyPalette(); if (!running) draw(0); });
   update();
 }
 </script>

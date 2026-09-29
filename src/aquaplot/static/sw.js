@@ -13,13 +13,13 @@
  * somebody walked to a stream to collect.
  */
 
-const VERSION = "aquaplot-v2";
+const VERSION = "aquaplot-v3";
 const SHELL = `${VERSION}-shell`;
 const DATA = `${VERSION}-data`;
 
 // Enough to complete a whole assessment offline: the page, and the vocabularies
 // the questions and the identification guide are rendered from.
-const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon.svg"];
+const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon.svg", "/static/theme.js"];
 const DATA_URLS = ["/api/form", "/api/guide", "/api/pilots"];
 
 self.addEventListener("install", (event) => {
