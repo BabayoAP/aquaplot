@@ -681,7 +681,7 @@ def form():
 
 # One reference photo per family, of the stage a volunteer finds in a tray, fetched ahead of time by
 # scripts/fetch_guide_photos.py. They ship with the app; nothing calls iNaturalist for them at run time.
-GUIDE_PHOTOS: dict = json.loads(resources.files("aquaplot.data").joinpath("guide_photos.json").read_text())["photos"]
+GUIDE_PHOTOS: dict = json.loads(resources.files("aquaplot.data").joinpath("guide_photos.json").read_text(encoding="utf-8"))["photos"]
 
 
 def guide_photo(family: str) -> dict | None:
