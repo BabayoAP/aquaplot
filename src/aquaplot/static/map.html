@@ -59,6 +59,13 @@
   .leaflet-popup-content { font: 13px/1.35 system-ui, sans-serif; margin: 10px 12px; }
   .leaflet-popup-content img { width: 100%; border-radius: 6px; margin-top: 6px; }
   .leaflet-popup-content b { font-size: 14px; }
+  .back, .navbtn { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
+                   padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); }
+  .back { position: fixed; top: 10px; left: 54px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .navbtn { display: inline-block; padding: 6px 11px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .back:hover, .navbtn:hover { color: var(--accent); }
+  .navbtn:hover { border-color: var(--accent); }
+  .navrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .toggle { display: none; position: fixed; right: 12px; bottom: 12px; z-index: 1002; background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   .toggle.open { bottom: calc(62vh + 12px); }
   @media (max-width: 760px) {
@@ -72,12 +79,14 @@
 </head>
 <body>
 <div id="map" role="application" aria-label="Satellite map of species sightings"></div>
+<a class="back" id="back" href="/">← Back to AquaPlot</a>
 <button class="toggle" id="toggle">Layers</button>
 <aside id="panel">
   <div>
     <h1><a href="/">AquaPlot</a> · Stream map</h1>
     <p class="sub">Citizen stream assessments over a satellite view of what else has been recorded nearby.
-      Pan or zoom to reload. <a href="/">Check a stream</a> · <a href="/dashboard">Dashboard</a></p>
+      Pan or zoom to reload.</p>
+    <div class="navrow"><a class="navbtn" href="/">Check a stream</a><a class="navbtn" href="/dashboard">Dashboard</a></div>
   </div>
 
   <section>
@@ -130,7 +139,7 @@
 
   <section>
     <h2>Sightings per year in view</h2>
-    <svg class="trend" id="trend" viewBox="0 0 300 110" preserveAspectRatio="none"></svg>
+    <svg class="trend" id="trend"></svg>
     <div class="legend"><span><i style="background:var(--introduced)"></i>introduced</span><span><i style="background:var(--native)"></i>native</span><span><i style="background:var(--threatened)"></i>threatened</span></div>
     <p class="sub" id="share"></p>
   </section>
@@ -340,26 +349,43 @@
     }
   }
 
+  // Drawn in real pixels at the chart's current width, and redrawn when that changes,
+  // so the lines and the year labels never stretch with the window.
+  let lastTrend = null;
   function drawTrend(t) {
+    lastTrend = t;
     const svg = $("trend");
-    const W = 300, H = 110, padL = 4, padB = 16, padT = 6;
+    const W = Math.max(160, Math.round(svg.getBoundingClientRect().width) || 300), H = 110, padL = 4, padB = 16, padT = 18;   // padT leaves a strip for the max label
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const years = t.years;
     if (!years.length) { svg.innerHTML = ""; $("share").textContent = "No sightings in view."; return; }
     const max = Math.max(1, ...t.introduced, ...t.native, ...t.threatened);
     const x = (i) => padL + (years.length === 1 ? (W - padL) / 2 : i * (W - padL - 2) / (years.length - 1));
     const y = (v) => padT + (H - padB - padT) * (1 - v / max);
     const line = (arr, color) => `<polyline fill="none" stroke="${color}" stroke-width="2" points="${arr.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/>`;
-    const step = Math.max(1, Math.ceil(years.length / 6));
+    const step = Math.max(1, Math.ceil(years.length / Math.max(2, Math.floor(W / 48))));
     const ticks = years.filter((_, i) => (years.length - 1 - i) % step === 0);  // anchored at the last year so labels never collide there
     const tickEls = ticks.map((yr) => { const i = years.indexOf(yr); return `<text x="${x(i)}" y="${H - 3}" font-size="9" fill="currentColor" text-anchor="${i === 0 ? "start" : i === years.length - 1 ? "end" : "middle"}">${yr}</text>`; }).join("");
     svg.innerHTML = line(t.native, COLORS.native) + line(t.introduced, COLORS.introduced) + line(t.threatened, COLORS.threatened) + tickEls
-      + `<text x="${W - 2}" y="${padT + 8}" font-size="9" fill="currentColor" text-anchor="end">max ${max.toLocaleString()}/yr</text>`;
+      + `<text x="${W - 2}" y="10" font-size="9" fill="currentColor" text-anchor="end">max ${max.toLocaleString()}/yr</text>`;
     const last = t.introduced_share_pct.filter((v) => v !== null);
     if (last.length >= 2) {
       const a = last[0], b = last[last.length - 1];
       $("share").textContent = `Introduced species were ${a}% of native+introduced sightings in ${years[t.introduced_share_pct.indexOf(a)]} and ${b}% in ${years[t.introduced_share_pct.lastIndexOf(b)]}.`;
     } else $("share").textContent = "";
   }
+
+  let lastTrendWidth = 0;
+  new ResizeObserver(([entry]) => {
+    const w = Math.round(entry.contentRect.width);
+    if (lastTrend && w && w !== lastTrendWidth) { lastTrendWidth = w; drawTrend(lastTrend); }
+  }).observe($("trend"));
+
+  // Back to wherever in AquaPlot the map was opened from; the check page otherwise.
+  try {
+    const from = document.referrer && new URL(document.referrer);
+    if (from && from.origin === location.origin && from.pathname !== "/map") $("back").href = from.pathname + from.search;
+  } catch (e) {}
 
   document.querySelectorAll("input[data-layer]").forEach((cb) => cb.addEventListener("change", () => {
     const name = cb.dataset.layer;
