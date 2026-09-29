@@ -25,9 +25,11 @@
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 560px) {
-    /* One row that scrolls sideways, so the header never grows to two rows of buttons. */
-    nav { margin-left: 0; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-    nav a { flex: none; white-space: nowrap; }
+    /* Wrap rather than scroll sideways: the scrollbar was hidden, so a link cut off
+       mid-word was the only hint there was more, and the last ones could not be
+       reached at all by anyone who did not think to swipe a row of buttons. */
+    nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
+    nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
   main { max-width: 880px; margin: 0 auto; padding: 28px 16px 70px; }
   a { color: var(--accent); }

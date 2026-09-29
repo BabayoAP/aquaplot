@@ -27,9 +27,11 @@
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 560px) {
-    /* One row that scrolls sideways, so the header never grows to two rows of buttons. */
-    nav { margin-left: 0; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-    nav a { flex: none; white-space: nowrap; }
+    /* Wrap rather than scroll sideways: the scrollbar was hidden, so a link cut off
+       mid-word was the only hint there was more, and the last ones could not be
+       reached at all by anyone who did not think to swipe a row of buttons. */
+    nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
+    nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
   main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 60px; }
   h1 { font-size: 22px; margin: 0 0 4px; }
@@ -46,6 +48,10 @@
   table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card);
           border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  /* The table is wider than a phone, and without this the whole page scrolled sideways
+     instead of the table. Every column is kept; the table carries its own scroll. */
+  #sites, #table { overflow-x: auto; }
+  #sites table, #table table { min-width: 520px; }
   th { color: var(--muted); font-weight: 600; font-size: 13px; }
   tr:last-child td { border-bottom: 0; }
   .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; color: #fff; }
@@ -186,7 +192,12 @@ Promise.all([
     $("sites").innerHTML = '<div class="empty">No assessments yet. <a href="/">Record the first one.</a></div>';
   } else {
     const table = document.createElement("table");
-    table.innerHTML = "<tr><th>Site</th><th>Band</th><th>Pressure</th><th>Visits</th><th>Trend</th><th>Last seen</th></tr>";
+    // A real thead and tbody, with a scope on each heading: that is what lets a screen
+    // reader say "Band, Good" on a cell instead of reading a bare word out of a grid.
+    table.innerHTML = "<thead><tr><th scope=col>Site</th><th scope=col>Band</th><th scope=col>Pressure</th>"
+      + "<th scope=col>Visits</th><th scope=col>Trend</th><th scope=col>Last seen</th></tr></thead>";
+    const body = document.createElement("tbody");
+    table.append(body);
     sites.forEach((s) => {
       const tr = document.createElement("tr");
       const name = document.createElement("td");
@@ -200,7 +211,7 @@ Promise.all([
       trend.innerHTML = `<span class="trend ${s.trend.direction}">${s.trend.direction}</span><br><span class="trend">${escape(s.trend.detail)}</span>`;
       const seen = document.createElement("td"); seen.textContent = s.last_seen.slice(0, 10);
       tr.append(name, band, pressure, visits, trend, seen);
-      table.append(tr);
+      body.append(tr);
     });
     $("sites").append(table);
   }

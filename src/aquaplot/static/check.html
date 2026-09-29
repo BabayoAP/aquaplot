@@ -34,9 +34,13 @@
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 560px) {
-    /* One row that scrolls sideways, so the header never grows to two rows of buttons. */
-    nav { margin-left: 0; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-    nav a { flex: none; white-space: nowrap; }
+    /* This used to be one row that scrolled sideways, to keep the header one row tall.
+       The scrollbar was hidden, so the only hint that there was more was a link cut off
+       mid-word - and the last two, the ID guide and About, could not be reached at all by
+       anyone who did not think to swipe a row of buttons. A second row costs about 34px of
+       a sticky header; an unreachable page costs more. */
+    nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
+    nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
   main { max-width: 640px; margin: 0 auto; padding: 16px 16px 64px; }
   h1 { font-size: 21px; margin: 0 0 4px; }
@@ -101,8 +105,20 @@
   .taxon .meta { color: var(--muted); font-size: 13px; }
   .taxon .row { margin-top: 8px; }
   .taxon .row button { padding: 6px 12px; font-size: 14px; }
+  .picks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .picks button { background: var(--soft); color: var(--accent); border: 1px solid var(--line); border-radius: 20px;
+                  padding: 4px 10px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .picks button::after { content: "\00d7"; font-size: 15px; line-height: 1; opacity: .75; }
+  .picks button:hover { border-color: var(--accent); }
   .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin-top: 10px; }
   .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  /* On a phone the longest term ("Weather either side of this check") sets the first column
+     and leaves the answers a sliver to wrap in. Stack them instead. */
+  @media (max-width: 560px) {
+    .kv { grid-template-columns: 1fr; gap: 0; }
+    .kv dt { margin-top: 10px; font-size: 13px; }
+    .kv dt:first-child { margin-top: 0; }
+  }
   .err { color: var(--alert); margin-top: 10px; }
   .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
   a { color: var(--accent); }
@@ -241,7 +257,9 @@
       looks at your tray photo separately, without seeing your answers, and tells you afterwards if it saw something
       different.</p>
     <input type="text" class="search" id="picksearch" placeholder="Search, e.g. 'three tails', 'case', 'shell', 'red worm'" aria-label="Search the animals">
+    <p class="hint"><a href="#" id="guidebtn2">Not sure what you are looking at? Open the ID guide</a></p>
     <p class="hint" id="picked" aria-live="polite">Nothing picked yet.</p>
+    <div class="picks" id="pickedchips"></div>
     <div id="picker"></div>
     <div class="row">
       <button type="button" class="ghost" data-go="step2">Back</button>
@@ -341,6 +359,7 @@ function emptyReview() { return { answers: {}, confirmed_taxa: [], rejected_taxa
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
 
 const PANELS = ["step1", "step2", "animals", "step3", "step4", "result"];
+let shown = false;
 function show(id) {
   PANELS.forEach((s) => { $(s).hidden = s !== id; });
   const index = PANELS.indexOf(id) + 1;
@@ -352,9 +371,13 @@ function show(id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
   // Move focus to the panel heading so a screen reader and a keyboard user both
   // land where the sighted user is looking, instead of at the top of the form.
+  // Not on the first render: nobody has gone anywhere yet, and because the page
+  // has seen no interaction at that point the browser treats the focus as a
+  // keyboard one and rings the first heading, which reads as an error.
   const heading = $(id).querySelector("h2, .band");
-  if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
-  $("announce").textContent = `Step ${index} of ${PANELS.length}`;
+  if (heading && shown) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+  if (shown) $("announce").textContent = `Step ${index} of ${PANELS.length}`;
+  shown = true;
 }
 show("step1");
 
@@ -1023,12 +1046,16 @@ let guideFamilies = [];
 const guideReady = api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawPicker(); })
   .catch(() => { $("picked").textContent = "The animal list could not load. You can still continue and let the model suggest."; });
 
-$("guidebtn").addEventListener("click", (e) => {
+let guideOpener = $("guidebtn");
+function openGuide(e) {
   e.preventDefault();
+  guideOpener = e.currentTarget;
   $("guide").hidden = false;
   $("guidesearch").focus();
   guideReady.then(() => drawGuide($("guidesearch").value));
-});
+}
+$("guidebtn").addEventListener("click", openGuide);
+$("guidebtn2").addEventListener("click", openGuide);
 
 // ---- step 3: the citizen identifies
 //
@@ -1048,13 +1075,33 @@ const GROUP_HEADINGS = {
   Annelida: "Worms", Megaloptera: "Alderflies", Hemiptera: "Water bugs", Turbellaria: "Flatworms",
 };
 
+function pickLabel(n) {
+  const f = guideFamilies.find((x) => x.family === n);
+  return f ? f.plain_name : `some kind of ${GROUP_WORDS[n] || n}`;
+}
+
 function togglePick(name, on) {
   state.taxa = on ? [...new Set([...state.taxa, name])] : state.taxa.filter((n) => n !== name);
-  const labels = state.taxa.map((n) => {
-    const f = guideFamilies.find((x) => x.family === n);
-    return f ? f.plain_name : `some kind of ${GROUP_WORDS[n] || n}`;
-  });
+  const labels = state.taxa.map(pickLabel);
   $("picked").textContent = labels.length ? `${labels.length} picked: ${labels.join(", ")}.` : "Nothing picked yet.";
+  // Once there are chips they say the same thing, visibly and undoably, so the sentence
+  // stops taking up room and stays only for the live-region announcement. With nothing
+  // picked there are no chips, and the sentence is the hint that says so.
+  $("picked").className = labels.length ? "sr" : "hint";
+  // The sentence above says what is picked; these say it again in a form you can undo.
+  // Without them, taking back one animal out of five means finding its group again,
+  // which is the one thing a person does while still standing over the tray.
+  const box = $("pickedchips");
+  box.innerHTML = "";
+  state.taxa.forEach((n) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = pickLabel(n);
+    b.title = `Remove ${pickLabel(n)}`;
+    b.setAttribute("aria-label", `Remove ${pickLabel(n)}`);
+    b.addEventListener("click", () => { togglePick(n, false); drawPicker(); });
+    box.append(b);
+  });
 }
 
 function chip(name, label, detail) {
@@ -1134,8 +1181,9 @@ function drawGuide(query) {
 }
 
 $("guidesearch").addEventListener("input", (e) => drawGuide(e.target.value));
-$("guideclose").addEventListener("click", () => { $("guide").hidden = true; $("guidebtn").focus(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("guide").hidden) { $("guide").hidden = true; $("guidebtn").focus(); } });
+function closeGuide() { $("guide").hidden = true; guideOpener.focus(); }
+$("guideclose").addEventListener("click", closeGuide);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("guide").hidden) closeGuide(); });
 </script>
 </body>
 </html>
