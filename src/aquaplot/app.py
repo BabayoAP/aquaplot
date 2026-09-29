@@ -49,6 +49,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -147,6 +148,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
+    docs_url=None,  # served by api_docs below, with a way back to the app
     title="AquaPlot",
     version=ASSESSMENT_VERSION,
     description=(
@@ -847,6 +849,33 @@ def area_listed():
 def index() -> FileResponse:
     """The guided stream check. This is the product; everything else supports it."""
     return FileResponse(STATIC_DIR / "check.html")
+
+
+DOCS_HEAD = """<style>
+  .ap-bar { max-width: 1460px; margin: 0 auto; padding: 16px 20px 0; box-sizing: border-box;
+            font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .ap-back { display: inline-block; background: #fff; color: #14202a; text-decoration: none; font-weight: 600;
+             padding: 7px 12px; border-radius: 8px; border: 1px solid #dde5e9; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .ap-back:hover { color: #0f6b7a; border-color: #0f6b7a; }
+</style>
+"""
+DOCS_BAR = """<div class="ap-bar"><a class="ap-back" id="ap-back" href="/about">← Back to AquaPlot</a></div>
+<script>
+  // Back to wherever in AquaPlot the reference was opened from; the about page otherwise.
+  try {
+    const from = document.referrer && new URL(document.referrer);
+    if (from && from.origin === location.origin && from.pathname !== "/docs") document.getElementById("ap-back").href = from.pathname + from.search;
+  } catch (e) {}
+</script>
+"""
+
+
+@app.get("/docs", include_in_schema=False)
+def api_docs() -> HTMLResponse:
+    """The interactive API reference: FastAPI's Swagger UI, with a way back to the app."""
+    page = get_swagger_ui_html(openapi_url=app.openapi_url, title=f"{app.title} - Swagger UI").body.decode()
+    page = page.replace("</head>", DOCS_HEAD + "</head>", 1).replace("<body>", "<body>\n" + DOCS_BAR, 1)
+    return HTMLResponse(page)
 
 
 @app.get("/about", include_in_schema=False)
