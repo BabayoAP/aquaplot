@@ -1,4 +1,4 @@
-# IEEE OneAquaHealth Global Hackathon 2026 — submission notes
+# IEEE OneAquaHealth Global Hackathon 2026: submission notes
 
 **Deadline:** Oct 4, 2026, 9:00 pm PDT. **Submission:** track alignment, project
 description, a 3–5 minute demo video, a public repository, and a working prototype.
@@ -6,22 +6,24 @@ description, a 3–5 minute demo video, a public repository, and a working proto
 ## One paragraph
 
 AquaPlot turns a walk past an urban stream into a health reading, with the volunteer in charge
-of it. A citizen photographs the reach, scoops gravel from a shallow fast patch into a pale
+of it. A citizen photographs the stream, scoops gravel from a shallow fast patch into a pale
 tray, and identifies what lives there from a guide organised by shape rather than by taxonomy.
-A vision model looks at the same tray photograph **without seeing their answers** and raises
-questions only where it saw something different — *you marked a stonefly; this may be a
-mayfly; count the tails* — ranked by whether the answer would change the stream's reading. The
+A vision model looks at the same tray photo **without seeing their answers** and raises
+questions only where it saw something different (*you marked a stonefly; this may be a
+mayfly; count the tails*), ranked by whether the answer would change the stream's reading. The
 citizen decides. Published indices (BMWP, or the Iberian IBMWP in Portugal and Spain) and a
 readable rule engine then turn the evidence into a Water Framework Directive screening band, a
-visual pressure score and findings for ecosystem, human and animal health, each carrying its
-evidence and its action. A health alert waits for a person to confirm what it rests on. A
-second visit to the same spot becomes a trend, the weather either side of the visit says whether
-sewage came from a storm overflow or a misconnection and warns of heavy rain or heat ahead, a finding that says "report this" comes with a
-report to send, and every assessment exports as a FHIR R4 Bundle that conforms to the
-OneAquaHealth project's own FHIR IG and passes the official HL7 validator, so an ecosystem
-reading can reach the health systems on the other side of the One Health link. A check made at
-one of the project's 106 research sites is linked to it by the project's own site code, and can
-be exported as the project's Citizen Science App submission in the app's own answer codes.
+visual pressure score and findings for ecosystem, human and animal health, each with its
+evidence and an action. A health alert waits for a person to confirm what it rests on.
+
+A second visit to the same spot becomes a trend. The weather before and after a visit shows
+whether sewage came from a storm overflow or a misconnected drain, and warns of heavy rain or
+heat ahead. A finding that says "report this" comes with a report to send. Every assessment
+exports as a FHIR R4 Bundle that conforms to the OneAquaHealth project's own FHIR IG and passes
+the official HL7 validator, so a reading about the stream can reach health systems. A check
+made at one of the project's 106 research sites is linked to it by the project's own site code,
+and can be exported as a submission to the project's Citizen Science App, in the app's own
+answer codes.
 
 ## Track alignment
 
@@ -33,17 +35,17 @@ AquaPlot's answer is a specific division of labour, and each part of it is enfor
 and covered by tests.
 
 - **The citizen identifies; the model checks, blind.** The person's own identifications are
-  what get scored. The model is shown the same tray photo without their list, so its agreement
-  is independent evidence rather than an echo. `secondopinion.py` turns the difference between
+  what get scored. The model is shown the same tray photo without their list, so when it
+  agrees, that is independent evidence. `secondopinion.py` turns the difference between
   the two lists into three kinds of question: a likely confusion, with the feature that
   separates the pair; an animal the model saw that the citizen did not mark; a sensitive family
   it could not find. Every question carries the band the stream would get if the model were
   right, and the decisive ones come first. *(Validation checks, human-in-the-loop.)*
 - **The model observes; the rules decide.** `observe.py` asks the model only for observations
-  in a fixed vocabulary generated from the field form, with a confidence each and an explicit
-  licence to answer "I cannot tell from this photo". Every determination — band, pressure,
-  health finding — comes from published indices and readable rules, and each finding names its
-  rule, its evidence and its action. *(Explainable AI.)*
+  in a fixed vocabulary generated from the field form, each with a confidence, and explicitly
+  allows it to answer "I cannot tell from this photo". Every judgement (band, pressure, health
+  finding) comes from published indices and readable rules, and each finding names its rule,
+  its evidence and its action. *(Explainable AI.)*
 - **A health alert waits for a person.** `onehealth.py` will not raise an alert on unconfirmed
   model output; it holds it at *concern*, says why, and the review asks for exactly the
   observation it rests on. A review never calls the model again, so a correction cannot be
@@ -75,8 +77,8 @@ and covered by tests.
   is stored with it and changes what a finding means: sewage after heavy rain sends the
   authority to the overflow records, sewage in dry weather to misconnected drains. Plus repeat
   visits as series rather than pins, an early-warning feed of sites whose latest state reached
-  concern, dated dry and stagnant findings as the urban drought signal, and an incident report
-  that turns a complaint into evidence.
+  concern, dated dry and stagnant findings as a sign of urban drought, and an incident report
+  that backs a complaint with evidence.
 - **Track 7, Digital Health Standards.** A FHIR R4 export that conforms to the OneAquaHealth IG
   ([`hl7-eu/oah`](https://github.com/hl7-eu/oah)): `location-oah` for the site, carrying the
   project's own site code at a research site, and `observation-indicators-oah` for every IG
@@ -116,16 +118,16 @@ Weights are from the Devpost rules; each criterion is scored 1–10.
 |---|---|
 | **Impact & alignment with the OneAquaHealth mission (30%)** | Benthic macroinvertebrates, the indicator group the project's protocols put first, scored with the index Iberian practice uses where the project's Coimbra pilot is. These are exactly what the project's own Citizen Science App does not ask about. Mosquito larvae and parasite-host snails are carried through to human and animal findings. Checks at the project's 106 research sites are linked to them by the project's site code, and every check can leave in the project's own formats: its app's submission and its FHIR IG. Every finding ends in an action split between the citizen, the community and the authority, and the authority's action arrives as a document the citizen can send. |
 | **Innovation & creativity (20%)** | The model as a *blind second opinion* on the volunteer rather than the identifier: questions ranked by whether the answer changes the band, with the feature that settles each. Plus an alert that waits for a human, a review that supersedes a visit instead of inventing one, and one rule applied to every hand-off: only what a person stands behind crosses into the project's formats. |
-| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 255 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The central claim is *measured*, not asserted: [EVALUATION.md](EVALUATION.md) sweeps observer quality against the review rules and shows an observer missing 40% of the animals still catches 69% of simulated volunteer mistakes, at 0.34 unnecessary questions per tray — the design argument for asking a model that may only raise questions. The whole system degrades: no model, no place, no coordinates and no photo each cost a named certainty factor instead of an error. |
-| **Usability & UX (15%)** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks do not have signal. |
-| **Feasibility & scalability (15%)** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter. The project's own FHIR IG and app schema are the integration path, not a new one. CSV, GeoJSON and FHIR mean the data outlives this deployment. |
+| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 255 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The central claim is *measured*, not asserted: [EVALUATION.md](EVALUATION.md) sweeps observer quality against the review rules and shows an observer missing 40% of the animals still catches 69% of simulated volunteer mistakes, at 0.34 unnecessary questions per tray. That is the case for a model that is only allowed to raise questions. Missing inputs don't break it: no model, no place, no coordinates and no photo each lower a named certainty factor instead of causing an error. |
+| **Usability & UX (15%)** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks often have no signal. |
+| **Feasibility & scalability (15%)** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter. It connects through the project's own FHIR IG and app schema instead of inventing a new route. CSV, GeoJSON and FHIR mean the data outlives this deployment. |
 
 ## Build timeline and prior work
 
 AquaPlot is a fork of the author's own earlier project, **SpeciesGuard**
 ([BabayoAP/nativeview](https://github.com/BabayoAP/nativeview)), a terrestrial
-invasive-species classifier built for NextStep Hacks 2026 (Sep 11–17, 2026). That is stated
-here, in the README and in the first commit message rather than left to be discovered.
+invasive-species classifier built for NextStep Hacks 2026 (Sep 11–17, 2026). This is stated
+here, in the README and in the first commit message.
 
 | When | What |
 |---|---|
@@ -154,7 +156,7 @@ everything after it.
       `secondopinion.py`. Headline: an observer missing 40% of the animals still catches 69% of
       simulated volunteer mistakes at 0.34 unnecessary questions per tray. Needs no model, no
       photos and no key, and is deterministic from its seed
-- [ ] Model-layer evaluation (`scripts/evaluate_observer.py`) — still needs an API key and
+- [ ] Model-layer evaluation (`scripts/evaluate_observer.py`): still needs an API key and
       labelled photos. With no key, one option is to have Claude Code run it by looking at the
       iNaturalist photos with the labels hidden, disclosed as exactly that rather than as
       `observe.ClaudeObserver` API calls; decide first. Do not quote the rule-layer table as
@@ -164,7 +166,7 @@ everything after it.
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository: free plan, no disk, demo data seeded at startup). Put `<live link>/about` in the Devpost description and `<live link>/try` as the first link
 - [ ] Demo video, 3–5 minutes (the sample check on step 1 makes it possible without a stream)
 - [ ] Eligibility confirmed: registered on Devpost. **The two Devpost pages contradict each
-      other** — the overview sidebar says "Students only" and "Team required", while the rules
+      other.** The overview sidebar says "Students only" and "Team required", while the rules
       page (checked 2026-09-28) says *"Open to individuals or teams (each participant can join
       only one team)"* and states no student requirement. The rules page normally governs, but
       a solo entry is the case the sidebar would exclude, so email the hackathon manager and get
@@ -181,7 +183,7 @@ seeded. Rehearse it out loud once and time it.
 
 **0:00–0:20 · The problem.** *"The animals in a stream are the best evidence of its health, and
 the hardest thing for a volunteer to name. This is a flat-headed mayfly. To a beginner it looks
-like a stonefly, and that one name can move a stream's reading. OneAquaHealth's own track brief
+like a stonefly, and that one name can change a stream's reading. OneAquaHealth's own track brief
 says it: citizen observations are inconsistent and error-prone. If an AI names the animals
 instead, nobody learns anything, and nobody can tell when it is wrong."*
 
@@ -189,9 +191,9 @@ instead, nobody learns anything, and nobody can tell when it is wrong."*
 pick a stonefly, answer the smell and access questions, submit. The card: *"You marked some
 kind of stonefly. The model thinks this may be Mayfly (flat-headed)."* Say: *"The AI looked at
 the same photo without seeing my answer. It doesn't overrule me; it asks, and tells me what to
-look at: count the tails."* Count them on the photo: three. Take the mayfly. *"Because it was
-asked blind, its agreement is evidence, not an echo, and taking its answer is recorded as
-that."*
+look at: count the tails."* Count them on the photo: three. Take the mayfly. *"It never saw
+my answer, so when it agrees with me, that means something. And when I take its answer, the
+app records that I adopted it, not that we agreed."*
 
 **1:30–2:10 · The reading and its reasons.** The band, then the sentence about people. Open one
 finding: its evidence and its action, and the rain forecast line if the weather has one. Point
@@ -205,13 +207,14 @@ no errors and no warnings. Only what a person confirmed is marked final."* Open 
 thing a citizen actually sends the water authority.
 
 **2:50–3:20 · Looking forward.** `/dashboard`: the declining Coimbra site and its chart, then
-*The next 48 hours*: the same rules re-run with the forecast. Heavy rain where sewage was seen
-is when an overflow runs.
+*The next 48 hours*: the same rules re-run with the forecast. Heavy rain at a site where sewage
+was seen means an overflow is likely.
 
 **3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 255
 tests. What we have not claimed yet: that the second opinion catches real mistakes on real
-trays. The harness to measure it is built; that is the next step. AquaPlot: the citizen
-identifies, the AI double-checks blind, the rules decide."*
+trays. The harness to measure it is built, and running it is the next step. That's AquaPlot:
+you name the animals, an AI checks you without seeing your answer, and the rules make the
+call."*
 
 If a judge asks about something not built, it was scoped out on purpose: a national index per
 country (one score column each), mapping to the project's expert macroinvertebrate codes (the

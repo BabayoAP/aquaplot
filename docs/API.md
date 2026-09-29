@@ -18,7 +18,7 @@ photo, a habitat answer, a species name or a description must be present.
 |---|---|---|
 | `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each. Send the reach and the sample tray. |
 | `description` | string | Free text from the observer. |
-| `lat`, `lon` | float | Used only if no photo carries EXIF GPS — EXIF wins, because it records where the *photo* was taken. |
+| `lat`, `lon` | float | Used only if no photo carries EXIF GPS. EXIF wins, because it records where the *photo* was taken. |
 | `site_name` | string | What people call the spot. |
 | `answers` | JSON object | `{"odour": "sewage", "algae": "bloom"}`. Keys and values must come from `/api/form`; an unknown key is a 422, not a silent drop. |
 | `taxa` | JSON array | `["Gammaridae", "Chironomidae"]`, or a group for an honest group-level answer (`"Plecoptera"`). **Sending this makes the check citizen-identified:** this list is what gets scored, and the model's view of the tray photo becomes a blind second opinion that can only raise questions. Omit it and the model's identifications are scored as unconfirmed proposals. |
@@ -77,7 +77,7 @@ Open items also appear in `needs_confirmation` with `kind: "second_opinion"` and
 ### `POST /api/assess/{id}/review`
 
 Fold a person's confirmations and corrections in. **The vision model is not called
-again** — re-running it could overwrite the correction just made.
+again**, because re-running it could overwrite the correction just made.
 
 ```json
 {
@@ -122,14 +122,14 @@ The stored assessment, exactly as produced.
 | `GET /api/sites` | One row per monitored spot with its latest band and trend. Optional `south`/`west`/`north`/`east` viewport (all four or none). |
 | `GET /api/sites/nearby?lat=&lon=&radius_m=` | Sites near a point, nearest first, so a returning volunteer can say "same spot". Default radius 250 m, max 5 km. |
 | `GET /api/sites/{site_key}` | Every visit at one spot, newest first, plus the trend. |
-| `POST /api/sites/{site_key}/name` | `{"name": "..."}` — let people call a stretch what they call it. |
+| `POST /api/sites/{site_key}/name` | `{"name": "..."}`. Lets people give a stretch the name they use for it. |
 | `GET /api/insights` | The dashboard's headline numbers, band and level distributions, monthly activity. |
 | `GET /api/alerts?days=30` | Sites whose **latest** assessment reached concern or alert. The early-warning feed. |
 | `GET /api/outlook` | The next 48 hours: each site's latest reading re-run through the rules with Open-Meteo's forecast, keeping the forward-looking findings (heavy rain ahead, heat ahead). Worst first; cached for 30 minutes; one forecast request covers every site. |
 | `GET /api/me/progress` | One contributor's record and badges. Requires `X-AquaPlot-Contributor`; returns an empty record without it. |
 
-A `site_key` is `lat,lon` rounded to three decimals — roughly a hundred metres,
-which is what groups repeat visits to "the same spot".
+A `site_key` is `lat,lon` rounded to three decimals, which is roughly a hundred
+metres. That is what groups repeat visits to "the same spot".
 
 ## Reference data
 
@@ -164,13 +164,13 @@ Still supported; see [CLASSIFIER.md](CLASSIFIER.md) and [AREA-VIEWER.md](AREA-VI
 |---|---|
 | 400 | An image could not be decoded. |
 | 404 | No assessment or site with that id. |
-| 422 | A field is outside the accepted vocabulary — the message names it. |
+| 422 | A field is outside the accepted vocabulary; the message names it. |
 | 429 | Rate limited; `Retry-After` is set. |
 | 502 | An upstream source (iNaturalist) failed in a place the request could not degrade around. |
 
-Assessment endpoints are built to degrade rather than fail: a model outage, an
+Assessment endpoints keep working when something is missing: a model outage, an
 unresolvable place, a missing photo and a dead iNaturalist each cost a named
-certainty penalty, not an error.
+certainty penalty instead of causing an error.
 
 ## Pages
 
@@ -189,5 +189,5 @@ certainty penalty, not an error.
 `/sw.js` is a service worker with root scope. It caches the check page, `/api/form`
 and `/api/guide`, so a whole assessment can be completed with no connection; the
 page keeps unsent assessments in IndexedDB and flushes them when the browser comes
-back online. Writes are never queued by the worker — the outbox is in the page,
-where it is visible and can be flushed by hand.
+back online. The worker never queues writes. The outbox is in the page, where it
+is visible and can be sent by hand.
