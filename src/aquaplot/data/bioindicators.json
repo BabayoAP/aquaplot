@@ -133,7 +133,7 @@
       "ept": true,
       "plain_name": "Caddisfly (net-spinner)",
       "look_for": "Grub with no portable case but feathery gills underneath; lives in a silk net between stones.",
-      "means": "Tolerates organic enrichment. Lots of these and nothing else suggests nutrient pollution."
+      "means": "Copes with extra nutrients from sewage or run-off. Lots of these and nothing else suggests nutrient pollution."
     },
     {
       "family": "Limnephilidae",
@@ -298,7 +298,7 @@
       "ept": false,
       "plain_name": "Blackfly larva",
       "look_for": "Bowling-pin shape anchored to a stone in fast water, fans at the head, sways in the current.",
-      "means": "Filter feeder of fast water; tolerates enrichment. Some species bite people and livestock."
+      "means": "Filters food from fast water and copes with nutrient pollution. Some species bite people and livestock."
     },
     {
       "family": "Chironomidae",
@@ -320,7 +320,7 @@
       "ept": false,
       "plain_name": "Mosquito larva (wriggler)",
       "look_for": "Hangs head-down from the surface film in still water, dives with a wriggle when disturbed.",
-      "means": "Breeds in still, warm, nutrient-rich water. A direct human-health signal: mosquitoes are the vector group OneAquaHealth tracks in urban streams.",
+      "means": "Breeds in still, warm, nutrient-rich water. This matters for people's health directly: mosquitoes spread disease, and they are the disease carriers OneAquaHealth tracks in urban streams.",
       "vector": true
     },
     {
@@ -456,7 +456,7 @@
       "ept": false,
       "plain_name": "Pea clam",
       "look_for": "Tiny pale two-part shell, the size of a grain of rice, in sand and silt.",
-      "means": "Tolerant of silt and enrichment."
+      "means": "Tolerant of silt and nutrient pollution."
     },
     {
       "family": "Unionidae",
@@ -566,7 +566,7 @@
       "ept": false,
       "plain_name": "Alderfly larva",
       "look_for": "Dark larva with seven pairs of feathery side filaments and one long pointed tail.",
-      "means": "Tolerates silt and enrichment."
+      "means": "Tolerates silt and nutrient pollution."
     },
     {
       "family": "Hydrobiidae",

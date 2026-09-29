@@ -179,9 +179,10 @@
 
     <div class="nearby" id="samplecard">
       <b>Not at a stream right now?</b>
-      <p class="sub">Try a sample check with two real photographs: a reach, and a tray with one nymph in it. Identify the
-        animal yourself in step 3 (a stonefly, perhaps?) and see what the model's blind second opinion says. The model's
-        reading of these two photos was recorded once and is replayed, so this works even where no model is configured.</p>
+      <p class="sub">Try a sample check with two real photos: one of a stretch of stream, and one of a tray holding a
+        single insect larva (a nymph). Name the animal yourself in step 3 (a stonefly, perhaps?) and see what the model
+        says after looking at the tray without your answer. The model's reading of these two photos was recorded once and
+        is replayed, so the sample works even on a server with no model set up.</p>
       <div class="row"><button type="button" class="ghost" id="samplebtn">Use the sample photos</button></div>
     </div>
   </section>
@@ -214,15 +215,16 @@
   <section class="step" id="animals" hidden>
     <div class="steptag">Step 3 · Animals</div>
     <h2>What did you find in the tray?</h2>
-    <p class="hint">Tap each kind of animal you can see. Go by shape: count the tails, look for legs, a case, a shell.
-      Not sure of the exact kind? Pick "some kind of…" for its group; that still counts. The model looks at your tray
-      photo on its own, without seeing your answers, and tells you afterwards if it saw something different.</p>
-    <input type="text" class="search" id="picksearch" placeholder="Search — try 'three tails', 'case', 'shell', 'red worm'" aria-label="Search the animals">
+    <p class="hint">Tap each kind of animal you can see. Go by shape: count the tails, and look for legs, a case or a
+      shell. If you're not sure of the exact kind, pick "some kind of…" for its group. That still counts. The model
+      looks at your tray photo separately, without seeing your answers, and tells you afterwards if it saw something
+      different.</p>
+    <input type="text" class="search" id="picksearch" placeholder="Search, e.g. 'three tails', 'case', 'shell', 'red worm'" aria-label="Search the animals">
     <p class="hint" id="picked" aria-live="polite">Nothing picked yet.</p>
     <div id="picker"></div>
     <div class="row">
       <button type="button" class="ghost" data-go="step2">Back</button>
-      <button type="button" class="ghost" id="letmodel">I can't tell — let the model suggest</button>
+      <button type="button" class="ghost" id="letmodel">I can't tell, let the model suggest</button>
       <button type="button" class="primary wide" data-go="step3">Next</button>
     </div>
   </section>
@@ -231,7 +233,7 @@
   <section class="step" id="step3" hidden>
     <div class="steptag">Step 4 · Your senses</div>
     <h2>What only you can tell</h2>
-    <p class="hint">A camera cannot smell, and it does not know who uses this water. These two answers change the
+    <p class="hint">A camera can't smell, and it doesn't know who uses this water. These two answers change the
       result more than anything else on this page.</p>
     <div id="personquestions"></div>
     <details>
@@ -295,7 +297,7 @@
   <button class="ghost close" id="guideclose">Close</button>
   <h2>What am I looking at?</h2>
   <p class="hint">Sorted by how sensitive the animal is. Finding the ones at the top is good news.</p>
-  <input type="text" class="search" id="guidesearch" placeholder="Search — try 'three tails', 'case', 'red worm'" aria-label="Search the identification guide">
+  <input type="text" class="search" id="guidesearch" placeholder="Search, e.g. 'three tails', 'case', 'red worm'" aria-label="Search the identification guide">
   <p class="hint" id="guidecount"></p>
   <div id="guidelist"></div>
 </div>
@@ -339,9 +341,9 @@ show("step1");
 api("/api/health").then((r) => r.json()).then((h) => {
   if (h.observer === "none") {
     $("notice").hidden = false;
-    $("notice").textContent = "No vision model is configured on this server, so nothing is read from your photos and nobody " +
-      "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself; the " +
-      "reading works exactly the same. (The sample photos below are the exception: their model reading was recorded.)";
+    $("notice").textContent = "This server has no vision model set up, so nothing reads your photos and nothing " +
+      "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself. " +
+      "The reading is calculated the same way. (The sample photos below are the exception: their model reading was recorded.)";
   }
 }).catch(() => {});
 
@@ -498,7 +500,7 @@ async function checkNearby() {
     const b = document.createElement("b"); b.textContent = `You have checked ${site.name} before.`;
     const sub = document.createElement("p"); sub.className = "sub";
     sub.textContent = `${site.metres_away} m from here · ${site.assessments} assessment${site.assessments === 1 ? "" : "s"}`
-      + ` · last was ${site.band} on ${site.last_seen.slice(0, 10)}. A repeat visit is what turns a reading into a trend.`;
+      + ` · last was ${site.band} on ${site.last_seen.slice(0, 10)}. Checking the same spot again builds up its trend.`;
     const row = document.createElement("div"); row.className = "row";
     const same = document.createElement("button"); same.type = "button"; same.className = "primary"; same.textContent = "Same spot";
     const other = document.createElement("button"); other.type = "button"; other.className = "ghost"; other.textContent = "A different spot";
@@ -613,12 +615,12 @@ $("submit").addEventListener("click", async () => {
       await queueSubmission(fields, state.files);
       $("error").hidden = true;
       $("announce").textContent = "Saved on this phone.";
-      alert("No connection here.\n\nYour assessment - answers and photos - is saved on this phone and will "
-          + "send itself as soon as you have a signal. You can carry on and check another spot.");
+      alert("No connection here.\n\nYour answers and photos are saved on this phone and will send "
+          + "as soon as you have a signal. You can carry on and check another spot.");
       resetForm();
     } catch (storageFailure) {
       $("error").hidden = false;
-      $("error").textContent = "No connection, and this browser would not let us save the assessment locally. "
+      $("error").textContent = "No connection, and this browser won't let AquaPlot save the assessment on the phone. "
         + "Keep this page open and try again once you have a signal.";
     }
     btn.disabled = false; btn.textContent = "See the result";
@@ -640,10 +642,10 @@ function openReview() {
   state.review = emptyReview();
   $("reviewintro").textContent = d.identified_by === "citizen" && d.second_opinion && d.second_opinion.available
     ? "You identified the animals yourself. The model looked at your tray photo separately, without seeing your answers. "
-      + "Below is where it saw something different, plus anything still unanswered. You decide; the ones at the top matter most."
+      + "Below are the places where it saw something different, plus anything still unanswered. You decide. The ones at the top matter most."
     : d.observer === "none"
-      ? "A few questions are still open. Answering them sharpens the reading."
-      : "The model proposed these. Confirming or correcting them changes the result — the ones at the top change it most.";
+      ? "A few questions are still open. Answering them makes the reading more precise."
+      : "The model suggested these. Confirming or correcting them changes the result, and the ones at the top change it most.";
   const q = $("queue"); q.innerHTML = "";
   d.needs_confirmation.slice(0, 8).forEach((item) => q.append(
     item.kind === "second_opinion" ? secondCard(item) : item.kind === "taxon" ? taxonCard(item) : habitatCard(item)));
@@ -662,7 +664,7 @@ function secondCard(item) {
   card.append(tell);
   if (item.changes_band) {
     const stake = document.createElement("div"); stake.className = "meta stake";
-    stake.textContent = `This one decides the reading: if the model is right, the stream reads ${item.band_if_model_right} instead.`;
+    stake.textContent = `This one changes the reading: if the model is right, the stream reads ${item.band_if_model_right} instead.`;
     card.append(stake);
   }
   const options = {
@@ -731,8 +733,8 @@ function habitatCard(item) {
   });
   if (!indicator) {
     const gone = document.createElement("p"); gone.className = "why";
-    gone.textContent = "The answer options for this question could not be loaded, so it cannot be answered here. "
-      + "Everything else on this page still applies.";
+    gone.textContent = "The answers for this question didn't load, so you can't answer it here. "
+      + "Everything else on this page still works.";
     card.append(gone);
   }
   card.append(choices);
@@ -842,10 +844,10 @@ function render(d) {
   const rows = [
     ["Identified by", identifiedBy(d)],
     ["Families found", `${d.ecology.families} (${d.ecology.ept_families} mayfly/stonefly/caddisfly)`],
-    ["Index", `${d.ecology.index} — ${d.ecology.citation}`],
+    ["Index", `${d.ecology.index}: ${d.ecology.citation}`],
     [`Average sensitivity (${d.ecology.mean_label})`, d.ecology.aspt === null ? "not calculated" : `${d.ecology.aspt} out of 10`],
     [`${d.ecology.total_label} total`, d.ecology.total_class
-      ? `${d.ecology.bmwp} (class '${d.ecology.total_class}' on the ${d.ecology.total_label} scale, which assumes a full standard sample)`
+      ? `${d.ecology.bmwp} (class '${d.ecology.total_class}' on the ${d.ecology.total_label} scale, which expects a full standard sample)`
       : d.ecology.bmwp],
     ["Visible pressure", `${d.pressures.pressure} / 100 (${d.pressures.band})`],
     ["Confidence in this reading", `${d.certainty}%`],
@@ -914,7 +916,7 @@ function loadBadges() {
       const s = document.createElement("span"); s.className = "badge"; s.textContent = b.name; s.title = b.why; box.append(s);
     });
     if (p.next) {
-      const n = document.createElement("p"); n.className = "why"; n.textContent = `Next: ${p.next.name} — ${p.next.why}`;
+      const n = document.createElement("p"); n.className = "why"; n.textContent = `Next badge: ${p.next.name}. ${p.next.why}`;
       box.append(n);
     }
   }).catch(() => {});
@@ -1021,7 +1023,7 @@ function drawPicker() {
     box.append(det);
   });
   if (!box.children.length && q) {
-    const p = document.createElement("p"); p.className = "hint"; p.textContent = `Nothing matches "${q}". Try a shape or a colour.`;
+    const p = document.createElement("p"); p.className = "hint"; p.textContent = `Nothing matches "${q}". Try a shape or a colour instead.`;
     box.append(p);
   }
 }
@@ -1049,7 +1051,7 @@ function drawGuide(query) {
     d.append(s, b, look, means); list.append(d);
   });
   $("guidecount").textContent = q
-    ? `${shown.length} of ${guideFamilies.length} match "${query.trim()}"` + (shown.length ? "" : " — try a shape or a colour instead of a name.")
+    ? `${shown.length} of ${guideFamilies.length} match "${query.trim()}"` + (shown.length ? "" : ". Try a shape or a colour instead of a name.")
     : `${guideFamilies.length} families.`;
 }
 

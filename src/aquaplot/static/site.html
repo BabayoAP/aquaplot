@@ -153,7 +153,7 @@ function drawChart(visits) {
   }
   visits.forEach((v, i) => {
     parts.push(`<circle class="dot" cx="${x(i)}" cy="${yBand(v.band_ordinal)}" r="7" fill="${css(v.band)}">`
-      + `<title>${esc(v.created_at.slice(0, 10))} — ${esc(v.band)}, pressure ${Math.round(v.pressure)}/100, `
+      + `<title>${esc(v.created_at.slice(0, 10))}: ${esc(v.band)}, pressure ${Math.round(v.pressure)}/100, `
       + `${esc(v.overall_level)}</title></circle>`);
     if (visits.length <= 12) {
       parts.push(`<text class="ylab" x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(v.created_at.slice(5, 10))}</text>`);

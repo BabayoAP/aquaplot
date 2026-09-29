@@ -70,8 +70,8 @@ Everything above needs a model and labelled photographs. The question underneath
 **given an observer of a stated quality, how much of a volunteer's mistake does the review
 catch, and how much noise does a volunteer who was right have to wade through?** That is a
 property of `secondopinion.py`, so `scripts/evaluate_rules.py` measures it by handing
-`score_outcomes` a *synthetic* observer with two dials — how often it misses an animal that is
-there, and how often it answers "some kind of mayfly" instead of naming the family — and
+`score_outcomes` a *synthetic* observer with two dials (how often it misses an animal that is
+there, and how often it answers "some kind of mayfly" instead of naming the family) and
 sweeping them.
 
 ```sh
@@ -86,7 +86,7 @@ review logic shows up as a falling catch rate.
 
 ## Results
 
-### Rule layer, synthetic observer — 2026-09-28
+### Rule layer, synthetic observer (2026-09-28)
 
 6 trays spanning a clean upland riffle to a drain, 200 runs per row, seed 1000, 198 simulated
 volunteer mistakes per run. Reproduce with
@@ -107,19 +107,19 @@ Reading it:
 
 - **An observer does not have to be good to be worth asking.** One that misses two animals in
   every five still catches 69% of simulated mistakes, at a cost of one unnecessary question
-  roughly every three trays. This is the design argument for asking a model that only ever
-  raises questions, and it is the row to quote, because a model missing 40% of a mixed tray is
-  a pessimistic reading of what these models do.
+  roughly every three trays. This is the case for a model that only ever raises questions. It
+  is the row to quote, because a model missing 40% of a mixed tray is a pessimistic estimate of
+  what these models do.
 - **A perfect observer never interrupts a volunteer who was right** (0.00 false alarms at 0%
   miss). Every false alarm in the table comes from the model failing to find an animal the
   volunteer correctly recorded, which is by design: a *sensitive* family the model could not
   find is worth a second look, because sensitive families are what lift a stream's reading.
 - **Answering only to order costs the suggestion, not the catch.** At 30% order-only the catch
   rate falls 13 points but the share where the right animal is offered falls 30. The question
-  still gets asked; it just says "some kind of mayfly" rather than naming the family — which is
-  the honest thing to show, and why order-level answers are counted apart from wrong ones.
+  still gets asked; it just says "some kind of mayfly" rather than naming the family. That is
+  the honest thing to show, and it's why order-level answers are counted apart from wrong ones.
 
-### Model layer — not yet run
+### Model layer: not yet run
 
 Needs an API key and labelled photos (`scripts/evaluate_observer.py`). Record each run here
 with the date, the model, the photo set and the four headline numbers: right to family, caught,

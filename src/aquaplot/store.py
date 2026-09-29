@@ -482,7 +482,7 @@ class Store:
 def trend_of(history: list[dict[str, Any]]) -> dict[str, Any]:
     """Is this site getting better or worse? Newest first, as ``history`` returns it."""
     if len(history) < 2:
-        return {"direction": "new", "detail": "One assessment so far. A second visit turns this into a trend."}
+        return {"direction": "new", "detail": "One assessment so far. A second visit will start a trend."}
     latest, previous = history[0]["band_ordinal"], history[1]["band_ordinal"]
     change = latest - previous
     if change > 0:
@@ -512,11 +512,11 @@ BADGES: list[dict[str, Any]] = [
      "test": lambda n, sites, repeats, conf, streak, inv: n >= 1},
     {"key": "reviewer", "name": "Reviewer", "why": "Confirmed or corrected what the model suggested, five times.",
      "test": lambda n, sites, repeats, conf, streak, inv: conf >= 5},
-    {"key": "returner", "name": "Returner", "why": "Went back to the same spot - the visit that turns a reading into a trend.",
+    {"key": "returner", "name": "Returner", "why": "Went back to the same spot to check it again.",
      "test": lambda n, sites, repeats, conf, streak, inv: repeats >= 1},
     {"key": "three-streams", "name": "Three streams", "why": "Assessed three different sites.",
      "test": lambda n, sites, repeats, conf, streak, inv: sites >= 3},
-    {"key": "sentinel", "name": "Sentinel", "why": "Recorded an invasive species, the sighting that makes early detection possible.",
+    {"key": "sentinel", "name": "Sentinel", "why": "Recorded an invasive species, which helps catch it early.",
      "test": lambda n, sites, repeats, conf, streak, inv: inv >= 1},
     {"key": "season-watch", "name": "Season watch", "why": "Assessed in three consecutive months.",
      "test": lambda n, sites, repeats, conf, streak, inv: streak >= 3},

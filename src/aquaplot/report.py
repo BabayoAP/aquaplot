@@ -56,12 +56,11 @@ REQUEST_BY_LEVEL: dict[Level, str] = {
     ),
     Level.OK: (
         "**For your records.** A citizen assessment at this location found the watercourse in good "
-        "condition. Baseline records matter as much as incident reports: they are what a later "
-        "decline is measured against."
+        "condition. A baseline record like this is what any later decline will be measured against."
     ),
 }
 
-# Each line completes the sentence "Screening class: <Band> — ...", so none of
+# Each line completes the sentence "Screening class: <Band>; ...", so none of
 # them repeats the band name.
 BAND_LINE: dict[Band, str] = {
     Band.HIGH: "the community is dominated by pollution-sensitive taxa.",
@@ -125,7 +124,7 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
     serious = [f for f in a.signal.findings if f.level.rank >= Level.CONCERN.rank]
     if serious:
         for f in serious:
-            lines.append(f"### {f.title}  \n*{f.domain.value} health — {f.level.value}*")
+            lines.append(f"### {f.title}  \n*{f.domain.value} health: {f.level.value}*")
             lines.append("")
             lines += [f"- {b}" for b in f.because]
             lines.append("")
@@ -137,7 +136,7 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
     lines += [
         "## Biological condition",
         "",
-        f"- **Screening class:** {a.ecology.band.value} — {BAND_LINE[a.ecology.band]}",
+        f"- **Screening class:** {a.ecology.band.value}; {BAND_LINE[a.ecology.band]}",
         f"- **Index:** {a.ecology.index.total} {a.ecology.bmwp:.0f}"
         + (f", {a.ecology.index.mean} {a.ecology.aspt:.2f}" if a.ecology.aspt is not None else f", {a.ecology.index.mean} not calculable")
         + f", {a.ecology.families} scoring families, {a.ecology.ept_families} EPT families",
@@ -179,7 +178,7 @@ def markdown(a: Assessment, site_history: list[dict[str, Any]] | None = None) ->
         lines += ["## Invasive species recorded", ""]
         for i in a.invasives:
             d = i.as_dict()
-            lines.append(f"- **{d['name']}** — listed by {d['source']} ({d['scope']}). {d['why_it_matters']}")
+            lines.append(f"- **{d['name']}**, listed by {d['source']} ({d['scope']}). {d['why_it_matters']}")
         lines.append("")
 
     if site_history and len(site_history) > 1:

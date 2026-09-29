@@ -67,7 +67,7 @@ def test_a_polluted_stream_community_bands_bad_and_names_the_signature():
     assert s.band is Band.BAD and s.ept_families == 0
     joined = " ".join(s.signals)
     assert "No mayflies, stoneflies or caddisflies" in joined
-    assert "oxygen-starved bed" in joined  # worms plus bloodworms, the classic pair
+    assert "short of oxygen" in joined  # worms plus bloodworms, the classic pair
 
 
 def test_effort_caps_the_claim():

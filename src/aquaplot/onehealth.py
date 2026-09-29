@@ -191,15 +191,15 @@ def cyanobacteria(ctx: Context) -> Finding | None:
         rule="human.cyanobacteria",
         domain=Domain.HUMAN,
         level=level,
-        title="Possible harmful algal bloom - avoid contact with the water",
+        title="Possible harmful algal bloom, so avoid contact with the water",
         because=(
             "a surface bloom, scum or paint-like mat was recorded",
             *(("people or dogs get into the water here",) if ctx.contact else ()),
         ),
         action=(
             "Keep out of the water and keep children and dogs out, including from spray. Do not let animals "
-            "drink it. Report the bloom to your local environmental agency - only a laboratory can confirm "
-            "whether it is toxin-producing cyanobacteria."
+            "drink it. Report the bloom to your local environmental agency. Only a laboratory can tell whether "
+            "it is toxin-producing cyanobacteria."
         ),
         confirmed=ctx.confirmed("algae"),
     )
@@ -240,8 +240,8 @@ def faecal_contamination(ctx: Context) -> Finding | None:
         because=tuple(evidence),
         action=(
             "Do not enter the water and wash your hands before eating. Report it to the water company and the "
-            "environmental regulator today, with the time, the photo and this location - overflow and "
-            "misconnection cases are made from exactly this kind of dated citizen record."
+            "environmental regulator today, with the time, the photo and this location. Cases against overflows "
+            "and misconnected drains are built from dated citizen records like this one."
         ),
         confirmed=ctx.confirmed(*[k for k in ("odour", "litter", "water_colour", "foam_or_sheen") if ctx.answer(k)][:1]),
     )
@@ -272,8 +272,8 @@ def mosquito_breeding(ctx: Context) -> Finding | None:
         because=tuple(evidence),
         action=(
             "Remove containers and litter that hold water near the bank, and tell the municipality about standing "
-            "water that does not drain. Restoring flow is the durable fix; insecticide is not, and it removes the "
-            "stream's own insect life along with the mosquitoes."
+            "water that does not drain. Getting the water flowing again fixes this for good. Insecticide doesn't, "
+            "and it kills the stream's own insects along with the mosquitoes."
         ),
         confirmed=ctx.confirmed("flow") if not larvae else True,
     )
@@ -297,8 +297,8 @@ def chemical_sheen(ctx: Context) -> Finding | None:
         title="Possible chemical contamination",
         because=tuple(evidence),
         action=(
-            "Keep out of the water and do not disturb the sediment. Report it with the location and time - a "
-            "fresh sheen is traceable upstream to its outfall, an old one is not."
+            "Keep out of the water and do not disturb the sediment. Report it with the location and time. A "
+            "fresh sheen can be traced upstream to the pipe it came from; an old one can't."
         ),
         confirmed=ctx.confirmed("foam_or_sheen") or ctx.confirmed("odour"),
     )
@@ -341,7 +341,7 @@ def rain_ahead(ctx: Context) -> Finding | None:
         rule="human.rain_ahead",
         domain=Domain.HUMAN,
         level=Level.CONCERN if sewage_seen else Level.WATCH,
-        title="Heavy rain is forecast - plan water contact around it",
+        title="Heavy rain is forecast, so plan water contact around it",
         because=(
             f"{w.rain_next_48h_mm:g} mm of rain is forecast here in the next 48 hours (Open-Meteo)",
             *(("sewage signs have been recorded here, so rain is likely to set an overflow running",) if sewage_seen else ()),
@@ -363,12 +363,12 @@ def wellbeing(ctx: Context) -> Finding | None:
         rule="human.wellbeing",
         domain=Domain.HUMAN,
         level=Level.OK,
-        title="A stream in this condition is a public-health asset",
+        title="A stream in this condition is good for public health",
         because=(
             f"the biological reading is '{ctx.status.band.value}' with low visible pressure",
             "accessible, clean urban water lowers heat stress, supports recreation and measurably improves mental wellbeing",
         ),
-        action="Keep recording it. Evidence that a stretch is in good condition is what protects it from the next development proposal.",
+        action="Keep recording it. A record showing this stretch in good condition helps protect it when the next development is proposed.",
     )
 
 
@@ -428,12 +428,12 @@ def invasive_pressure(ctx: Context) -> Finding | None:
         title="Invasive species recorded at this site",
         because=(
             f"{', '.join(ctx.invasives)} was identified here",
-            "invasive freshwater species displace native ones, and some carry diseases native species have no defence against - "
-            "introduced crayfish spread crayfish plague, which is lethal to European native crayfish",
+            "invasive freshwater species displace native ones, and some carry diseases native species have no defence against; "
+            "introduced crayfish, for example, spread crayfish plague, which kills European native crayfish",
         ),
         action=(
             "Do not move animals, plants or wet equipment between water bodies. Check, clean and dry boots and nets "
-            "before your next visit, and record the sighting - early detection is the only cheap stage of an invasion."
+            "before your next visit, and record the sighting. An invasion is only cheap to deal with if it is caught early."
         ),
     )
 
@@ -457,8 +457,9 @@ def biological_condition(ctx: Context) -> Finding | None:
     because = [ctx.status.meaning]
     if ctx.status.aspt is not None:
         because.append(
-            f"{ctx.status.families} scoring famil{'y' if ctx.status.families == 1 else 'ies'} were identified, "
-            f"average sensitivity ({ctx.status.index.mean}) {ctx.status.aspt:.1f}, of which {ctx.status.ept_families} are mayflies, stoneflies or caddisflies"
+            f"{ctx.status.families} scoring famil{'y was' if ctx.status.families == 1 else 'ies were'} identified, "
+            f"with an average sensitivity ({ctx.status.index.mean}) of {ctx.status.aspt:.1f}; {ctx.status.ept_families} of them "
+            f"{'is a mayfly, stonefly or caddisfly' if ctx.status.ept_families == 1 else 'are mayflies, stoneflies or caddisflies'}"
         )
     return Finding(
         rule="ecosystem.biological_condition",
@@ -467,9 +468,9 @@ def biological_condition(ctx: Context) -> Finding | None:
         title=f"Biological condition: {band.value}" + (" (provisional)" if ctx.status.evidence_limited else ""),
         because=tuple(because),
         action=(
-            "Repeat this check at the same spot each season. A single reading is a snapshot; a series is evidence."
+            "Repeat this check at the same spot each season. One reading shows a single day; a series shows what is changing."
             if level.rank <= Level.WATCH.rank
-            else "Repeat the check upstream and downstream of this point. Where the invertebrates change is where the problem enters."
+            else "Repeat the check upstream and downstream of this point. The problem enters where the invertebrates change."
         ),
         confirmed=not ctx.status.evidence_limited,
     )
@@ -503,7 +504,7 @@ def habitat_degradation(ctx: Context) -> Finding | None:
         because=tuple(because),
         action=(
             "Water quality alone will not fix this stretch. Ask your municipality about de-culverting, softening "
-            "the banks and letting a margin grow unmown - the cheapest of those is simply mowing less."
+            "the banks and letting a margin grow unmown. Mowing less is the cheapest of these."
         ),
     )
 
@@ -516,7 +517,7 @@ def thermal_and_drought(ctx: Context) -> Finding | None:
     if ctx.answer("shade") == "open":
         because.append("the water is fully exposed to the sun, so it warms and loses oxygen on hot days")
     if ctx.answer("flow") == "dry":
-        because.append("the bed was dry, which is a climate-resilience signal worth dating precisely")
+        because.append("the bed was dry, which is worth recording with the exact date as a sign of drought stress")
     elif ctx.answer("flow") == "stagnant":
         because.append("flow has stopped, leaving isolated pools that heat and deoxygenate")
     return Finding(
@@ -555,8 +556,8 @@ def heat_ahead(ctx: Context) -> Finding | None:
         because=(f"up to {w.max_temp_next_48h_c:g} °C is forecast here in the next 48 hours (Open-Meteo)", *exposed),
         action=(
             "If you can, look again at dawn during the heat, when oxygen is lowest: fish gasping at the surface or "
-            "dead fish should be reported to the environmental agency at once, because an oxygen crash can be "
-            "mitigated only while it is happening."
+            "dead fish should be reported to the environmental agency at once, because an oxygen crash can only be "
+            "dealt with while it is happening."
         ),
     )
 
@@ -649,8 +650,8 @@ def _headline(ctx: Context, levels: dict[Domain, Level], findings: list[Finding]
 
 def _community_actions(ctx: Context, findings: list[Finding]) -> list[str]:
     out = [
-        "Check the same spot again in a month. AquaPlot compares readings at a site over time, and a trend is what "
-        "moves a municipality when a single complaint does not."
+        "Check the same spot again in a month. AquaPlot compares readings at a site over time, and a municipality "
+        "is more likely to act on a trend than on a single complaint."
     ]
     if any(f.rule == "ecosystem.habitat_degradation" for f in findings):
         out.append("Ask your local authority to leave a two-metre margin unmown along the bank. It costs less than mowing it.")
@@ -659,7 +660,7 @@ def _community_actions(ctx: Context, findings: list[Finding]) -> list[str]:
     if ctx.habitat.value("litter") in ("scattered", "heavy"):
         out.append("A litter pick here is worth organising, and it is the easiest way to get neighbours to the water's edge.")
     if any(f.rule == "animal.invasive_species" for f in findings):
-        out.append("Run a 'check, clean, dry' reminder for anyone who uses the water - it is how invasions are slowed.")
+        out.append("Remind anyone who uses the water to check, clean and dry their gear. It slows the spread of invasive species.")
     return out
 
 

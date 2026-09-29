@@ -1,14 +1,14 @@
 {
   "resourceType": "Bundle",
-  "id": "aquaplot-4f4c12ec6937",
+  "id": "aquaplot-7ca8260f10db",
   "type": "collection",
   "timestamp": "2026-09-27T10:30:00+00:00",
   "entry": [
     {
-      "fullUrl": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186",
+      "fullUrl": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1",
       "resource": {
         "resourceType": "Location",
-        "id": "site-4f4c12ec6937",
+        "id": "site-7ca8260f10db",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/location-oah"
@@ -48,10 +48,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440",
+      "fullUrl": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458",
       "resource": {
         "resourceType": "Observation",
-        "id": "status-4f4c12ec6937",
+        "id": "status-7ca8260f10db",
         "status": "amended",
         "category": [
           {
@@ -75,7 +75,7 @@
           "text": "Urban stream ecological status, citizen screening"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -290,10 +290,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:3a21051b-6f84-5340-a11c-ae059eaaa6a4",
+      "fullUrl": "urn:uuid:17e1b03d-bd88-572c-8ab4-b2997a6650ed",
       "resource": {
         "resourceType": "Observation",
-        "id": "survey-4f4c12ec6937",
+        "id": "survey-7ca8260f10db",
         "status": "final",
         "category": [
           {
@@ -317,7 +317,7 @@
           "text": "Benthic macroinvertebrate survey"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -327,7 +327,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "component": [
@@ -385,7 +385,7 @@
             "text": "No mayflies, stoneflies or caddisflies were found. These three groups are the first to disappear when oxygen drops or pollution arrives, so their absence is the clearest warning sign in the sample."
           },
           {
-            "text": "Everything identified is a pollution-tolerant animal. That pattern points to organic enrichment - sewage, run-off or decomposing material using up the oxygen."
+            "text": "Everything identified is a pollution-tolerant animal. That pattern points to organic enrichment: sewage, run-off or rotting material using up the oxygen."
           },
           {
             "text": "Average sensitivity of the families present (ASPT) is 2.3 out of 10."
@@ -398,10 +398,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:7f912d43-d55f-5073-bbf8-3a8e4722adc2",
+      "fullUrl": "urn:uuid:19b17283-722e-5ab1-a972-ce29fc3f5aac",
       "resource": {
         "resourceType": "Observation",
-        "id": "habitat-4f4c12ec6937",
+        "id": "habitat-7ca8260f10db",
         "status": "final",
         "category": [
           {
@@ -425,7 +425,7 @@
           "text": "Visual stream habitat and pressure assessment"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -435,7 +435,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "component": [
@@ -491,10 +491,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:c3d3eec4-87c3-502e-b236-d722801bf3ab",
+      "fullUrl": "urn:uuid:444084da-c952-5625-addf-51498780c70f",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-macroinvertebreates-4f4c12ec6937",
+        "id": "oah-macroinvertebreates-7ca8260f10db",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -523,7 +523,7 @@
           "text": "Benthic Macro invertebrates count"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -617,10 +617,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:ae8594d3-d419-5185-85d5-312393169cee",
+      "fullUrl": "urn:uuid:0bace1a5-5055-563c-b6f8-9ea84eb5ce87",
       "resource": {
         "resourceType": "Observation",
-        "id": "oah-foam-4f4c12ec6937",
+        "id": "oah-foam-7ca8260f10db",
         "meta": {
           "profile": [
             "http://hl7.eu/fhir/ig/oah/StructureDefinition/observation-indicators-oah"
@@ -649,7 +649,7 @@
           "text": "Foam/colour/smell"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -703,10 +703,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:35bde56f-fce9-5041-b0d1-372d87203edb",
+      "fullUrl": "urn:uuid:f42140f3-d20b-5c00-a423-27da3e89ae08",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-ecosystem-4f4c12ec6937",
+        "id": "onehealth-ecosystem-7ca8260f10db",
         "status": "final",
         "category": [
           {
@@ -739,7 +739,7 @@
           "text": "One Health signal: ecosystem health"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -749,7 +749,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "valueCodeableConcept": {
@@ -785,7 +785,7 @@
               ],
               "text": "Biological condition: Bad"
             },
-            "valueString": "Almost nothing but the animals that survive very low oxygen. This stretch is in serious trouble.; 3 scoring families were identified, average sensitivity (ASPT) 2.3, of which 0 are mayflies, stoneflies or caddisflies",
+            "valueString": "Almost nothing but the animals that survive very low oxygen. This stretch is in serious trouble.; 3 scoring families were identified, with an average sensitivity (ASPT) of 2.3; 0 of them are mayflies, stoneflies or caddisflies",
             "interpretation": [
               {
                 "coding": [
@@ -801,7 +801,7 @@
         ],
         "note": [
           {
-            "text": "Biological condition: Bad: Repeat the check upstream and downstream of this point. Where the invertebrates change is where the problem enters."
+            "text": "Biological condition: Bad: Repeat the check upstream and downstream of this point. The problem enters where the invertebrates change."
           }
         ],
         "text": {
@@ -811,10 +811,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:730d7257-83c8-528a-9ee1-f58e873a9639",
+      "fullUrl": "urn:uuid:8c91c6a6-fd0c-54da-9591-660e14f76c52",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-human-4f4c12ec6937",
+        "id": "onehealth-human-7ca8260f10db",
         "status": "final",
         "category": [
           {
@@ -847,7 +847,7 @@
           "text": "One Health signal: human health"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -857,7 +857,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "valueCodeableConcept": {
@@ -909,7 +909,7 @@
         ],
         "note": [
           {
-            "text": "Signs of sewage reaching the stream: Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location - overflow and misconnection cases are made from exactly this kind of dated citizen record."
+            "text": "Signs of sewage reaching the stream: Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location. Cases against overflows and misconnected drains are built from dated citizen records like this one."
           }
         ],
         "text": {
@@ -919,10 +919,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:0a678cb8-b71a-5af4-867b-26381dd7a55d",
+      "fullUrl": "urn:uuid:04be4fbc-e660-5320-9037-fabe5a0c74be",
       "resource": {
         "resourceType": "Observation",
-        "id": "onehealth-animal-4f4c12ec6937",
+        "id": "onehealth-animal-7ca8260f10db",
         "status": "final",
         "category": [
           {
@@ -955,7 +955,7 @@
           "text": "One Health signal: animal health"
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "effectiveDateTime": "2026-09-27T10:30:00+00:00",
         "performer": [
@@ -965,7 +965,7 @@
         ],
         "derivedFrom": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "valueCodeableConcept": {
@@ -1054,10 +1054,10 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:336adedc-99bb-5b85-8e46-326c560a4011",
+      "fullUrl": "urn:uuid:3e3560f8-ae49-54c5-bfc8-aae344ff006a",
       "resource": {
         "resourceType": "Flag",
-        "id": "flag-human-faecal-contamination-4f4c12ec6937",
+        "id": "flag-human-faecal-contamination-7ca8260f10db",
         "status": "active",
         "category": [
           {
@@ -1087,25 +1087,25 @@
               "display": "One Health rule: human health, faecal contamination"
             }
           ],
-          "text": "Signs of sewage reaching the stream. Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location - overflow and misconnection cases are made from exactly this kind of dated citizen record."
+          "text": "Signs of sewage reaching the stream. Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location. Cases against overflows and misconnected drains are built from dated citizen records like this one."
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "period": {
           "start": "2026-09-27T10:30:00+00:00"
         },
         "text": {
           "status": "generated",
-          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Signs of sewage reaching the stream. Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location - overflow and misconnection cases are made from exactly this kind of dated citizen record.</div>"
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Signs of sewage reaching the stream. Do not enter the water and wash your hands before eating. Report it to the water company and the environmental regulator today, with the time, the photo and this location. Cases against overflows and misconnected drains are built from dated citizen records like this one.</div>"
         }
       }
     },
     {
-      "fullUrl": "urn:uuid:61a6a72b-a57d-538c-8ff1-39163c37d402",
+      "fullUrl": "urn:uuid:4024c10b-8c47-5829-b193-dfe3a3bfa7d2",
       "resource": {
         "resourceType": "Flag",
-        "id": "flag-ecosystem-biological-condition-4f4c12ec6937",
+        "id": "flag-ecosystem-biological-condition-7ca8260f10db",
         "status": "active",
         "category": [
           {
@@ -1135,28 +1135,28 @@
               "display": "One Health rule: ecosystem health, biological condition"
             }
           ],
-          "text": "Biological condition: Bad. Repeat the check upstream and downstream of this point. Where the invertebrates change is where the problem enters."
+          "text": "Biological condition: Bad. Repeat the check upstream and downstream of this point. The problem enters where the invertebrates change."
         },
         "subject": {
-          "reference": "urn:uuid:7b131d3d-822b-5ddf-8e5f-13c388da3186"
+          "reference": "urn:uuid:c768890b-9af8-5016-9c60-62663cf54eb1"
         },
         "period": {
           "start": "2026-09-27T10:30:00+00:00"
         },
         "text": {
           "status": "generated",
-          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Biological condition: Bad. Repeat the check upstream and downstream of this point. Where the invertebrates change is where the problem enters.</div>"
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Biological condition: Bad. Repeat the check upstream and downstream of this point. The problem enters where the invertebrates change.</div>"
         }
       }
     },
     {
-      "fullUrl": "urn:uuid:52af30c2-f852-560f-abf3-054a3ecc80f7",
+      "fullUrl": "urn:uuid:df1c76ab-15a0-5dea-94ab-a96bf2039c4a",
       "resource": {
         "resourceType": "Provenance",
-        "id": "prov-4f4c12ec6937",
+        "id": "prov-7ca8260f10db",
         "target": [
           {
-            "reference": "urn:uuid:5a8b9c4e-87b8-538f-a15e-e364e6220440"
+            "reference": "urn:uuid:37fd5058-f00c-5d81-b50f-e6ce04c2f458"
           }
         ],
         "recorded": "2026-09-27T10:30:00+00:00",

@@ -8,7 +8,7 @@ tell a real reason from a written one, and only you have it.
 
 ## Tagline
 
-The citizen identifies. The AI double-checks, blind. The rules decide.
+Volunteers name what lives in their stream, an AI double-checks them without seeing their answers, and published rules turn it into a health reading.
 
 ## Track alignment
 
@@ -36,7 +36,7 @@ that missing half without taking the person out of it.
 
 ## What it does
 
-A volunteer at an urban stream photographs the reach, scoops gravel from a shallow fast patch
+A volunteer at an urban stream photographs the stream, scoops gravel from a shallow fast patch
 into a pale tray, and **identifies what lives there** from a guide organised by shape ("three
 tails", "a case made of sand").
 
@@ -52,8 +52,8 @@ coordinates) and a readable rule engine produce:
   findings** for the ecosystem, people and animals, each naming its rule, its evidence and an
   action, split between what you can do now, what your community can do, and what to ask the
   authority for;
-- a **health alert that waits for a human**: model-only evidence is held at "concern" until a
-  person confirms the observation underneath;
+- a **health alert that waits for a human**: evidence only the model saw is held at "concern"
+  until a person confirms the observation it rests on;
 - the **weather either side of the visit** (Open-Meteo): sewage signs after heavy rain point the
   authority at storm-overflow records, and in dry weather at misconnected drains;
 - a **dated report** the citizen can send to the water authority;
@@ -63,17 +63,17 @@ coordinates) and a readable rule engine produce:
   project's 106 research sites carries the project's site code.
 
 Repeat visits to the same spot become a **trend**, the dashboard flags declining sites, and a
-**48-hour outlook** re-runs every site's latest reading against the forecast: heavy rain where
-sewage has been seen is when an overflow is likely to run. It works **offline** (riverbanks do
-not have signal) and it works **with no AI at all**.
+**48-hour outlook** re-runs every site's latest reading against the forecast, because an
+overflow is most likely to run when heavy rain falls where sewage has been seen. It works
+**offline** (riverbanks often have no signal) and it works **with no AI at all**.
 
 ## How we built it
 
 - **Python and FastAPI**, SQLite, and plain HTML and JavaScript with no build step, so it runs
   on a free tier and anyone can read it.
 - **Claude** as the vision model, behind a fixed schema: `observe.py` may only return
-  observations in a vocabulary generated from the field form, with a confidence each and an
-  explicit licence to say "I cannot tell from this photo". Every determination lives in
+  observations in a vocabulary generated from the field form, each with a confidence, and it
+  is explicitly allowed to say "I cannot tell from this photo". Every determination lives in
   `bioindex.py` and `onehealth.py`, where it can be read, tested and argued with.
 - **One JSON file** defines the field form, and generates the model's prompt, the server's
   validator, the questions on screen, the pressure scoring and the FHIR CodeSystem.
@@ -89,10 +89,10 @@ not have signal) and it works **with no AI at all**.
 
 - **Making the AI useful without letting it decide.** Our first version had the model identify
   the animals and the person confirm. We changed the order: the person identifies, and the model
-  is asked blind, because agreement is only evidence if it was not an echo.
+  is asked blind, because the model agreeing only counts as evidence if it never saw the answer.
 - **Getting a clean validation.** Our first FHIR export failed the HL7 validator: invalid
-  `fullUrl`s, undefined extensions, empty arrays. Running the validator against the project's
-  own profiles is what found them.
+  `fullUrl`s, undefined extensions, empty arrays. We only found them by running the validator
+  against the project's own profiles.
 - **Being honest about thin evidence.** A tray with three animals cannot prove a stream is
   healthy or dead. The index caps the band a small sample can reach, and says so on screen.
 - **A demo without a stream or an API key.** Judges rarely stand in a river. The sample check
@@ -104,16 +104,16 @@ not have signal) and it works **with no AI at all**.
 - The blind second opinion: an AI that asks a volunteer the right question instead of replacing
   their judgement.
 - A FHIR export that conforms to OneAquaHealth's own IG with zero validator errors and warnings.
-- Every finding explains itself: rule, evidence, action.
-- It degrades instead of failing: no model, no signal, no coordinates or no photo each cost a
-  named piece of certainty, never the result.
+- Every finding explains itself, with the rule behind it, its evidence and an action.
+- Missing inputs don't break it. No model, no signal, no coordinates or no photo each lower the
+  certainty, with a sentence saying why, but none of them stops the result.
 
 ## What we learned
 
-[Replace or edit with your own.] That "human in the loop" means little until it is a mechanism
-with a test: an alert that will not fire without a person's confirmation, a review that never
-calls the model again, and a record that says when a person took the AI's answer rather than
-agreeing with it. And that the fastest way to find out whether an interoperability claim is true
+[Replace or edit with your own.] That "human in the loop" only means something once there is a
+mechanism and a test behind it: an alert that will not fire without a person's confirmation, a
+review that never calls the model again, and a record that says when a person took the AI's
+answer rather than agreeing with it. And that the fastest way to find out whether an interoperability claim is true
 is to run the official validator against it.
 
 ## What's next for AquaPlot

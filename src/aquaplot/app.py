@@ -134,7 +134,7 @@ app = FastAPI(
     description=(
         "Guided citizen stream checks. A photo and a few plain-language answers become a "
         "biological band (BMWP/ASPT, or IBMWP/IASPT in Iberia), a visual pressure score and a One Health read-out for "
-        "people, animals and the ecosystem - with every finding traceable to the observation "
+        "people, animals and the ecosystem. Every finding can be traced to the observation "
         "behind it. Built for the IEEE OneAquaHealth Global Hackathon 2026."
     ),
 )

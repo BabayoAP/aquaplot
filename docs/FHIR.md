@@ -20,7 +20,7 @@ health data. Today it cannot: stream monitoring lives in environmental-agency sp
 health surveillance lives in HL7, and the two never meet. That is the fragmentation this
 hackathon's Track 7 names, and it is a mapping problem, not a research problem.
 
-FHIR turns out to fit with no abuse of the specification, because `Observation.subject` and
+FHIR fits without bending the specification, because `Observation.subject` and
 `Flag.subject` both admit a **Location**. A monitoring point is a Location; a stream assessment
 is an Observation about it; an instruction to keep out of the water is a Flag on it.
 
@@ -87,9 +87,9 @@ body; submitting needs an app account. Example:
 | `Observation` ×0–8 | `oah-{indicator}-{id}` | Profile `observation-indicators-oah`, `status = final`. One per IG indicator the person gave evidence for (see above). |
 | `Observation` | `status-{id}` | The panel. `valueCodeableConcept` is the WFD band; `method` names the index (BMWP/ASPT, or IBMWP/IASPT in Iberia). Components carry the index total and mean, scoring families, EPT families, the habitat pressure index, the assessment certainty, the band as an ordinal 5–1, the number of human-confirmed observations, **who identified the animals** (`identified-by-citizen` / `-model` / `-none`) and, when the model gave a second opinion, **what it found**: independent agreements, answers the citizen adopted from it, answers the citizen kept, and disagreements still open. For IBMWP, the index's own class from the total is included and labelled as understating a single tray. `note` carries the screening caveat, the second-opinion summary and every limitation. `status` is `preliminary` until a human has confirmed something, then `amended`. |
 | `Observation` | `survey-{id}` | The raw biological evidence: one component per family with the score it contributed; a family the index does not score is present with `dataAbsentReason = not-applicable`. `note` carries the plain-language signals. |
-| `Observation` | `habitat-{id}` | The field form, answer by answer; each answer's `text` says *who* gave it — the model or the citizen. |
+| `Observation` | `habitat-{id}` | The field form, answer by answer; each answer's `text` says *who* gave it: the model or the citizen. |
 | `Observation` ×3 | `onehealth-{domain}-{id}` | One per domain. `valueCodeableConcept` is the level; `interpretation` maps it to HL7 v3 ObservationInterpretation (`N`, `A`, `H`, `HH`); components carry each finding's evidence; `note` carries each finding's action. |
-| `Flag` | `flag-{rule}-{id}` | One per finding at alert level — the resource a receiving system can surface to a clinician or a public-health officer without parsing anything else. Category `safety` plus the One Health domain. |
+| `Flag` | `flag-{rule}-{id}` | One per finding at alert level. This is the resource a receiving system can surface to a clinician or a public-health officer without parsing anything else. Category `safety` plus the One Health domain. |
 | `Provenance` | `prov-{id}` | Who and what produced it: the citizen as author, AquaPlot and its model backend as assembler, the bioindicator catalogue and index, the habitat form version, iNaturalist. |
 
 Every entry's `fullUrl` is a `urn:uuid` derived deterministically from the assessment, and every
@@ -105,8 +105,8 @@ possible thing to do in a standards track, so:
 
 - Every AquaPlot-specific code comes from one project CodeSystem,
   `https://github.com/BabayoAP/aquaplot/fhir/CodeSystem/stream-health` (`status: draft`,
-  `experimental: true`). It is **generated from the same vocabularies the app runs on** — the
-  bioindicator catalogue, the habitat form, the One Health rules, both indices — so it cannot
+  `experimental: true`). It is **generated from the same vocabularies the app runs on** (the
+  bioindicator catalogue, the habitat form, the One Health rules, both indices), so it cannot
   drift from what the exporter emits, and a test asserts every code in a bundle is defined in it.
   Each coding's `display` is the CodeSystem's; the wording for a particular case ("Biological
   condition: Poor") goes in `text`.
@@ -130,7 +130,7 @@ possible thing to do in a standards track, so:
    catchment. Both are one field.
 4. **Agree the Flag lifecycle.** AquaPlot emits `active` flags with a start period. Who clears
    them, and on what evidence, is an operational decision that belongs with the authority
-   receiving them — the natural answer is a later assessment at the same site.
+   receiving them. The natural answer is a later assessment at the same site.
 
 ## Trying it
 
@@ -141,10 +141,9 @@ curl -s localhost:8000/api/assess/<id>/fhir | jq '.entry[].resource.resourceType
 ## Validating it yourself
 
 Download `validator_cli.jar` from the
-[HL7 FHIR core releases](https://github.com/hapifhir/org.hl7.fhir.core/releases) (Java 11+), then:
-
-The OneAquaHealth IG is not yet on the FHIR package registry, so build its conformance resources
-from source with [SUSHI](https://fshschool.org) (Node 18+) first:
+[HL7 FHIR core releases](https://github.com/hapifhir/org.hl7.fhir.core/releases) (Java 11+).
+The OneAquaHealth IG is not yet on the FHIR package registry, so first build its conformance
+resources from source with [SUSHI](https://fshschool.org) (Node 18+), then run the validator:
 
 ```sh
 git clone --depth 1 https://github.com/hl7-eu/oah && (cd oah && npx fsh-sushi build .)
@@ -164,4 +163,4 @@ no model and a health alert.
 
 An earlier version of this exporter did not pass: entry `fullUrl`s were not valid UUIDs, the
 Provenance used extensions with no published definition, and a check with no findings produced
-empty arrays. Running the validator is what found them.
+empty arrays. Running the validator found them.

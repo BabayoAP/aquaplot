@@ -99,7 +99,7 @@ BAND_ORDER: tuple[Band, ...] = (Band.HIGH, Band.GOOD, Band.MODERATE, Band.POOR, 
 
 BAND_MEANING: dict[Band, str] = {
     Band.HIGH: "The invertebrates here are the ones that only live in clean, well-oxygenated water.",
-    Band.GOOD: "A healthy mix, including some sensitive animals. The stream is working.",
+    Band.GOOD: "A healthy mix, including some sensitive animals. The stream is in good shape.",
     Band.MODERATE: "Sensitive animals are thinning out. Something is putting the stream under pressure.",
     Band.POOR: "Mostly pollution-tolerant animals. The stream is degraded and losing its sensitive species.",
     Band.BAD: "Almost nothing but the animals that survive very low oxygen. This stretch is in serious trouble.",
@@ -465,7 +465,7 @@ class EcologicalStatus:
         if self.capped:
             return (
                 f"Provisional: too few animals were found to claim better than '{self.band.value}'. "
-                "That is a limit of the sample, not proof that the stream is degraded - look again, "
+                "That is a limit of the sample, not proof that the stream is degraded. Look again, "
                 "turning more stones, to firm it up."
             )
         return (
@@ -727,19 +727,19 @@ def _signals(
     if tolerant and tolerant == len(scored):
         out.append(
             "Everything identified is a pollution-tolerant animal. That pattern points to organic "
-            "enrichment - sewage, run-off or decomposing material using up the oxygen."
+            "enrichment: sewage, run-off or rotting material using up the oxygen."
         )
     elif tolerant > sensitive and tolerant:
         out.append(
-            f"Tolerant animals outnumber sensitive ones ({tolerant} to {sensitive}), the usual signature of a "
-            "stream under continuous pressure rather than a one-off spill."
+            f"Tolerant animals outnumber sensitive ones ({tolerant} to {sensitive}). That usually means the stream is "
+            "under constant pressure rather than recovering from a one-off spill."
         )
     if sensitive >= 3:
         out.append(f"{sensitive} families scoring 8 or more were present, which is characteristic of a well-oxygenated stretch.")
     if any(t.family == "Oligochaeta" for t in scored) and any(t.family == "Chironomidae" for t in scored) and ept == 0:
         out.append(
-            "Sludge worms and bloodworms together, with no sensitive families, is the classic community of an "
-            "oxygen-starved bed. Look upstream for a discharge or a misconnected drain."
+            "Sludge worms and bloodworms together, with no sensitive families, is the typical mix on a stream bed "
+            "that is short of oxygen. Look upstream for a discharge or a misconnected drain."
         )
     out.append(f"Average sensitivity of the families present ({index.mean}) is {aspt:.1f} out of 10.")
     return out

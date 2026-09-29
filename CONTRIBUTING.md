@@ -30,8 +30,8 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ## Rules the codebase depends on
 
-These are not style preferences. Breaking one changes what the system claims
-about somebody's drinking water.
+Breaking any of these changes what the system claims about somebody's drinking
+water.
 
 - **The model observes; the rules decide.** `observe.py` may return only
   structured observations. Anything that concludes something belongs in
@@ -43,8 +43,8 @@ about somebody's drinking water.
   cannot tell the user what to confirm.
 - **A review never calls the model again** (`assess.reassess`). A second pass
   could overwrite the correction a person just made.
-- **Every certainty factor below 1.0 leaves a sentence.** A number nobody can take
-  apart is not evidence. Bump `ASSESSMENT_VERSION` when the rule changes.
+- **Every certainty factor below 1.0 leaves a sentence.** Otherwise nobody can see
+  what lowered the number. Bump `ASSESSMENT_VERSION` when the rule changes.
 - **Tests never touch the network or a model.** Every outbound call goes through
   an injectable callable for exactly this reason.
 - **Never blind search-and-replace the word "riffle".** "Riffle beetle" is the
@@ -58,7 +58,7 @@ about somebody's drinking water.
 `src/aquaplot/data/bioindicators.json`. Needs `family`, `common_name`, `group`,
 `bmwp` (1–10), `ept`, `plain_name`, `look_for`, `means`, and `vector: true` if it
 carries a human or animal health signal. Write `look_for` for someone holding a
-tray who has never heard of the order — shapes, counts of tails, what the case is
+tray who has never heard of the order: shapes, counts of tails, what the case is
 made of. If a vision model or a citizen is likely to type a genus or a vernacular
 name, add it to `ALIASES` in `bioindex.py` in lower case.
 
@@ -68,14 +68,14 @@ name, add it to `ALIASES` in `bioindex.py` in lower case.
 generates the model's prompt, the server's validator, the questions on the page
 and the pressure scoring. Set `photo_visible: false` if no camera could judge it,
 and `exposure: true` if it describes who is exposed rather than how degraded the
-water is — exposure is kept out of the pressure score and handed to the rules.
+water is. Exposure is kept out of the pressure score and handed to the rules.
 
 ### A One Health rule
 
 A function in `onehealth.py` decorated with `@rule`, taking a `Context` and
 returning a `Finding` or `None`. It must carry a stable id, the evidence in the
 words the observer used, and an action a specific person can take. Add it to
-[docs/ONE-HEALTH.md](docs/ONE-HEALTH.md) — a test fails if a rule is undocumented.
+[docs/ONE-HEALTH.md](docs/ONE-HEALTH.md). A test fails if a rule is undocumented.
 
 ### A different biotic index
 
@@ -99,7 +99,7 @@ agency source is another adapter.
 
 ## Tests
 
-Name a test after the behaviour it protects, not the function it calls —
+Name a test after the behaviour it protects, not the function it calls:
 `test_an_unconfirmed_bloom_is_held_below_alert_until_a_person_confirms_it`, not
 `test_evaluate_3`. If you fix a bug, the test that fails without the fix is the
 deliverable; the fix is the easy part.

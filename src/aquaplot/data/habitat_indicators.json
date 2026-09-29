@@ -85,7 +85,7 @@
       "question": "How much algae is there?",
       "weight": 1.2,
       "photo_visible": true,
-      "why": "Thick algae is the visible face of nutrient pollution. It swings oxygen wildly between day and night and some blooms are toxic to dogs, livestock and people.",
+      "why": "Thick algae is the most visible sign of nutrient pollution. It makes oxygen levels swing wildly between day and night, and some blooms are toxic to dogs, livestock and people.",
       "options": [
         {
           "value": "none",
@@ -115,7 +115,7 @@
       "question": "Is there foam or an oily film?",
       "weight": 1.1,
       "photo_visible": true,
-      "why": "Natural foam is tan and breaks up; persistent white foam suggests detergent, and a rainbow sheen suggests oil from a road drain.",
+      "why": "Natural foam is tan and breaks up. Persistent white foam suggests detergent, and a rainbow sheen suggests oil from a road drain.",
       "options": [
         {
           "value": "none",
@@ -206,7 +206,7 @@
       "question": "What are the banks made of?",
       "weight": 1.0,
       "photo_visible": true,
-      "why": "Hydromorphology is the pressure European urban streams fail on most often. A concrete channel moves water fast and gives nothing anywhere to live.",
+      "why": "Changes to the shape of the channel and its banks are the most common reason European urban streams fail. A concrete channel moves water fast and gives animals nowhere to live.",
       "options": [
         {
           "value": "natural",
@@ -353,7 +353,7 @@
       "question": "What can you smell? (only you can answer this)",
       "weight": 1.3,
       "photo_visible": false,
-      "why": "Smell separates a cloudy but healthy stream in spate from a sewage discharge, and no camera can report it. This is the field where the person, not the model, decides.",
+      "why": "Smell tells a stream that is cloudy after rain but healthy apart from one carrying sewage, and no camera can report it. Only you can answer this one.",
       "options": [
         {
           "value": "none",
@@ -394,7 +394,7 @@
       "question": "Do people or animals use this water?",
       "weight": 0.0,
       "photo_visible": true,
-      "why": "The One Health question. A degraded stream nobody touches is an ecological problem; a degraded stream children paddle in is also a public-health one.",
+      "why": "This is where people's and animals' health comes in. A degraded stream nobody touches is an ecological problem; a degraded stream children paddle in is also a public-health one.",
       "options": [
         {
           "value": "none",

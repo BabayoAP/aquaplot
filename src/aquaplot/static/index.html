@@ -57,9 +57,10 @@
 <body>
 <main>
   <h1>Identify one organism</h1>
-  <p class="sub">Photo in, native / invasive / naturalized out, with a certainty score and an evidence trail,
-    for wherever the photo was taken. Inherited from SpeciesGuard, the project AquaPlot grew out of.
-    For a whole stream, use the <a href="/">guided check</a>. <a href="/map" id="maplink">Open the map</a></p>
+  <p class="sub">Upload a photo of a plant or animal to find out whether it is native, invasive or naturalized
+    where the photo was taken. You get a certainty score and the evidence behind it. This page comes from
+    SpeciesGuard, the project AquaPlot grew out of. To check a whole stream, use the <a href="/">guided check</a>.
+    <a href="/map" id="maplink">Open the map</a></p>
 
   <div class="notice" id="notice" hidden></div>
 
@@ -108,7 +109,7 @@
       <dt>Species model</dt><dd id="rmodel"></dd>
     </dl>
     <p><a id="rmap" href="/map">See sightings around this location on the area viewer</a></p>
-    <p class="caveat">Decision support, not a regulatory finding. "Invasive" here means the species is on an invasive list for some jurisdiction — the EU Union list under Regulation 1143/2014, or Cal-IPC, CDFW, USGS or UC IPM — and the result says which. "Naturalized/Non-native" means iNaturalist records it as introduced where you are, but no list in the seed names it. Verify before removing anything.</p>
+    <p class="caveat">This is a guide to help you decide, not a regulatory finding. "Invasive" means the species is on an invasive list somewhere (the EU Union list under Regulation 1143/2014, or Cal-IPC, CDFW, USGS or UC IPM), and the result says which list. "Naturalized/Non-native" means iNaturalist records it as introduced where you are, but none of the lists AquaPlot carries names it. Check before removing anything.</p>
     <p class="foot" id="rver"></p>
   </section>
 </main>
@@ -121,7 +122,7 @@
 
   fetch("/api/health").then((r) => r.json()).then((h) => {
     if (h.identifier === "none") {
-      $("notice").textContent = "No species model is configured on this server, so results are the neutral placeholder at 0 % certainty. Set ANTHROPIC_API_KEY or run Ollama with a vision model.";
+      $("notice").textContent = "This server has no species model set up, so every result is a placeholder at 0 % certainty. Set ANTHROPIC_API_KEY or run Ollama with a vision model.";
       $("notice").hidden = false;
     } else if (h.identifier === "ollama") {
       $("notice").textContent = "Identification runs on a local vision model; a photo can take a minute or two.";

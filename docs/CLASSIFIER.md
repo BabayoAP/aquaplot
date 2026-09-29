@@ -1,4 +1,4 @@
-# Classifier — how a photo becomes "Invasive, 72 %"
+# Classifier: how a photo becomes "Invasive, 72 %"
 
 > **Inherited feature.** This is SpeciesGuard's single-organism classifier, kept working in
 > AquaPlot and served at `/classify`. AquaPlot's own product is the guided stream check at `/`,

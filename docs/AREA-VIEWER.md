@@ -1,4 +1,4 @@
-# Area viewer — feature spec
+# Area viewer: feature spec
 
 > **Inherited feature.** This is SpeciesGuard's area viewer, kept working in AquaPlot and
 > served at `/map`, where it now also draws AquaPlot's own stream assessments coloured by
