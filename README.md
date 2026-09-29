@@ -287,7 +287,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
 | `src/aquaplot/data/oah_reference.json` | Snapshot of the OneAquaHealth public API: 106 research sites and the Citizen Science App's answer codes. Refresh with `scripts/fetch_oah_reference.py`. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
-| `src/aquaplot/static/about.html` | AquaPlot in two minutes, at `/about`: the problem, what you'll see when you try it, and what is and isn't claimed. `/try` opens the sample check. The logo on every page links here. |
+| `src/aquaplot/static/about.html` | AquaPlot in two minutes, at `/about`: the problem, what you'll see when you try it, and what is and isn't claimed. `/try` opens the sample check. The water scene at the top is three.js from cdnjs, loaded after the page; it holds still for reduced motion and falls back to a gradient without WebGL. The logo on every page links here. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
