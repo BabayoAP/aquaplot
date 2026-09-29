@@ -554,17 +554,26 @@ if (new URLSearchParams(location.search).has("sample")) $("samplebtn").click();
 // ---- photos
 // A phone's own camera app beats anything in a page, and `capture` opens it. Desktop browsers
 // ignore `capture` and show a file picker instead, so there the page shows the webcam itself.
+// Opening is asynchronous, so the button has to refuse a second press while the first
+// is still waiting for the camera: two presses would take two streams, and only the
+// second would be showing - the first would stay live, with its light on, behind a
+// dialog that showModal() had already refused to open twice.
+let opening = false;
 $("camerabtn").addEventListener("click", async () => {
   const phone = matchMedia("(pointer: coarse)").matches;
   if (phone || !navigator.mediaDevices?.getUserMedia) return $("camera").click();
+  const dialog = $("camdialog"), video = $("camvideo");
+  if (opening || dialog.open) return;
+  opening = true;
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
   } catch (_) {
     // No camera, or permission refused: choosing a file is still a way to add the photo.
     return $("camera").click();
+  } finally {
+    opening = false;
   }
-  const dialog = $("camdialog"), video = $("camvideo");
   video.srcObject = stream;
   dialog.addEventListener("close", () => { stream.getTracks().forEach((t) => t.stop()); video.srcObject = null; },
                           { once: true });
