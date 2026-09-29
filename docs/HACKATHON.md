@@ -193,6 +193,13 @@ everything after it.
       only one team)"* and states no student requirement. The rules page normally governs, but
       a solo entry is the case the sidebar would exclude, so email the hackathon manager and get
       the answer in writing before the deadline rather than after it
+- [ ] **Confirm the sample recording names a real model.** `data/samples.json` records
+      `recorded_by: "claude-opus-5-5"` ("Claude Opus 5.5"), and that string reaches the result
+      page, the authority report and the FHIR Provenance as the observer. `render.yaml` sets
+      `CLAUDE_MODEL=claude-opus-5`. If 5.5 was not the model that actually answered, this is a
+      false provenance claim in the one place the project can least afford one, since holding
+      the line between a recorded reading and a live one is the argument. Fix it in
+      `samples.json` and in `tests/test_samples.py`, which asserts the string
 - [ ] Submitted on Devpost before Oct 4, 2026, 9:00 pm PDT
 
 ## Demo script (for the video)
