@@ -1,0 +1,323 @@
+{
+ "photos": {
+  "Aeshnidae": {
+   "file": "aeshnidae.webp",
+    "attribution": "(c) George Elbogen, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/334395877"
+  },
+  "Ancylidae": {
+   "file": "ancylidae.webp",
+    "attribution": "(c) Julien Renoult, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/30896831"
+  },
+  "Asellidae": {
+   "file": "asellidae.webp",
+    "attribution": "(c) K.P., some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/264844254"
+  },
+  "Astacidae": {
+   "file": "astacidae.webp",
+    "attribution": "(c) Matthew Vosper, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/129202356"
+  },
+  "Baetidae": {
+   "file": "baetidae.webp",
+    "attribution": "(c) Thomas Gyselinck, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/220213302"
+  },
+  "Caenidae": {
+   "file": "caenidae.webp",
+    "attribution": "(c) Joseph Aubert, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/292154730"
+  },
+  "Calopterygidae": {
+   "file": "calopterygidae.webp",
+    "attribution": "(c) Roman, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/35641610"
+  },
+  "Cambaridae": {
+   "file": "cambaridae.webp",
+    "attribution": "(c) Ewout Knoester, some rights reserved (CC BY-SA)",
+   "licence": "cc-by-sa",
+   "observation": "https://www.inaturalist.org/observations/292476976"
+  },
+  "Chironomidae": {
+   "file": "chironomidae.webp",
+    "attribution": "(c) Johan Kjær Prehn, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/153093933"
+  },
+  "Coenagrionidae": {
+   "file": "coenagrionidae.webp",
+    "attribution": "(c) Igor Shelpiakov, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/135109403"
+  },
+  "Corixidae": {
+   "file": "corixidae.webp",
+    "attribution": "(c) Kim P.-Schmidt, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/73606187"
+  },
+  "Culicidae": {
+   "file": "culicidae.webp",
+    "attribution": "(c) Nikita Gerasin, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/89362699"
+  },
+  "Dreissenidae": {
+   "file": "dreissenidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/277159964"
+  },
+  "Dytiscidae": {
+   "file": "dytiscidae.webp",
+    "attribution": "(c) Евгений Рыбальченко, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/110167578"
+  },
+  "Elmidae": {
+   "file": "elmidae.webp",
+    "attribution": "(c) Bastien Le Mort, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/234660103"
+  },
+  "Ephemerellidae": {
+   "file": "ephemerellidae.webp",
+    "attribution": "(c) bitsnbirds, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/131768382"
+  },
+  "Ephemeridae": {
+   "file": "ephemeridae.webp",
+    "attribution": "(c) Óscar Sampedro, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/248487931"
+  },
+  "Erpobdellidae": {
+   "file": "erpobdellidae.webp",
+    "attribution": "(c) Adi Peter, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/125190514"
+  },
+  "Gammaridae": {
+   "file": "gammaridae.webp",
+    "attribution": "(c) Tommy Andriollo, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/231626238"
+  },
+  "Gerridae": {
+   "file": "gerridae.webp",
+    "attribution": "(c) Julien Tchilinguirian, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/250733592"
+  },
+  "Glossiphoniidae": {
+   "file": "glossiphoniidae.webp",
+    "attribution": "(c) Вячеслав Юсупов, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/32358867"
+  },
+  "Goeridae": {
+   "file": "goeridae.webp",
+    "attribution": "(c) げっとり, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/334474480"
+  },
+  "Gyrinidae": {
+   "file": "gyrinidae.webp",
+    "attribution": "(c) Daniel Tomas-López, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/291289064"
+  },
+  "Heptageniidae": {
+   "file": "heptageniidae.webp",
+    "attribution": "(c) Johan Kjær Prehn, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/134089411"
+  },
+  "Hydrobiidae": {
+   "file": "hydrobiidae.webp",
+    "attribution": "(c) Mathijs Zonneveld, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/285060657"
+  },
+  "Hydrophilidae": {
+   "file": "hydrophilidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/354178159"
+  },
+  "Hydropsychidae": {
+   "file": "hydropsychidae.webp",
+    "attribution": "(c) Óscar Sampedro, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/248487977"
+  },
+  "Leptoceridae": {
+   "file": "leptoceridae.webp",
+    "attribution": "(c) Pete Bradshaw, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/381979667"
+  },
+  "Leptophlebiidae": {
+   "file": "leptophlebiidae.webp",
+    "attribution": "(c) Mark Wilkinson, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/101013602"
+  },
+  "Leuctridae": {
+   "file": "leuctridae.webp",
+    "attribution": "(c) Matteo Bellucci, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/220057477"
+  },
+  "Libellulidae": {
+   "file": "libellulidae.webp",
+    "attribution": "(c) Asrın Akıncıoğlu, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/366264659"
+  },
+  "Limnephilidae": {
+   "file": "limnephilidae.webp",
+    "attribution": "(c) Pierre Chevillard, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/336809191"
+  },
+  "Lymnaeidae": {
+   "file": "lymnaeidae.webp",
+    "attribution": "(c) Mathijs Zonneveld, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/335512294"
+  },
+  "Nemouridae": {
+   "file": "nemouridae.webp",
+    "attribution": "(c) Johan Kjær Prehn, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/143205513"
+  },
+  "Neritidae": {
+   "file": "neritidae.webp",
+    "attribution": "(c) JH, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/233968465"
+  },
+  "Notonectidae": {
+   "file": "notonectidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/99249031"
+  },
+  "Odontoceridae": {
+   "file": "odontoceridae.webp",
+    "attribution": "(c) helrob, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/280330329"
+  },
+  "Oligochaeta": {
+   "file": "oligochaeta.webp",
+    "attribution": "(c) Nicola Crockford, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/307801481"
+  },
+  "Perlidae": {
+   "file": "perlidae.webp",
+    "attribution": "(c) Julien Renoult, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/359928694"
+  },
+  "Perlodidae": {
+   "file": "perlodidae.webp",
+    "attribution": "(c) Andrea Chemello, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/263287328"
+  },
+  "Physidae": {
+   "file": "physidae.webp",
+    "attribution": "(c) snaily_naily, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/183524722"
+  },
+  "Planariidae": {
+   "file": "planariidae.webp",
+    "attribution": "(c) Emanuele Santarelli, some rights reserved (CC BY-SA)",
+   "licence": "cc-by-sa",
+   "observation": "https://www.inaturalist.org/observations/48708405"
+  },
+  "Planorbidae": {
+   "file": "planorbidae.webp",
+    "attribution": "(c) Jan Ebr &amp; Ivana Ebrová, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/75198167"
+  },
+  "Polycentropodidae": {
+   "file": "polycentropodidae.webp",
+    "attribution": "(c) Jan Sheppard, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/121987337"
+  },
+  "Psychodidae": {
+   "file": "psychodidae.webp",
+    "attribution": "(c) carnifex, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/29101450"
+  },
+  "Rhyacophilidae": {
+   "file": "rhyacophilidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/20325056"
+  },
+  "Sericostomatidae": {
+   "file": "sericostomatidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/181646667"
+  },
+  "Sialidae": {
+   "file": "sialidae.webp",
+    "attribution": "(c) olmagon, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/300937179"
+  },
+  "Simuliidae": {
+   "file": "simuliidae.webp",
+    "attribution": "(c) Johan Kjær Prehn, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/112076162"
+  },
+  "Sphaeriidae": {
+   "file": "sphaeriidae.webp",
+    "attribution": "no rights reserved",
+   "licence": "cc0",
+   "observation": "https://www.inaturalist.org/observations/116864104"
+  },
+  "Syrphidae": {
+   "file": "syrphidae.webp",
+    "attribution": "(c) Donald Hobern, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/2867504"
+  },
+  "Tipulidae": {
+   "file": "tipulidae.webp",
+    "attribution": "(c) Radu Teodoreanu, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/363594670"
+  },
+  "Unionidae": {
+   "file": "unionidae.webp",
+    "attribution": "(c) Kazimieras Martinaitis, some rights reserved (CC BY)",
+   "licence": "cc-by",
+   "observation": "https://www.inaturalist.org/observations/39751293"
+  }
+ },
+ "note": "One reference photo per family for the animal picker and the ID guide, fetched from iNaturalist by scripts/fetch_guide_photos.py. Each shows the stage a volunteer finds in a tray; the attribution, licence and observation are shown beside the photo."
+}

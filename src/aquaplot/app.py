@@ -679,9 +679,22 @@ def form():
     return habitat.form_schema()
 
 
+# One reference photo per family, of the stage a volunteer finds in a tray, fetched ahead of time by
+# scripts/fetch_guide_photos.py. They ship with the app; nothing calls iNaturalist for them at run time.
+GUIDE_PHOTOS: dict = json.loads(resources.files("aquaplot.data").joinpath("guide_photos.json").read_text())["photos"]
+
+
+def guide_photo(family: str) -> dict | None:
+    p = GUIDE_PHOTOS.get(family)
+    if p is None:
+        return None
+    return {"url": f"/static/guide/{p['file']}", "attribution": p["attribution"],
+            "licence": p["licence"], "observation": p["observation"]}
+
+
 @app.get("/api/guide", tags=["reference"])
 def guide():
-    """The bioindicator catalogue: what to look for, and what finding it means."""
+    """The bioindicator catalogue: what to look for, what finding it means, and a credited photo of each."""
     return {
         "version": bioindex.CATALOGUE_VERSION,
         "indices": {k: {"name": i.name, "citation": i.citation} for k, i in bioindex.INDICES.items()},
@@ -699,6 +712,7 @@ def guide():
                 "look_for": f.look_for,
                 "means": f.means,
                 "vector": f.vector,
+                "photo": guide_photo(f.family),
             }
             for f in sorted(bioindex.CATALOGUE, key=lambda f: (-(f.reference_score or 0), f.family))
         ],

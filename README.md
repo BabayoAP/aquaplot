@@ -116,7 +116,9 @@ and GeoJSON, so nothing is locked in.
 (the stream and the sample tray); **the animals you found**; the two questions only a person
 standing there can answer (smell, and who uses the water); and finally the places where you
 and the model differ. The animal picker is grouped by shape, searchable by what you can see,
-and offers "some kind of mayfly" when you can't tell the family. Every habitat question is
+and offers "some kind of mayfly" when you can't tell the family. Each animal has a credited photo
+of the stage you actually find in a tray (a nymph, not the winged adult), and the phone keeps them
+all for use without a signal. Every habitat question is
 rendered from `/api/form`, which comes from the same file as the model's prompt and the
 server's validator, so the words on screen can't drift from the vocabulary the system accepts.
 The result shows the band and what it means in plain language, who identified the animals and
@@ -223,7 +225,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 262 tests, no network, no model
+.venv/bin/python -m pytest                       # 269 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -286,6 +288,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/data/status_seed.json` | 101 listed invasives with jurisdiction, habitat and One Health relevance. |
 | `src/aquaplot/data/pilot_sites.json` | The five OneAquaHealth research cities. |
 | `src/aquaplot/data/oah_reference.json` | Snapshot of the OneAquaHealth public API: 106 research sites and the Citizen Science App's answer codes. Refresh with `scripts/fetch_oah_reference.py`. |
+| `src/aquaplot/data/guide_photos.json` | Who took each ID photo, under which licence, and the iNaturalist observation it came from. The photos themselves are in `static/guide/`; refresh or replace one with `scripts/fetch_guide_photos.py`. |
 | `src/aquaplot/data/field_guide.md` | The sampling protocol. Served at `/field-guide`; one copy, read by people and by the program. |
 | `src/aquaplot/static/about.html` | AquaPlot in two minutes, at `/about`: the problem, what you'll see when you try it, and what is and isn't claimed. `/try` opens the sample check. The water scene at the top is three.js from cdnjs, loaded after the page; it holds still for reduced motion and falls back to a gradient without WebGL. The logo on every page links here. |
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
@@ -320,7 +323,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 194 of the 262 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 201 of the 269 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
@@ -357,6 +360,7 @@ is documented.
 | Source | Used for | Terms |
 |---|---|---|
 | [iNaturalist API](https://api.inaturalist.org/v1/docs/) | Taxonomy, establishment means, administrative places, sightings | Free, attribution, ~1 req/s |
+| iNaturalist photos, one per family | The photos in the animal picker and the ID guide | CC0, CC BY or CC BY-SA; credited beside each photo and in `data/guide_photos.json` |
 | BMWP family scores (Armitage et al. 1983) | The biological index | Published methodology, widely reproduced |
 | IBMWP family scores (Alba-Tercedor et al. 2002; MAGRAMA 2011) | The index in Portugal and Spain | Published methodology; checked against the tables in the `biomonitoR` R package |
 | EU Regulation (EU) 1143/2014 Union list | Invasive species of Union concern | Public |

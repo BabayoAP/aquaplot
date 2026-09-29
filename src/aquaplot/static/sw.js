@@ -13,9 +13,12 @@
  * somebody walked to a stream to collect.
  */
 
-const VERSION = "aquaplot-v3";
+const VERSION = "aquaplot-v4";
 const SHELL = `${VERSION}-shell`;
 const DATA = `${VERSION}-data`;
+// The ID photos have their own cache, named for the photo set rather than the app version, so an
+// app update does not make every phone download them again. Bump it when the photos change.
+const PHOTOS = "aquaplot-guide-photos-1";
 
 // Enough to complete a whole assessment offline: the page, and the vocabularies
 // the questions and the identification guide are rendered from.
@@ -34,7 +37,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    const keep = new Set([SHELL, DATA]);
+    const keep = new Set([SHELL, DATA, PHOTOS]);
     await Promise.all((await caches.keys()).filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
@@ -63,6 +66,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.pathname.startsWith("/static/guide/")) {
+    // Cache first: a photo never changes under its name, and once seen it works offline.
+    event.respondWith((async () => {
+      const hit = await caches.match(url.pathname);
+      if (hit) return hit;
+      const fresh = await fetch(request);
+      if (fresh.ok) (await caches.open(PHOTOS)).put(url.pathname, fresh.clone());
+      return fresh;
+    })());
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith((async () => {
       try {
@@ -79,4 +94,22 @@ self.addEventListener("fetch", (event) => {
   if (SHELL_URLS.includes(url.pathname)) {
     event.respondWith(caches.match(url.pathname).then((hit) => hit || fetch(request)));
   }
+});
+
+// The check page asks for every ID photo once it is idle (never when the visitor is saving data).
+// Only AquaPlot's own photos are fetched, one at a time, and a lost connection stops the run: the
+// rest are picked up on the next visit.
+self.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "cache-guide-photos") return;
+  event.waitUntil((async () => {
+    const cache = await caches.open(PHOTOS);
+    for (const path of event.data.urls || []) {
+      if (typeof path !== "string" || !path.startsWith("/static/guide/")) continue;
+      if (await cache.match(path)) continue;
+      try {
+        const res = await fetch(path);
+        if (res.ok) await cache.put(path, res);
+      } catch (e) { break; }
+    }
+  })());
 });

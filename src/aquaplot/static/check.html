@@ -89,6 +89,11 @@
   .why { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
   .choices.pick button { border-radius: 10px; flex: 1 1 100%; }
   .choices.pick button[aria-pressed=true] .why { color: inherit; opacity: .85; }
+  .choices.pick button { display: flex; gap: 10px; align-items: flex-start; }
+  .photo { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex: none; background: var(--line); }
+  .chiptext { display: block; min-width: 0; }
+  .credit { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .choices.pick button[aria-pressed=true] .credit { color: inherit; opacity: .75; }
   .band { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
   .band.High { color: var(--high); } .band.Good { color: var(--good); } .band.Moderate { color: var(--moderate); }
   .band.Poor { color: var(--poor); } .band.Bad { color: var(--bad); }
@@ -138,6 +143,8 @@
   .guide[hidden] { display: none; }
   .guide .close { position: sticky; top: 0; float: right; }
   .gitem { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  .gitem { display: flex; gap: 12px; align-items: flex-start; }
+  .gitem .photo { width: 76px; height: 76px; }
   .gitem b { display: block; }
   .gitem .s { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .badge { display: inline-block; background: var(--soft); color: var(--accent); border-radius: 20px;
@@ -1055,7 +1062,7 @@ $("again").addEventListener("click", resetForm);
 
 // ---- ID guide
 let guideFamilies = [];
-const guideReady = api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawPicker(); })
+const guideReady = api("/api/guide").then((r) => r.json()).then((g) => { guideFamilies = g.families; drawPicker(); keepPhotosOffline(); })
   .catch(() => { $("picked").textContent = "The animal list could not load. You can still continue and let the model suggest."; });
 
 let guideOpener = $("guidebtn");
@@ -1116,12 +1123,24 @@ function togglePick(name, on) {
   });
 }
 
-function chip(name, label, detail) {
+// A reference photo of the stage found in a tray. Lazy, so a group's photos load when it is opened.
+function photoOf(photo, label) {
+  const img = document.createElement("img");
+  img.className = "photo"; img.src = photo.url; img.alt = `Photo of a ${label}`;
+  img.loading = "lazy"; img.decoding = "async"; img.width = 64; img.height = 64;
+  return img;
+}
+
+function chip(name, label, detail, photo) {
   const b = document.createElement("button");
   b.type = "button"; b.setAttribute("aria-pressed", String(state.taxa.includes(name)));
+  if (photo) b.append(photoOf(photo, label));
+  const text = document.createElement("span"); text.className = "chiptext";
   const strong = document.createElement("b"); strong.textContent = label;
-  b.append(strong);
-  if (detail) { const s = document.createElement("span"); s.className = "why"; s.style.display = "block"; s.textContent = detail; b.append(s); }
+  text.append(strong);
+  if (detail) { const s = document.createElement("span"); s.className = "why"; s.style.display = "block"; s.textContent = detail; text.append(s); }
+  if (photo) { const c = document.createElement("span"); c.className = "credit"; c.textContent = `Photo: ${photo.attribution}`; text.append(c); }
+  b.append(text);
   b.addEventListener("click", () => {
     const on = b.getAttribute("aria-pressed") !== "true";
     b.setAttribute("aria-pressed", String(on));
@@ -1155,7 +1174,7 @@ function drawPicker() {
     sum.append(document.createTextNode(GROUP_HEADINGS[group] || group), n);
     const choices = document.createElement("div"); choices.className = "choices pick";
     choices.append(chip(group, `Some kind of ${GROUP_WORDS[group] || group} (not sure which)`));
-    members.forEach((f) => choices.append(chip(f.family, f.plain_name, f.look_for)));
+    members.forEach((f) => choices.append(chip(f.family, f.plain_name, f.look_for, f.photo)));
     det.append(sum, choices);
     box.append(det);
   });
@@ -1163,6 +1182,19 @@ function drawPicker() {
     const p = document.createElement("p"); p.className = "hint"; p.textContent = `Nothing matches "${q}". Try a shape or a colour instead.`;
     box.append(p);
   }
+}
+
+// Keep every ID photo on the phone for use at the stream: once the list is in and the page is
+// idle, the service worker downloads them all in the background (about a third of a megabyte).
+// A visitor who has asked to save data is not sent them unasked; their photos load only when a
+// group is opened, and are kept once seen.
+function keepPhotosOffline() {
+  if (!("serviceWorker" in navigator) || (navigator.connection && navigator.connection.saveData)) return;
+  const urls = guideFamilies.map((f) => f.photo && f.photo.url).filter(Boolean);
+  const send = () => navigator.serviceWorker.ready
+    .then((reg) => reg.active && reg.active.postMessage({ type: "cache-guide-photos", urls }))
+    .catch(() => {});
+  if ("requestIdleCallback" in window) requestIdleCallback(send, { timeout: 10000 }); else setTimeout(send, 3000);
 }
 
 $("picksearch").addEventListener("input", drawPicker);
@@ -1185,7 +1217,14 @@ function drawGuide(query) {
     const b = document.createElement("b"); b.textContent = f.plain_name;
     const look = document.createElement("div"); look.textContent = f.look_for;
     const means = document.createElement("div"); means.className = "why"; means.textContent = f.means;
-    d.append(s, b, look, means); list.append(d);
+    const text = document.createElement("div"); text.append(s, b, look, means);
+    if (f.photo) {
+      const credit = document.createElement("a"); credit.className = "credit"; credit.href = f.photo.observation;
+      credit.target = "_blank"; credit.rel = "noopener"; credit.textContent = `Photo: ${f.photo.attribution}`;
+      text.append(credit);
+      d.append(photoOf(f.photo, f.plain_name));
+    }
+    d.append(text); list.append(d);
   });
   $("guidecount").textContent = q
     ? `${shown.length} of ${guideFamilies.length} match "${query.trim()}"` + (shown.length ? "" : ". Try a shape or a colour instead of a name.")

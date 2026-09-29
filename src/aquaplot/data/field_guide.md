@@ -7,7 +7,8 @@ supermarket. It is written for someone who has never done this before.
 
 **What to bring**
 
-- A phone.
+- A phone. Open AquaPlot on it once on Wi-Fi before you go, so the identification photos
+  are saved on it for use without a signal.
 - A pale plastic tray, tub or takeaway container. Pale, so you can see what moves against it.
 - A small net if you have one. A kitchen sieve works. So do your hands.
 - Wellingtons, or shoes you do not mind soaking.
