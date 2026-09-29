@@ -156,11 +156,18 @@ everything after it.
       `secondopinion.py`. Headline: an observer missing 40% of the animals still catches 68% of
       simulated volunteer mistakes at 0.32 unnecessary questions per tray. Needs no model, no
       photos and no key, and is deterministic from its seed
-- [ ] Model-layer evaluation (`scripts/evaluate_observer.py`): still needs an API key and
-      labelled photos. With no key, one option is to have Claude Code run it by looking at the
-      iNaturalist photos with the labels hidden, disclosed as exactly that rather than as
-      `observe.ClaudeObserver` API calls; decide first. Do not quote the rule-layer table as
-      evidence the model works
+- [x] **Model-layer evaluation run on the keyless backend** (2026-09-28), recorded in
+      [EVALUATION.md](EVALUATION.md#model-layer-local-backend-2026-09-28): 32 labelled
+      iNaturalist photos through Ollama / `qwen2.5vl:3b`. It named no animal on any of them,
+      while getting `photo_kind` right 32 of 32 — so the keyless path has no second opinion,
+      and the app now says so rather than questioning every family the volunteer got right.
+      The labelled set and the harness are built, so this is a real measurement rather than a
+      plan for one
+- [ ] **Model-layer evaluation against Claude** — the same 32 photos with `ANTHROPIC_API_KEY`
+      set, one command (`scripts/evaluate_observer.py eval/inat/labels-subset.csv --out
+      eval/claude-results`). This is the one that speaks to the deployed model; the local
+      backend's zeros say nothing about it. Do not quote the rule-layer table as evidence the
+      model works
 - [ ] Before judging opens (Oct 1): open the live link so the free instance is awake, and try
       *Use the sample photos* on it once
 - [ ] Live link deployed (`render.yaml` blueprint is in the repository: free plan, no disk, demo data seeded at startup). Put `<live link>/about` in the Devpost description and `<live link>/try` as the first link

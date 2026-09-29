@@ -125,9 +125,42 @@ Reading it:
   strength of that caught mistakes the way a stopped clock tells the time. Fewer catches, a
   fifth fewer false alarms, and what remains is signal.
 
-### Model layer: not yet run
+### Model layer, local backend (2026-09-28)
 
-Needs an API key and labelled photos (`scripts/evaluate_observer.py`). Record each run here
-with the date, the model, the photo set and the four headline numbers: right to family, caught,
-caught with the right answer, false-alarm photos. Do not quote the table above as evidence that
-the model works; it is evidence that the rules around it hold up when it does not.
+**Observer:** Ollama / `qwen2.5vl:3b` (the keyless path; 3.8 B parameters, Q4_K_M, on a laptop).
+**Photos:** 32 from iNaturalist — research-grade, openly licensed, European, insects restricted
+to larva or nymph — one per family, spread across the catalogue's whole score range (1 to 10)
+and 14 taxonomic groups. Rebuild with `scripts/fetch_inat_eval.py`, then
+`AQUAPLOT_OBSERVER=ollama scripts/evaluate_observer.py eval/inat/labels-subset.csv --out eval/inat-results`.
+
+| | Count | Share |
+|---|---|---|
+| Right to family | 0 | 0% |
+| Right to order only | 0 | 0% |
+| Wrong | 0 | 0% |
+| Missed | 32 | 100% |
+| Mistakes caught | 0 of 249 | 0% |
+| Photos where a correct list drew a question | 0 of 32 | 0% |
+
+**It named no animal, on any photo.** Not wrongly — at all. This is not the harness failing to
+reach it: the model returned valid structured output on all 32, raised no error, and got
+`photo_kind` right every time (`single_organism`, 32 of 32). It read the photograph and
+declined the only question that mattered. These are single-animal photos, lit and framed by
+someone who wanted them identified — the set that *flatters* a model — and it still scored
+zero, so there is nothing here to attribute to tray clutter.
+
+Two things follow.
+
+- **The keyless deployment has no second opinion**, and the app now says so instead of
+  implying otherwise. Finding this is what prompted the rule above: an observer that names
+  nothing is reported as no second opinion rather than one that disagreed with everything.
+  Before that, this backend turned every sensitive family a volunteer got right into an "are
+  you sure?" — 0 of 32 false-alarm photos above would have been 32 of 32.
+- **Claude is still unmeasured.** This measures the backend that needs no key, because that is
+  the one we could run. Do not read a row of zeros for a 3.8 B local model as a result about
+  the model the deployment uses, in either direction. Running the same 32 photos with
+  `ANTHROPIC_API_KEY` set is one command and is the next thing to do.
+
+Nothing in the submission claims the second opinion catches real mistakes on real trays. That
+claim still needs a run against Claude, and better, against photographs of actual kick-sample
+trays rather than iNaturalist portraits.
