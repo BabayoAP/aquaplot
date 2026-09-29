@@ -35,17 +35,41 @@ family the model merely failed to find: that cannot raise the band, and asking a
 be noise. A sensitive family the model could not find *is* questioned, because sensitive
 families are what lift a stream's reading, and they are the identifications worth a second look.
 
-## Running it
+## Running it with your own key
 
-A starter set from iNaturalist: research-grade, openly licensed, European, and for insects only
-photos annotated as larva or nymph.
+Every figure below was taken on a set of photographs this repository pins, so you can rebuild
+that exact set and put your own model against the same pictures. Three commands:
 
 ```sh
-.venv/bin/python scripts/fetch_inat_eval.py --per-family 3 --out eval/inat
-ANTHROPIC_API_KEY=... .venv/bin/python scripts/evaluate_observer.py eval/inat/labels.csv --out eval/inat-results
+cp .env.example .env                                    # put ANTHROPIC_API_KEY in it; .env is git-ignored
+.venv/bin/python scripts/fetch_inat_eval.py --from-labels eval/inat/labels-subset.csv
+.venv/bin/python scripts/evaluate_observer.py eval/inat/labels-subset.csv \
+    --observer claude --out eval/claude-results
 ```
 
-Around 150 photos at three per family. Each is one model call.
+That is **32 photos, one model call each**, one per family across 32 families. `labels.csv` is
+the full set, 101 photos, and costs three times as much. The run prints how many calls it is
+about to spend and waits for a keypress; `--yes` skips that.
+
+Four things the harness does so that a number you get back means something:
+
+- **The set is pinned, not searched for.** `--from-labels` re-fetches the exact observations the
+  committed `labels.csv` names, by iNaturalist observation id, so your photographs are
+  byte-identical to the ones the recorded figures came from. Searching again is *not*
+  reproducible: `fetch_inat_eval.py` orders by votes, and both the votes and the pool of
+  research-grade observations move under it. Photos are fetched rather than committed because
+  they are 11 MB of other people's CC-BY-NC work; the labels that identify them are committed.
+- **It will not quietly measure something else.** `--observer claude` refuses to start unless
+  Claude is the backend that will answer. Without it, a key you forgot to export means the run
+  falls through to a local Ollama model, and a table headed with the wrong model is worse than
+  no table at all.
+- **It stops when the backend does.** Three failures in a row (a rejected key, an exhausted
+  balance, a dropped connection) end the run and name the cause, because a hundred error rows
+  score identically to a model that saw nothing.
+- **It never pays twice.** Answers are saved as they arrive, so an interrupted run resumes;
+  failures are *not* resumed, so a photo that errored is sent again once the cause is fixed.
+  Scoring is a pure function of `observations.json`, so `--rescore` re-runs the whole table for
+  free after a rule changes.
 
 Your own tray photos are the better test. Put them in a folder with a `labels.csv`:
 
@@ -53,6 +77,9 @@ Your own tray photos are the better test. Put them in a folder with a `labels.cs
 photo,families,note
 tray-01.jpg,Heptageniidae;Gammaridae;Chironomidae,Ribeira de Coselhas, riffle below the bridge
 ```
+
+A set like that cannot be rebuilt from iNaturalist and does not pretend to be: `--from-labels`
+skips any row it cannot trace to an observation rather than guessing at one.
 
 ## Reading the result honestly
 
@@ -130,8 +157,18 @@ Reading it:
 **Observer:** Ollama / `qwen2.5vl:3b` (the keyless path; 3.8 B parameters, Q4_K_M, on a laptop).
 **Photos:** 32 from iNaturalist — research-grade, openly licensed, European, insects restricted
 to larva or nymph — one per family, spread across the catalogue's whole score range (1 to 10)
-and 14 taxonomic groups. Rebuild with `scripts/fetch_inat_eval.py`, then
-`AQUAPLOT_OBSERVER=ollama scripts/evaluate_observer.py eval/inat/labels-subset.csv --out eval/inat-results`.
+and 14 taxonomic groups. The exact photographs are pinned by
+[`eval/inat/labels-subset.csv`](../eval/inat/labels-subset.csv), and the model's raw answers and
+this report are committed beside them in [`eval/inat-results/`](../eval/inat-results/), so the
+table below can be checked rather than taken on trust. Reproduce it with:
+
+```sh
+.venv/bin/python scripts/fetch_inat_eval.py --from-labels eval/inat/labels-subset.csv
+AQUAPLOT_OBSERVER=ollama .venv/bin/python scripts/evaluate_observer.py \
+    eval/inat/labels-subset.csv --observer ollama --out eval/inat-results
+```
+
+or rescore the recorded answers without a model at all, with `--rescore`.
 
 | | Count | Share |
 |---|---|---|

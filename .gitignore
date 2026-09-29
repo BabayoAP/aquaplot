@@ -12,6 +12,16 @@ aquaplot.db
 riffle.db
 *.db-journal
 
-# evaluation photos and model outputs
-eval/
+# Evaluation photos are fetched, never vendored: 11 MB of CC-BY-NC iNaturalist
+# images, rebuildable byte-for-byte from the committed labels with
+#   scripts/fetch_inat_eval.py --from-labels eval/inat/labels.csv
+# The labels and the recorded model answers are text and ARE committed, because
+# docs/EVALUATION.md quotes figures taken from them and a figure nobody can get
+# back to is not a measurement.
+eval/**/*.jpg
+eval/**/*.jpeg
+eval/**/*.png
 eval-results/
+
+# keys
+.env

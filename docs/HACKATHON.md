@@ -164,11 +164,21 @@ everything after it.
       and the app now says so rather than questioning every family the volunteer got right.
       The labelled set and the harness are built, so this is a real measurement rather than a
       plan for one
-- [ ] **Model-layer evaluation against Claude** — the same 32 photos with `ANTHROPIC_API_KEY`
-      set, one command (`scripts/evaluate_observer.py eval/inat/labels-subset.csv --out
-      eval/claude-results`). This is the one that speaks to the deployed model; the local
-      backend's zeros say nothing about it. Do not quote the rule-layer table as evidence the
-      model works
+- [x] **The labelled set made reproducible** (2026-09-29): `eval/inat/labels.csv` (101 photos)
+      and `labels-subset.csv` (32) are committed, along with the recorded answers and report in
+      `eval/inat-results/`. The photographs themselves stay out of the repository — 11 MB of
+      other people's CC-BY-NC work — but `scripts/fetch_inat_eval.py --from-labels` rebuilds
+      them byte-for-byte by iNaturalist observation id. Before this, every figure in
+      [EVALUATION.md](EVALUATION.md) rested on a folder that existed on one laptop and was
+      git-ignored, and re-running the fetch would have produced a *different* set, because it
+      searches by vote count. A judge can now check the numbers
+- [ ] **Model-layer evaluation against Claude** — the same 32 photos, with a key, in three
+      commands ([EVALUATION.md](EVALUATION.md#running-it-with-your-own-key)). This is the one
+      that speaks to the deployed model; the local backend's zeros say nothing about it. Do not
+      quote the rule-layer table as evidence the model works. The harness now refuses to run
+      unless Claude is really the backend answering (`--observer claude`), stops after three
+      consecutive failures instead of recording a rejected key as 32 blank answers, and retries
+      a photo that errored on the next run
 - [x] **No hosted link** (decided 2026-09-30): the Devpost rules ask for a public repository and
       "a working prototype, mockup, or proof-of-concept", not a hosted one, so judges run it from
       the repository, on their own machine or in a Codespace. The Devpost *Try it* line says how,

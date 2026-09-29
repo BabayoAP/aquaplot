@@ -113,3 +113,59 @@ def test_answering_only_to_order_costs_the_suggestion_but_not_the_catch():
 
     assert coarse["right_answer"] < exact["right_answer"]
     assert coarse["caught"] > 0.5
+
+
+# ---- rebuilding the labelled set (scripts/fetch_inat_eval.py) ----------------
+
+
+def _fetch():
+    """Import the fetch script the way a developer runs it, from the repository root."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent.parent / "scripts" / "fetch_inat_eval.py"
+    spec = importlib.util.spec_from_file_location("fetch_inat_eval", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_a_labelled_photo_names_the_observation_it_came_from():
+    """The published figures are only checkable if the exact photographs can be got
+    back, and searching iNaturalist again returns a different set. Each row carries
+    its observation link, so each row can be re-fetched by id."""
+    fetch = _fetch()
+    row = {
+        "photo": "perlidae-91628632.jpg",
+        "note": "(c) somebody, some rights reserved (CC BY-NC) - https://www.inaturalist.org/observations/91628632",
+    }
+    assert fetch.observation_id(row) == 91628632
+
+
+def test_a_hand_written_label_falls_back_to_the_filename():
+    """Somebody labelling photos they already have writes no note; the id in the
+    name that fetch wrote is still enough to rebuild from."""
+    fetch = _fetch()
+    assert fetch.observation_id({"photo": "baetidae-165625583.jpg", "note": ""}) == 165625583
+
+
+def test_a_photo_with_no_traceable_observation_is_not_guessed_at():
+    fetch = _fetch()
+    assert fetch.observation_id({"photo": "tray-01.jpg", "note": "Ribeira de Coselhas, riffle below the bridge"}) is None
+
+
+def test_every_committed_label_can_be_rebuilt():
+    """A committed labels.csv whose rows cannot be traced back to an observation is
+    a measurement nobody can reproduce, which is the thing this file exists to stop."""
+    from pathlib import Path
+
+    fetch = _fetch()
+    import csv
+
+    for name in ("labels.csv", "labels-subset.csv"):
+        path = Path(__file__).resolve().parent.parent / "eval" / "inat" / name
+        with path.open(encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        assert rows, f"{name} is empty"
+        untraceable = [r["photo"] for r in rows if fetch.observation_id(r) is None]
+        assert not untraceable, f"{name}: {untraceable}"

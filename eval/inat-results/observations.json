@@ -1,0 +1,230 @@
+{
+  "observer": "ollama",
+  "model": "qwen2.5vl:3b",
+  "observations": [
+    {
+      "photo": "perlidae-91628632.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "perlodidae-241178272.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "heptageniidae-60533966.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "ephemerellidae-39777360.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "ephemeridae-248487931.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "leptoceridae-281567889.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "odontoceridae-117306286.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "calopterygidae-318437798.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "aeshnidae-334395877.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "nemouridae-234309632.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "caenidae-252899412.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "limnephilidae-104967889.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "gammaridae-271925291.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "neritidae-16420100.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "coenagrionidae-328812633.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "hydropsychidae-228888912.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "dytiscidae-231006630.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "hydrophilidae-50664882.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "simuliidae-190493297.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "planariidae-117721354.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "gerridae-147356788.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "corixidae-368979467.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "psychodidae-29101450.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "sialidae-309235393.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "erpobdellidae-31458811.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "glossiphoniidae-343968998.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "physidae-50783226.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "sphaeriidae-243746218.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "hydrobiidae-276780250.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "culicidae-253036435.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "syrphidae-42783316.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    },
+    {
+      "photo": "cambaridae-4700299.jpg",
+      "photo_kind": "single_organism",
+      "taxa": [],
+      "error": null,
+      "reasoning": ""
+    }
+  ]
+}
