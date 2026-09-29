@@ -102,7 +102,7 @@ def main() -> int:
 
     wanted = {f.strip().lower() for f in args.families.split(",")} if args.families else None
     skip = {int(s) for s in args.skip.split(",") if s.strip()}
-    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"photos": {}}
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {"photos": {}}
     photos: dict = manifest.setdefault("photos", {})
     PHOTO_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -166,7 +166,7 @@ def main() -> int:
         "and observation are shown beside the photo."
     )
     manifest["photos"] = dict(sorted(photos.items()))
-    MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n")
+    MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{len(photos)} of {len(CATALOGUE)} families have a photo", file=sys.stderr)
     return 0
 

@@ -40,7 +40,7 @@ def test_every_photo_names_its_photographer_its_licence_and_its_observation(clie
 
 
 def test_photos_exist_only_for_families_the_catalogue_knows():
-    photos = json.loads((ROOT / "src/aquaplot/data/guide_photos.json").read_text())["photos"]
+    photos = json.loads((ROOT / "src/aquaplot/data/guide_photos.json").read_text(encoding="utf-8"))["photos"]
     assert set(photos) <= {f.family for f in CATALOGUE}
 
 
