@@ -227,6 +227,9 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
+GitHub runs the same tests on every pull request and every push to `main`
+(`.github/workflows/tests.yml`), so a PR shows whether it breaks anything before it is merged.
+
 Open `/about` for the two-minute tour, `/try` for the sample check, `/` to check a stream,
 `/site/{key}` for one spot's history, `/dashboard` for the insights, `/map` for the map,
 `/field-guide` for the sampling protocol, and `/docs` for the interactive API reference.
