@@ -117,8 +117,8 @@ and GeoJSON, so nothing is locked in.
 standing there can answer (smell, and who uses the water); and finally the places where you
 and the model differ. The animal picker is grouped by shape, searchable by what you can see,
 and offers "some kind of mayfly" when you can't tell the family. Each animal has a credited photo
-of the stage you actually find in a tray (a nymph, not the winged adult), and the phone keeps them
-all for use without a signal. Every habitat question is
+of the stage you actually find in a tray (a nymph, not the winged adult); tap it to see it large.
+The phone keeps the small photos for use without a signal, and each large one once it has been opened. Every habitat question is
 rendered from `/api/form`, which comes from the same file as the model's prompt and the
 server's validator, so the words on screen can't drift from the vocabulary the system accepts.
 The result shows the band and what it means in plain language, who identified the animals and
@@ -225,7 +225,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 269 tests, no network, no model
+.venv/bin/python -m pytest                       # 271 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -323,7 +323,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 201 of the 269 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 203 of the 271 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at

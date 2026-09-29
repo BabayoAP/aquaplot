@@ -688,7 +688,7 @@ def guide_photo(family: str) -> dict | None:
     p = GUIDE_PHOTOS.get(family)
     if p is None:
         return None
-    return {"url": f"/static/guide/{p['file']}", "attribution": p["attribution"],
+    return {"url": f"/static/guide/{p['file']}", "large_url": f"/static/guide/{p['large']}", "attribution": p["attribution"],
             "licence": p["licence"], "observation": p["observation"]}
 
 

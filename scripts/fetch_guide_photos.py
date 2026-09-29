@@ -9,14 +9,17 @@ shown as adults. Everything else is shown at any stage.
 
 Research-grade observations from Europe come first, most-faved first, falling back to anywhere.
 Licences without a non-commercial clause are preferred; CC BY-NC is used only when nothing else
-exists. Each photo is cropped square, shrunk to 200 px and saved as WebP in ``static/guide/``,
-and ``data/guide_photos.json`` records the photographer's attribution, the licence and the
-observation, which the app shows beside the photo. The app itself never calls iNaturalist for
-these: they ship with it and are cached for offline use by the service worker.
+exists. Each photo is saved twice as WebP in ``static/guide/``: a 200 px square for the picker,
+and the whole frame up to 800 px for the enlarged view. ``data/guide_photos.json`` records the
+photographer's attribution, the licence and the observation, which the app shows beside the
+photo. The app itself never calls iNaturalist for these: they ship with it, and the service
+worker keeps them for offline use.
 
     .venv/bin/python scripts/fetch_guide_photos.py                 # every family without a photo
     .venv/bin/python scripts/fetch_guide_photos.py --families Perlidae --skip 123456
                                                                    # replace a poor photo
+    .venv/bin/python scripts/fetch_guide_photos.py --refresh       # redo the files from the
+                                                                   # observations already chosen
 """
 
 from __future__ import annotations
@@ -40,6 +43,7 @@ NON_COMMERCIAL = "cc-by-nc,cc-by-nc-sa"
 LIFE_STAGE, NYMPH, LARVA = 1, 5, 6
 YOUNG_IN_WATER = {"Ephemeroptera", "Plecoptera", "Trichoptera", "Odonata", "Diptera", "Megaloptera"}
 SIZE = 200
+LARGE = 800
 # Where iNaturalist files a catalogue family under another name, or the catalogue's group is broader
 # than the animal a volunteer finds in a tray.
 INAT_NAMES = {
@@ -63,6 +67,7 @@ def entry(family: str, obs: dict) -> dict:
     photo = obs["photos"][0]
     return {
         "file": f"{family.lower()}.webp",
+        "large": f"{family.lower()}-large.webp",
         "attribution": photo["attribution"],
         "licence": photo["license_code"],
         "observation": f"https://www.inaturalist.org/observations/{obs['id']}",
@@ -78,10 +83,21 @@ def thumbnail(data: bytes, size: int = SIZE) -> bytes:
     return out.getvalue()
 
 
+def enlarged(data: bytes, size: int = LARGE) -> bytes:
+    """The whole frame, no crop, at most ``size`` px on its long edge: what the enlarged view shows."""
+    image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+    image.thumbnail((size, size), Image.LANCZOS)
+    out = io.BytesIO()
+    image.save(out, "WEBP", quality=76, method=6)
+    return out.getvalue()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--families", help="comma-separated subset to fetch or replace, e.g. Perlidae,Baetidae")
     parser.add_argument("--skip", default="", help="comma-separated observation ids to pass over (poor photos)")
+    parser.add_argument("--refresh", action="store_true",
+                        help="rebuild the files from the observations already in the manifest, without searching again")
     args = parser.parse_args()
 
     wanted = {f.strip().lower() for f in args.families.split(",")} if args.families else None
@@ -96,11 +112,26 @@ def main() -> int:
         r.raise_for_status()
         return r.json()
 
+    def save(client: httpx.Client, family: str, obs: dict) -> None:
+        url = obs["photos"][0]["url"].replace("/square.", "/large.")
+        time.sleep(PAUSE)
+        data = client.get(url, timeout=60).content
+        (PHOTO_DIR / f"{family.lower()}.webp").write_bytes(thumbnail(data))
+        (PHOTO_DIR / f"{family.lower()}-large.webp").write_bytes(enlarged(data))
+        photos[family] = entry(family, obs)
+        print(f"{family}: {photos[family]['licence']} {photos[family]['observation']}", file=sys.stderr)
+
     headers = {"User-Agent": "AquaPlot ID guide (github.com/BabayoAP/aquaplot)"}
     with httpx.Client(headers=headers) as client:
         for fam in CATALOGUE:
             if wanted is not None and fam.family.lower() not in wanted:
                 continue
+            if args.refresh:
+                if fam.family not in photos:
+                    continue
+                obs_id = photos[fam.family]["observation"].rsplit("/", 1)[-1]
+                obs = get(client, f"/observations/{obs_id}")["results"][0]
+                save(client, fam.family, obs)
                 continue
             if wanted is None and fam.family in photos:
                 continue
@@ -127,12 +158,7 @@ def main() -> int:
             if obs is None:
                 print(f"skip {fam.family}: no openly licensed photo found", file=sys.stderr)
                 continue
-            url = obs["photos"][0]["url"].replace("/square.", "/medium.")
-            time.sleep(PAUSE)
-            data = client.get(url, timeout=60).content
-            (PHOTO_DIR / f"{fam.family.lower()}.webp").write_bytes(thumbnail(data))
-            photos[fam.family] = entry(fam.family, obs)
-            print(f"{fam.family}: {photos[fam.family]['licence']} {photos[fam.family]['observation']}", file=sys.stderr)
+            save(client, fam.family, obs)
 
     manifest["note"] = (
         "One reference photo per family for the animal picker and the ID guide, fetched from iNaturalist by "

@@ -90,7 +90,26 @@
   .choices.pick button { border-radius: 10px; flex: 1 1 100%; }
   .choices.pick button[aria-pressed=true] .why { color: inherit; opacity: .85; }
   .choices.pick button { display: flex; gap: 10px; align-items: flex-start; }
-  .photo { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex: none; background: var(--line); }
+  .photo { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex: none; background: var(--line); display: block; }
+  /* A choice with a photo: one card holding two buttons, the photo (enlarge) and the name (pick). */
+  .pickrow { flex: 1 1 100%; display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line);
+             border-radius: 10px; padding: 8px 11px; }
+  .pickrow:has(.choice[aria-pressed=true]) { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .choices.pick .pickrow .choice, .choices.pick .pickrow .choice[aria-pressed=true] {
+    flex: 1; border: 0; padding: 0; background: transparent; color: inherit; border-radius: 6px; min-height: 64px; }
+  .pickrow:has(.choice[aria-pressed=true]) .why, .pickrow:has(.choice[aria-pressed=true]) .credit { color: inherit; opacity: .85; }
+  .choices.pick button.zoom, button.zoom { flex: none; padding: 0; border: 0; background: none; border-radius: 8px;
+    cursor: zoom-in; position: relative; line-height: 0; }
+  button.zoom::after { content: ""; position: absolute; right: 3px; bottom: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,.55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='M15 15l5 5M10.5 8v5M8 10.5h5'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  #photoview { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+               width: min(860px, calc(100vw - 24px)); max-height: calc(100vh - 24px); }
+  #photoview::backdrop { background: rgba(0,0,0,.72); }
+  #photoview img { display: block; width: 100%; max-height: calc(100vh - 170px); object-fit: contain; border-radius: 9px;
+                   background: #000; image-rendering: auto; }
+  #photoview .cap { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; margin-top: 10px; }
+  #photoview .cap b { display: block; }
+  #photoview .credit { font-size: 12px; }
   .chiptext { display: block; min-width: 0; }
   .credit { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
   .choices.pick button[aria-pressed=true] .credit { color: inherit; opacity: .75; }
@@ -350,6 +369,14 @@
     <p class="foot" id="rfoot"></p>
   </section>
 </main>
+
+<dialog id="photoview" aria-labelledby="pvname">
+  <img id="pvimg" alt="">
+  <div class="cap">
+    <div><b id="pvname"></b><span class="why" id="pvlook"></span><a class="credit" id="pvcredit" target="_blank" rel="noopener"></a></div>
+    <button type="button" class="ghost" id="pvclose" autofocus>Close</button>
+  </div>
+</dialog>
 
 <div class="guide" id="guide" hidden>
   <button class="ghost close" id="guideclose">Close</button>
@@ -1131,16 +1158,30 @@ function photoOf(photo, label) {
   return img;
 }
 
+// A photo you can tap to see it large. A button of its own, so tapping it never picks the animal.
+function zoomButton(photo, label, look) {
+  const z = document.createElement("button");
+  z.type = "button"; z.className = "zoom"; z.setAttribute("aria-label", `Enlarge the photo of a ${label}`);
+  z.append(photoOf(photo, label));
+  z.addEventListener("click", () => openPhoto(photo, label, look));
+  return z;
+}
+
 function chip(name, label, detail, photo) {
   const b = document.createElement("button");
   b.type = "button"; b.setAttribute("aria-pressed", String(state.taxa.includes(name)));
-  if (photo) b.append(photoOf(photo, label));
   const text = document.createElement("span"); text.className = "chiptext";
   const strong = document.createElement("b"); strong.textContent = label;
   text.append(strong);
   if (detail) { const s = document.createElement("span"); s.className = "why"; s.style.display = "block"; s.textContent = detail; text.append(s); }
   if (photo) { const c = document.createElement("span"); c.className = "credit"; c.textContent = `Photo: ${photo.attribution}`; text.append(c); }
   b.append(text);
+  let card = b;
+  if (photo) {
+    b.classList.add("choice");
+    card = document.createElement("div"); card.className = "pickrow";
+    card.append(zoomButton(photo, label, detail), b);
+  }
   b.addEventListener("click", () => {
     const on = b.getAttribute("aria-pressed") !== "true";
     b.setAttribute("aria-pressed", String(on));
@@ -1151,7 +1192,7 @@ function chip(name, label, detail, photo) {
       count.textContent = count.textContent.replace(/ · \d+ picked$/, "") + (picks ? ` · ${picks} picked` : "");
     }
   });
-  return b;
+  return card;
 }
 
 function drawPicker() {
@@ -1186,6 +1227,7 @@ function drawPicker() {
 
 // Keep every ID photo on the phone for use at the stream: once the list is in and the page is
 // idle, the service worker downloads them all in the background (about a third of a megabyte).
+// The large versions (1.6 MB in all) are not sent ahead: each loads when it is opened, and is kept.
 // A visitor who has asked to save data is not sent them unasked; their photos load only when a
 // group is opened, and are kept once seen.
 function keepPhotosOffline() {
@@ -1222,7 +1264,7 @@ function drawGuide(query) {
       const credit = document.createElement("a"); credit.className = "credit"; credit.href = f.photo.observation;
       credit.target = "_blank"; credit.rel = "noopener"; credit.textContent = `Photo: ${f.photo.attribution}`;
       text.append(credit);
-      d.append(photoOf(f.photo, f.plain_name));
+      d.append(zoomButton(f.photo, f.plain_name, f.look_for));
     }
     d.append(text); list.append(d);
   });
@@ -1234,7 +1276,32 @@ function drawGuide(query) {
 $("guidesearch").addEventListener("input", (e) => drawGuide(e.target.value));
 function closeGuide() { $("guide").hidden = true; guideOpener.focus(); }
 $("guideclose").addEventListener("click", closeGuide);
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("guide").hidden) closeGuide(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || document.querySelector("dialog[open]")) return;  // an open dialog closes itself first
+  if (!$("guide").hidden) closeGuide();
+});
+
+// ---- the enlarged photo
+// Shows the thumbnail at once, then swaps in the large version when it arrives. With no signal and
+// the large one never opened before, the thumbnail stays: blurrier, but still the right animal.
+function openPhoto(photo, label, look) {
+  const img = $("pvimg");
+  img.src = photo.url; img.alt = `Photo of a ${label}`;
+  $("pvname").textContent = label;
+  $("pvlook").textContent = look || "";
+  $("pvlook").style.display = look ? "block" : "none";
+  $("pvcredit").textContent = `Photo: ${photo.attribution}`;
+  $("pvcredit").href = photo.observation;
+  if (photo.large_url) {
+    const large = new Image();
+    large.onload = () => { if (img.alt === `Photo of a ${label}`) img.src = photo.large_url; };
+    large.src = photo.large_url;
+  }
+  $("photoview").showModal();
+}
+$("pvclose").addEventListener("click", () => $("photoview").close());
+// A tap on the dimmed backdrop closes it too.
+$("photoview").addEventListener("click", (e) => { if (e.target === $("photoview")) $("photoview").close(); });
 </script>
 </body>
 </html>
