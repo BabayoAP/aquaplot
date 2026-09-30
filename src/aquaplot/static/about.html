@@ -6,6 +6,13 @@
 <title>AquaPlot in two minutes</title>
 <meta name="description" content="Volunteers identify what lives in their stream, and an AI checks their answers without seeing them. Published indices and readable rules turn that into a health reading for the water, people and animals.">
 <link rel="icon" href="/icon.svg">
+<!-- three.module.min.js imports "./three.core.js", the unminified core; send it the minified one. -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.186.1/three.module.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.186.1/three.core.js": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.186.1/three.core.min.js"
+} }
+</script>
 <style>
   :root {
     --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
@@ -31,7 +38,7 @@
     nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
     nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
-  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 70px; }
+  main { max-width: 880px; margin: 0 auto; padding: 0 16px 70px; }
   a { color: var(--accent); }
   .kicker { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin: 0; }
   h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 6px 0 12px; letter-spacing: -.02em; }
@@ -68,6 +75,18 @@
   th { color: var(--muted); font-weight: 600; font-size: 13px; }
   tr:last-child td { border-bottom: 0; }
   .foot { color: var(--muted); font-size: 13px; margin-top: 40px; }
+  /* The water scene: a canvas behind the heading that fades into the page at its bottom edge. */
+  :root { --scene-h: clamp(240px, 42vh, 420px); }
+  .hero { position: relative; }
+  .scene { position: absolute; inset: 0 0 auto 0; height: var(--scene-h); overflow: hidden;
+           background: radial-gradient(130% 110% at 50% 0%, color-mix(in srgb, var(--accent) 30%, var(--bg)) 0%, var(--bg) 80%); }
+  .scene canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+  .scene canvas.ready { opacity: 1; }
+  .scene::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+                  background: linear-gradient(to bottom, var(--bg) 0%, transparent 16%, transparent 42%,
+                    color-mix(in srgb, var(--bg) 62%, transparent) 70%, var(--bg) 97%); }
+  .hero-text { position: relative; max-width: 880px; margin: 0 auto; padding: calc(var(--scene-h) - 104px) 16px 0; }
+  .hero-text .kicker, .hero-text h1 { text-shadow: 0 0 22px var(--bg), 0 0 6px var(--bg); }
   :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 </style>
 </head>
@@ -76,13 +95,18 @@
   <a class="brand" href="/about">AquaPlot<span>.</span></a>
   <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/docs">API</a></nav>
 </div></header>
+<section class="hero">
+  <div class="scene" id="scene" aria-hidden="true"><canvas id="water"></canvas></div>
+  <div class="hero-text">
+    <p class="kicker">IEEE OneAquaHealth Global Hackathon 2026 · Track 3, AI-Supported Assessment</p>
+    <h1>You name what lives in your stream. An AI checks your answer without seeing it.</h1>
+    <p class="lede">AquaPlot helps a volunteer at an urban stream work out how healthy the water is, and what that
+      means for the people and animals nearby. You identify the animals. An AI looks at the same photo without seeing
+      your answers and asks about anything it sees differently. The score comes from published indices and rules
+      anyone can read.</p>
+  </div>
+</section>
 <main>
-  <p class="kicker">IEEE OneAquaHealth Global Hackathon 2026 · Track 3, AI-Supported Assessment</p>
-  <h1>You name what lives in your stream. An AI checks your answer without seeing it.</h1>
-  <p class="lede">AquaPlot helps a volunteer at an urban stream work out how healthy the water is, and what that
-    means for the people and animals nearby. You identify the animals. An AI looks at the same photo without seeing
-    your answers and asks about anything it sees differently. The score comes from published indices and rules
-    anyone can read.</p>
 
   <div class="problem" role="note">
     <p><b>The problem.</b> The small animals living in a stream are the best sign of its health, but they are hard
@@ -183,6 +207,278 @@ Promise.all([fetch("/api/insights").then((r) => r.json()), fetch("/api/health").
       return `<div class="stat"><div class="n">${d.innerHTML}</div><div class="l">${e.innerHTML}</div></div>`;
     }).join("");
   }).catch(() => { document.getElementById("stats").innerHTML = ""; });
+</script>
+<script type="module">
+// The water scene at the top of the page. Purely decorative: if three.js cannot load, WebGL is
+// missing or the visitor has asked to save data, the CSS gradient behind the canvas stays.
+const host = document.getElementById("scene"), canvas = document.getElementById("water");
+if (!(navigator.connection && navigator.connection.saveData)) start().catch(() => {});
+
+async function start() {
+  const THREE = await import("three");
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "low-power" });
+  } catch (e) { return; }
+  const small = innerWidth < 640;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
+
+  // Waves travel left to right. One table drives the shader and the leaves that ride on it.
+  const WAVES = [  // direction x, direction z, wavenumber, amplitude, speed
+    [1.0, 0.35, 0.8, 0.13, 1.1],
+    [1.0, -0.55, 1.5, 0.065, 1.7],
+    [0.6, 1.0, 2.4, 0.035, 2.3],
+    [1.0, 0.1, 3.9, 0.018, 3.0],
+  ].map(([x, z, k, a, s]) => { const l = Math.hypot(x, z); return [x / l, z / l, k, a, s]; });
+  const f = (v) => v.toFixed(5);
+  const WAVE_GLSL = `vec3 waves(vec2 p, float t) {  // height, d/dx, d/dz
+    vec3 r = vec3(0.0); float ph;
+    ${WAVES.map(([x, z, k, a, s]) => `ph = dot(vec2(${f(x)}, ${f(z)}), p) * ${f(k)} - t * ${f(s)};
+    r += vec3(${f(a)} * sin(ph), ${f(a * k * x)} * cos(ph), ${f(a * k * z)} * cos(ph));`).join("\n    ")}
+    return r;
+  }`;
+  function wavesAt(x, z, t) {
+    let h = 0, dx = 0, dz = 0;
+    for (const [wx, wz, k, a, s] of WAVES) {
+      const ph = (wx * x + wz * z) * k - t * s;
+      h += a * Math.sin(ph); dx += a * k * wx * Math.cos(ph); dz += a * k * wz * Math.cos(ph);
+    }
+    return [h, dx, dz];
+  }
+  const VORONOI_GLSL = `
+    vec2 hash2(vec2 p) { p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
+    float hash1(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
+    vec3 voronoi(vec2 x) {  // nearest distance, second-nearest distance, cell id
+      vec2 n = floor(x), fr = fract(x); float d1 = 8.0, d2 = 8.0; vec2 cell = vec2(0.0);
+      for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+        vec2 g = vec2(float(i), float(j)); vec2 r = g + hash2(n + g) - fr; float d = dot(r, r);
+        if (d < d1) { d2 = d1; d1 = d; cell = n + g; } else if (d < d2) { d2 = d; }
+      }
+      return vec3(sqrt(d1), sqrt(d2), hash1(cell));
+    }`;
+  // Tileable water caustics (after Dave Hoskins' well-known Shadertoy pattern): bright, wandering filaments.
+  const CAUSTIC_GLSL = `
+    float caustic(vec2 uv, float t) {
+      vec2 p = mod(uv * 6.28318, 6.28318) - 250.0, i = p;
+      float c = 1.0, inten = 0.005;
+      for (int n = 0; n < 5; n++) {
+        float tt = t * (1.0 - 3.5 / float(n + 1));
+        i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
+        c += 1.0 / length(vec2(p.x / (sin(i.x + tt) / inten), p.y / (cos(i.y + tt) / inten)));
+      }
+      c = 1.17 - pow(c / 5.0, 1.4);
+      return pow(abs(c), 8.0);
+    }`;
+
+  const world = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+  const uniforms = {
+    uTime: { value: 0 }, uFogNear: { value: 8 }, uFogFar: { value: 26 },
+    uDeep: { value: new THREE.Color() }, uShallow: { value: new THREE.Color() }, uSky: { value: new THREE.Color() },
+    uSun: { value: new THREE.Color() }, uFog: { value: new THREE.Color() },
+    uBedA: { value: new THREE.Color() }, uBedB: { value: new THREE.Color() }, uGap: { value: new THREE.Color() },
+    uCaustic: { value: new THREE.Color() }, uReflect: { value: 0.85 },
+    uLight: { value: new THREE.Vector3(-0.3, 0.55, -1.0).normalize() },
+  };
+  const FOG = `float fogAt(vec3 w) { return smoothstep(uFogNear, uFogFar, length(cameraPosition - w)); }`;
+
+  // The stream bed: pebbles with moving caustics, wobbled by the surface above them.
+  const bedGeo = new THREE.PlaneGeometry(70, 50, 1, 1).rotateX(-Math.PI / 2).translate(0, -1.0, -15);
+  const bed = new THREE.Mesh(bedGeo, new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: `varying vec3 vWorld;
+      void main() { vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `uniform float uTime, uFogNear, uFogFar; uniform vec3 uBedA, uBedB, uGap, uCaustic, uDeep, uFog;
+      varying vec3 vWorld;
+      ${VORONOI_GLSL} ${WAVE_GLSL} ${FOG} ${CAUSTIC_GLSL}
+      void main() {
+        vec2 p = vWorld.xz;
+        vec2 q = p + waves(p, uTime).yz * 0.35;
+        vec3 v = voronoi(q * 0.85);
+        float pebble = smoothstep(0.02, 0.2, v.y - v.x);
+        float dome = 1.0 - smoothstep(0.0, 0.8, v.x);
+        float grain = hash1(floor(q * 40.0)) * 0.08;
+        vec3 stone = mix(uBedA, uBedB, v.z) * (0.8 + 0.3 * dome);
+        vec3 col = mix(uGap + grain, stone, pebble * 0.85);
+        col = mix(col, uDeep, 0.5);
+        col += uCaustic * caustic(q * 0.16, uTime * 0.45) * 0.55;
+        gl_FragColor = vec4(mix(col, uFog, fogAt(vWorld)), 1.0);
+        #include <colorspace_fragment>
+      }`,
+  }));
+  world.add(bed);
+
+  // The surface: displaced by the wave table, with fine ripples, glints and a fresnel reflection.
+  const seg = small ? 110 : 180;
+  const waterGeo = new THREE.PlaneGeometry(70, 50, seg, Math.round(seg * 0.7)).rotateX(-Math.PI / 2).translate(0, 0, -15);
+  const water = new THREE.Mesh(waterGeo, new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthWrite: false,
+    vertexShader: `uniform float uTime; varying vec3 vWorld; varying vec3 vNormal; varying float vH;
+      ${WAVE_GLSL}
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vec3 h = waves(w.xz, uTime);
+        w.y += h.x; vH = h.x; vWorld = w.xyz;
+        vNormal = normalize(vec3(-h.y, 1.0, -h.z));
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: `uniform float uTime, uFogNear, uFogFar, uReflect; uniform vec3 uDeep, uShallow, uSky, uSun, uFog, uLight;
+      varying vec3 vWorld; varying vec3 vNormal; varying float vH;
+      ${FOG}
+      void main() {
+        vec2 p = vWorld.xz; float t = uTime;
+        vec2 r = vec2(sin(p.x * 7.0 - t * 4.0 + sin(p.y * 3.0)) * 0.5 + sin(p.x * 13.0 - p.y * 5.0 - t * 6.0) * 0.25,
+                      sin(p.y * 8.0 + t * 3.0 + sin(p.x * 2.0)) * 0.5 + sin(p.y * 15.0 + p.x * 4.0 - t * 5.0) * 0.25);
+        vec3 n = normalize(normalize(vNormal) + vec3(r.x, 0.0, r.y) * 0.07);
+        vec3 V = normalize(cameraPosition - vWorld);
+        float fres = mix(0.05, 1.0, pow(1.0 - max(dot(n, V), 0.0), 3.0));
+        float nh = max(dot(n, normalize(uLight + V)), 0.0);
+        float spec = pow(nh, 420.0) * 2.2 + pow(nh, 40.0) * 0.08;
+        vec3 body = mix(uDeep, uShallow, clamp(vH * 2.8 + 0.5, 0.0, 1.0));
+        vec3 col = mix(body, uSky, fres * uReflect) + uSun * spec + smoothstep(0.09, 0.2, vH) * 0.08;
+        float fog = fogAt(vWorld);
+        gl_FragColor = vec4(mix(col, uFog, fog), mix(mix(0.5, 0.96, fres), 1.0, fog));
+        #include <colorspace_fragment>
+      }`,
+  }));
+  water.renderOrder = 2;
+  world.add(water);
+
+  // Specks drifting just under the surface.
+  const MOTES = small ? 120 : 220;
+  const motePos = new Float32Array(MOTES * 3), moteSeed = new Float32Array(MOTES);
+  for (let i = 0; i < MOTES; i++) {
+    motePos.set([Math.random() * 36 - 18, -0.15 - Math.random() * 0.8, Math.random() * 14 - 10], i * 3);
+    moteSeed[i] = Math.random();
+  }
+  const moteGeo = new THREE.BufferGeometry();
+  moteGeo.setAttribute("position", new THREE.BufferAttribute(motePos, 3));
+  moteGeo.setAttribute("seed", new THREE.BufferAttribute(moteSeed, 1));
+  const motes = new THREE.Points(moteGeo, new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthWrite: false,
+    vertexShader: `uniform float uTime, uFogNear, uFogFar; attribute float seed; varying float vAlpha;
+      ${FOG}
+      void main() {
+        vec3 p = position;
+        p.x = mod(p.x + uTime * (0.3 + seed * 0.45) + 18.0, 36.0) - 18.0;
+        p.y += sin(uTime * (0.6 + seed) + seed * 40.0) * 0.06;
+        vec4 mv = viewMatrix * modelMatrix * vec4(p, 1.0);
+        gl_PointSize = (2.0 + seed * 3.5) * (7.0 / -mv.z) * ${f(Math.min(devicePixelRatio, 1.75))};
+        vAlpha = (0.25 + seed * 0.35) * (1.0 - fogAt((modelMatrix * vec4(p, 1.0)).xyz));
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `uniform vec3 uCaustic; varying float vAlpha;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        gl_FragColor = vec4(uCaustic, vAlpha * smoothstep(0.5, 0.1, d));
+        #include <colorspace_fragment>
+      }`,
+  }));
+  motes.renderOrder = 1;
+  world.add(motes);
+
+  // A few leaves riding the waves.
+  const leafShape = new THREE.Shape();
+  leafShape.moveTo(-0.32, 0);
+  leafShape.bezierCurveTo(-0.18, 0.2, 0.14, 0.2, 0.34, 0);
+  leafShape.bezierCurveTo(0.14, -0.2, -0.18, -0.2, -0.32, 0);
+  const leafGeo = new THREE.ShapeGeometry(leafShape, 10).rotateX(-Math.PI / 2);
+  world.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.4));
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+  sunLight.position.set(-3, 6, -8);
+  world.add(sunLight);
+  const leaves = ["#6f8f3a", "#8a9a3c", "#b0892f", "#9c6b2c", "#5f7f36", "#a47a34", "#7d8f3e"].map((c, i) => {
+    const leaf = new THREE.Mesh(leafGeo, new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
+    leaf.userData = { x: -16 + i * 5.3 + Math.random() * 2, z: 0.5 - Math.random() * 9, speed: 0.45 + Math.random() * 0.3,
+                      yaw: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.25, scale: 1.0 + Math.random() * 0.6 };
+    leaf.scale.setScalar(leaf.userData.scale);
+    world.add(leaf);
+    return leaf;
+  });
+  const up = new THREE.Vector3(0, 1, 0), normal = new THREE.Vector3(), tilt = new THREE.Quaternion(), yaw = new THREE.Quaternion();
+
+  // Colours come from the page's own palette, so the scene follows light and dark mode.
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  function applyPalette() {
+    const css = getComputedStyle(document.documentElement);
+    const bg = new THREE.Color(css.getPropertyValue("--bg").trim());
+    const accent = new THREE.Color(css.getPropertyValue("--accent").trim());
+    const u = uniforms, c = (hex) => new THREE.Color(hex);
+    if (dark.matches) {
+      u.uDeep.value.copy(c("#07262d")); u.uShallow.value.copy(accent).lerp(c("#0c3a42"), 0.55);
+      u.uSky.value.copy(bg).lerp(accent, 0.34); u.uSun.value.copy(c("#d9f6f8"));
+      u.uBedA.value.copy(c("#3a4a4c")); u.uBedB.value.copy(c("#5d5a4e")); u.uGap.value.copy(c("#1a2426"));
+      u.uCaustic.value.copy(c("#8fe3ea")); u.uReflect.value = 0.85;
+    } else {
+      u.uDeep.value.copy(accent); u.uShallow.value.copy(accent).lerp(c("#39c0b6"), 0.7);
+      u.uSky.value.copy(bg).lerp(accent, 0.36); u.uSun.value.copy(c("#ffffff")).multiplyScalar(0.5);
+      u.uBedA.value.copy(c("#9a927c")); u.uBedB.value.copy(c("#7a7466")); u.uGap.value.copy(c("#5b5649"));
+      u.uCaustic.value.copy(c("#f4fffd")); u.uReflect.value = 0.55;
+    }
+    u.uFog.value.copy(bg);
+    world.fog = new THREE.Fog(bg, u.uFogNear.value, u.uFogFar.value);
+    renderer.setClearColor(bg);
+  }
+  applyPalette();
+
+  // The camera leans a little towards the pointer.
+  const look = new THREE.Vector3(0, -0.8, -2), lean = { x: 0, y: 0, tx: 0, ty: 0 };
+  addEventListener("pointermove", (e) => {
+    lean.tx = (e.clientX / innerWidth - 0.5) * 1.6;
+    lean.ty = (e.clientY / innerHeight - 0.5) * 0.6;
+  }, { passive: true });
+
+  let t = 8, last = performance.now(), running = false, visible = true;
+  function draw(dt) {
+    t += dt;
+    uniforms.uTime.value = t;
+    lean.x += (lean.tx - lean.x) * Math.min(1, dt * 2.5);
+    lean.y += (lean.ty - lean.y) * Math.min(1, dt * 2.5);
+    camera.position.set(lean.x, 4.6 - lean.y, 6.5);
+    camera.lookAt(look.x + lean.x * 0.4, look.y, look.z);
+    for (const leaf of leaves) {
+      const d = leaf.userData;
+      d.x += d.speed * dt; if (d.x > 18) d.x -= 36;
+      d.yaw += d.spin * dt;
+      const [h, dx, dz] = wavesAt(d.x, d.z, t);
+      leaf.position.set(d.x, h + 0.03, d.z);
+      tilt.setFromUnitVectors(up, normal.set(-dx, 1, -dz).normalize());
+      yaw.setFromAxisAngle(up, d.yaw);
+      leaf.quaternion.copy(tilt).multiply(yaw);
+    }
+    renderer.render(world, camera);
+    canvas.classList.add("ready");
+  }
+
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  function loop(now) {
+    if (!running) return;
+    draw(Math.min((now - last) / 1000, 0.05));
+    last = now;
+    requestAnimationFrame(loop);
+  }
+  function update() {
+    const go = visible && !document.hidden && !still.matches;
+    if (go && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+    if (!go) running = false;
+    if (still.matches) draw(0);  // one still frame instead of motion
+  }
+
+  new ResizeObserver(() => {
+    const w = host.clientWidth, h = host.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.fov = w / h < 1.4 ? 50 : 42;  // a taller view on phones
+    camera.updateProjectionMatrix();
+    if (!running) draw(0);
+  }).observe(host);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; update(); }).observe(host);
+  document.addEventListener("visibilitychange", update);
+  still.addEventListener("change", update);
+  dark.addEventListener("change", () => { applyPalette(); if (!running) draw(0); });
+  update();
+}
 </script>
 </body>
 </html>
