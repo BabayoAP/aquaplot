@@ -326,6 +326,12 @@ def _taxa(raw: str | None) -> list[bioindex.TaxonObservation]:
     return [bioindex.TaxonObservation(name=str(n), confidence=1.0, confirmed_by="citizen") for n in names if str(n).strip()]
 
 
+# The check page takes at most four photos (the reach and the tray, with room to spare). The
+# server holds the same line: every photo is its own model call, and a live reading is
+# charged per check, so without a cap one reading could buy any number of paid calls.
+MAX_PHOTOS = 4
+
+
 @app.post("/api/assess", tags=["assessment"])
 async def assess(
     request: Request,
@@ -347,6 +353,8 @@ async def assess(
     pressure score and a One Health read-out, because a citizen who filled the
     form by hand has done the real work either way.
     """
+    if len(photos) > MAX_PHOTOS:
+        raise HTTPException(status_code=422, detail=f"send at most {MAX_PHOTOS} photos with one check")
     citizen_answers = _readings(answers, "citizen")
     citizen_taxa = _taxa(taxa)
     if index and index not in bioindex.INDICES:

@@ -16,7 +16,7 @@ photo, a habitat answer, a species name or a description must be present.
 
 | Field | Type | Notes |
 |---|---|---|
-| `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each. Send the reach and the sample tray. |
+| `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each, and at most 4 per check. Send the reach and the sample tray. |
 | `description` | string | Free text from the observer. |
 | `lat`, `lon` | float | Used only if no photo carries EXIF GPS. EXIF wins, because it records where the *photo* was taken. |
 | `site_name` | string | What people call the spot. |
