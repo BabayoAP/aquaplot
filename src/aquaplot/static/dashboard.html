@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="/static/theme.js"></script>
+<script src="/static/guide.js"></script>
 <title>AquaPlot — stream health dashboard</title>
 <style>
   :root {
@@ -26,11 +27,11 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { background: var(--card); border-bottom: 1px solid var(--line); }
-  .bar { max-width: 1040px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .bar { max-width: 1500px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
   nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
-  .bar { position: relative; padding-right: 84px; }
-  .bar .theme-switch { position: absolute; top: 13px; right: 16px; }
+  .bar { position: relative; padding-right: 64px; }
+  .bar > .menu { position: absolute; top: 12px; right: 16px; }
   nav a { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
@@ -39,7 +40,7 @@
        mid-word was the only hint there was more, and the last ones could not be
        reached at all by anyone who did not think to swipe a row of buttons. */
     .bar { padding-right: 16px; }
-    .bar .theme-switch { top: 10px; }
+    .bar > .menu { top: 8px; }
     nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
     nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
@@ -88,7 +89,19 @@
 <body>
 <header><div class="bar">
   <a class="brand" href="/about">AquaPlot<span>.</span></a>
-  <nav><a href="/">Check a stream</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/api/export.csv">CSV</a><a href="/docs">API</a><a href="/about">About</a><a href="/developers">Developers</a></nav><span data-theme-switch></span>
+  <nav><a href="/">Check a stream</a><a href="/dashboard" aria-current="page">Dashboard</a><a href="/map">Map</a></nav>
+  <details class="menu">
+    <summary aria-label="More" title="More"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></summary>
+    <div class="menu-panel">
+      <a href="/field-guide">How to sample</a>
+      <a href="#" data-open-guide>ID guide</a>
+      <a href="/api/export.csv">Download CSV</a>
+      <a href="/docs">API reference</a>
+      <a href="/developers">Developers</a>
+      <a href="/about">About</a>
+      <label class="menu-theme">Dark mode <span data-theme-switch></span></label>
+    </div>
+  </details>
 </div></header>
 <main>
   <h1>Stream health dashboard</h1>

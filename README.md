@@ -225,7 +225,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 298 tests, no network, no model
+.venv/bin/python -m pytest                       # 305 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -316,7 +316,8 @@ readings. The page can ask Anthropic whether the key works, which costs nothing.
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
 | `src/aquaplot/static/developers.html` | The Developers page, at `/developers`: saves a Claude API key in this browser so its checks get a live reading, and checks the key with Anthropic. |
-| `src/aquaplot/static/theme.js` | The light/dark switch shared by every page: applies a saved choice before first paint, draws the switch, and announces changes to pages that colour things in script. |
+| `src/aquaplot/static/theme.js` | The light/dark switch and the header's ⋮ menu, shared by every page: applies a saved choice before first paint, draws the switch, announces changes to pages that colour things in script, and styles the menu and closes it on a click elsewhere or Escape. Each page's header has Check a stream, Dashboard and Map in the bar; How to sample, CSV, the API reference, Developers, About and the switch are in the menu (`tests/test_header.py` keeps the copies the same). |
+| `src/aquaplot/static/guide.js` | The ID guide and the photo viewer, shared by every page: "ID guide" in the ⋮ menu opens it over whatever page you are on, and the check page's animal picker enlarges its photos in the same viewer and lists the same families. Cached with the shell by `sw.js`, so it works offline on the check page. |
 | `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
 | `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites and the OneAquaHealth research sites over iNaturalist layers. No build step. |
 | `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |
@@ -345,7 +346,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 230 of the 298 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 237 of the 305 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at

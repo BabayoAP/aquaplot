@@ -78,5 +78,6 @@ def test_the_enlarged_photo_keeps_the_whole_frame_instead_of_cropping_it():
 
 def test_a_photo_opens_large_without_picking_the_animal(client):
     page = client.get("/").text
-    assert '<dialog id="photoview"' in page
-    assert 'z.className = "zoom"' in page and "openPhoto(photo, label, look)" in page  # its own button
+    assert 'z.className = "zoom"' in page and "aquaplotGuide.openPhoto(photo, label, look)" in page  # its own button
+    viewer = client.get("/static/guide.js").text  # the viewer every page shares
+    assert '"dialog", "idg-photo"' in viewer and "showModal()" in viewer
