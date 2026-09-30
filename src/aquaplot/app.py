@@ -179,6 +179,10 @@ app.state.assessor = StreamAssessor(
 # replace the client factory with a fake, so they never reach Anthropic.
 app.state.claude_client = claude_client
 app.state.claude_model = os.environ.get("CLAUDE_MODEL", "claude-opus-5")
+# The key check answers "does Anthropic accept this key?" for free, which would make the
+# server an anonymous key tester for anyone holding a list of leaked keys. A tester needs a
+# handful of tries, not hundreds.
+app.state.key_check_limiter = RateLimiter(limit=10)
 
 
 @app.get("/api/health", tags=["meta"])
@@ -301,6 +305,13 @@ def _reading_with(observer) -> StreamAssessor:
     return assessor
 
 
+async def _close(client) -> None:
+    """Release a per-request Anthropic client's connection pool, which nothing else will reuse."""
+    close = getattr(client, "close", None)
+    if close is not None:
+        await close()
+
+
 def own_claude_key(request: Request) -> str | None:
     """A Claude API key this browser saved on the Developers page, if it sent one.
 
@@ -321,9 +332,17 @@ async def check_claude_key(request: Request) -> dict[str, Any]:
     key = own_claude_key(request)
     if key is None:
         raise HTTPException(status_code=422, detail="send the key in the X-AquaPlot-Claude-Key header")
+    wait = app.state.key_check_limiter.retry_after(client_key(request))
+    if wait > 0:
+        raise HTTPException(
+            status_code=429,
+            detail=f"too many key checks from this address; try again in {max(1, round(wait / 60))} min",
+            headers={"Retry-After": str(int(wait) + 1)},
+        )
     model = app.state.claude_model
+    client = app.state.claude_client(key)
     try:
-        await app.state.claude_client(key).models.retrieve(model)
+        await client.models.retrieve(model)
     except anthropic.AuthenticationError:
         reason = "Anthropic did not accept this key. Check it was copied whole, and that it has not been revoked."
     except anthropic.PermissionDeniedError:
@@ -336,6 +355,8 @@ async def check_claude_key(request: Request) -> dict[str, Any]:
         reason = "This server could not reach Anthropic. Try again in a minute."
     else:
         return {"ok": True, "model": model}
+    finally:
+        await _close(client)
     return {"ok": False, "model": model, "reason": reason}
 
 
@@ -438,26 +459,31 @@ async def assess(
     # left. Past the limit the check still runs, without the model, and says why.
     assessor = app.state.assessor
     own_key = own_claude_key(request)
-    if own_key:
-        assessor = _reading_with(ClaudeObserver(client=app.state.claude_client(own_key), model=app.state.claude_model))
+    own_client = app.state.claude_client(own_key) if own_key else None
+    if own_client is not None:
+        assessor = _reading_with(ClaudeObserver(client=own_client, model=app.state.claude_model))
     elif allowance.is_paid(assessor.observer) and any(_reads_live(assessor.observer, image) for image in decoded):
         granted, counts = claim_live_reading(request)
         if not granted:
             assessor = _reading_with(WithheldObserver(allowance.status(counts, app.state.live_limits)["reason"]))
 
-    result = await _upstream(
-        assessor.assess(
-            Submission(
-                photos=tuple(decoded),
-                description=(description or "").strip(),
-                region=resolve_region(gps, lat, lon),
-                answers=tuple(citizen_answers),
-                taxa=tuple(citizen_taxa),
-                site_name=(site_name or "").strip() or None,
-                index=index or None,
+    try:
+        result = await _upstream(
+            assessor.assess(
+                Submission(
+                    photos=tuple(decoded),
+                    description=(description or "").strip(),
+                    region=resolve_region(gps, lat, lon),
+                    answers=tuple(citizen_answers),
+                    taxa=tuple(citizen_taxa),
+                    site_name=(site_name or "").strip() or None,
+                    index=index or None,
+                )
             )
         )
-    )
+    finally:
+        if own_client is not None:
+            await _close(own_client)
     app.state.store.save(result, contributor_of(request))
     return result.as_dict()
 

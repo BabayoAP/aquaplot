@@ -139,7 +139,9 @@ async function checkKey() {
 $("keyform").addEventListener("submit", (event) => {
   event.preventDefault();
   const key = $("key").value.trim();
-  if (!/^sk-ant-\S{20,}$/.test(key)) return say("That doesn't look like a Claude API key. They start with sk-ant-.", false);
+  // Only the characters real keys use: a stray curly quote or ellipsis from a copied snippet
+  // can't be sent in a header at all, and would make every check from this browser fail.
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(key)) return say("That doesn't look like a Claude API key. They start with sk-ant- and contain only letters, digits, - and _.", false);
   try { localStorage.setItem(STORE, key); } catch (e) { return say("This browser won't let AquaPlot save the key.", false); }
   $("key").value = "";
   describe();

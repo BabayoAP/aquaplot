@@ -396,7 +396,13 @@ const api = (path, opts = {}) => fetch(path, { ...opts, headers: { "X-AquaPlot-C
 
 // A Claude key saved on the Developers page. It goes only with this browser's own checks,
 // read at the moment each one is sent, so the outbox never stores it.
-function claudeKey() { try { return localStorage.getItem("aquaplot-claude-key") || ""; } catch (e) { return ""; } }
+// A value a header cannot carry is ignored rather than sent: fetch would throw, and the
+// outbox would take that for no signal and hold every check forever.
+function claudeKey() {
+  let key = "";
+  try { key = localStorage.getItem("aquaplot-claude-key") || ""; } catch (e) {}
+  return /^[\x21-\x7e]+$/.test(key) ? key : "";
+}
 const keyHeader = () => (claudeKey() ? { "X-AquaPlot-Claude-Key": claudeKey() } : {});
 
 function who() {

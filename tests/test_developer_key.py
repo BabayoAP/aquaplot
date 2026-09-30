@@ -33,6 +33,7 @@ class FakeClaude:
         self.key = key
         self.error = error
         self.calls: list[object] = []
+        self.closed = False
         self.messages = SimpleNamespace(parse=self._parse)
         self.models = SimpleNamespace(retrieve=self._retrieve)
 
@@ -41,6 +42,9 @@ class FakeClaude:
         if self.error:
             raise self.error
         return SimpleNamespace(stop_reason="end_turn", parsed_output=SCENE)
+
+    async def close(self):
+        self.closed = True
 
     async def _retrieve(self, model):
         self.calls.append(model)
@@ -72,6 +76,7 @@ def clients():
 def no_model(client, clients):
     """A server with no vision model of its own, like the public demo without a key."""
     app.state.limiter = RateLimiter()
+    app.state.key_check_limiter = RateLimiter(limit=10)
     app.state.store = Store(":memory:")
     app.state.assessor = StreamAssessor(observer=SampleReplay(NullObserver()))
     return client, clients
@@ -173,6 +178,25 @@ def test_a_key_that_will_not_work_is_explained_in_plain_words(no_model, status, 
     body = res.json()
     assert body["ok"] is False and says in body["reason"]
     assert KEY not in res.text
+
+
+def test_each_client_built_for_a_key_is_closed_when_its_request_ends(no_model):
+    client, clients = no_model
+    check(client, headers=HEADERS)
+    client.post("/api/claude-key/check", headers=HEADERS)
+    clients.error = rejected(401, anthropic.AuthenticationError)
+    check(client, shade=20, headers=HEADERS)
+    client.post("/api/claude-key/check", headers=HEADERS)
+    assert len(clients) == 4 and all(c.closed for c in clients)
+
+
+def test_the_server_is_not_a_free_tester_for_other_peoples_keys(no_model):
+    client, clients = no_model
+    for n in range(10):
+        assert client.post("/api/claude-key/check", headers={"X-AquaPlot-Claude-Key": f"{KEY}{n}"}).status_code == 200
+    res = client.post("/api/claude-key/check", headers=HEADERS)
+    assert res.status_code == 429 and "Retry-After" in res.headers
+    assert len(clients) == 10  # the eleventh never reached Anthropic
 
 
 def test_checking_a_key_needs_a_key(no_model):
