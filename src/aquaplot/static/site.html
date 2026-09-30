@@ -21,7 +21,7 @@
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { background: var(--card); border-bottom: 1px solid var(--line); }
   .bar { max-width: 860px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .brand { font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
+  .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
   nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
   nav a { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
           padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
@@ -79,7 +79,7 @@
 </head>
 <body>
 <header><div class="bar">
-  <div class="brand">AquaPlot<span>.</span></div>
+  <a class="brand" href="/about">AquaPlot<span>.</span></a>
   <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/about">About</a></nav>
 </div></header>
 <main>
