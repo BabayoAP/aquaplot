@@ -3,18 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/static/theme.js"></script>
 <title>AquaPlot — stream map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
 <style>
   :root {
+    color-scheme: light;
     --bg: #f6f7f4; --card: #ffffff; --ink: #1d221c; --muted: #66705f; --line: #dfe3da;
     --accent: #2f6b3a; --introduced: #d64545; --listed: #8b1a1a; --native: #2f9e5b; --threatened: #e0a020; --loss: #b04ad6;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #14171a; --card: #1e2226; --ink: #e8ebe6; --muted: #98a193; --line: #2d3338; --accent: #6fbf7c; }
+    :root:not([data-theme="light"]) { --bg: #14171a; --card: #1e2226; --ink: #e8ebe6; --muted: #98a193; --line: #2d3338; --accent: #6fbf7c; color-scheme: dark; }
   }
+  :root[data-theme="dark"] { --bg: #14171a; --card: #1e2226; --ink: #e8ebe6; --muted: #98a193; --line: #2d3338; --accent: #6fbf7c; color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body { background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; }
@@ -66,6 +69,9 @@
   .back:hover, .navbtn:hover { color: var(--accent); }
   .navbtn:hover { border-color: var(--accent); }
   .navrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .theme-switch.floating, .theme-switch.floating[aria-checked="true"] { position: fixed; top: 10px; right: 352px; z-index: 1000;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.3); }
+  .theme-switch.floating:not([aria-checked="true"]) { background: #c9d0d5; }
   .toggle { display: none; position: fixed; right: 12px; bottom: 12px; z-index: 1002; background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   .toggle.open { bottom: calc(62vh + 12px); }
   @media (max-width: 760px) {
@@ -74,12 +80,14 @@
             border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; transform: translateY(100%); transition: transform .2s; z-index: 1001; }
     aside.open { transform: none; }
     .toggle { display: block; }
+    .theme-switch.floating, .theme-switch.floating[aria-checked="true"] { right: 12px; }
   }
 </style>
 </head>
 <body>
 <div id="map" role="application" aria-label="Satellite map of species sightings"></div>
 <a class="back" id="back" href="/">← Back to AquaPlot</a>
+<span data-theme-switch class="floating"></span>
 <button class="toggle" id="toggle">Layers</button>
 <aside id="panel">
   <div>

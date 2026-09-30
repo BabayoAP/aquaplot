@@ -291,6 +291,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
+| `src/aquaplot/static/theme.js` | The light/dark switch shared by every page: applies a saved choice before first paint, draws the switch, and announces changes to pages that colour things in script. |
 | `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
 | `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites and the OneAquaHealth research sites over iNaturalist layers. No build step. |
 | `src/aquaplot/{identify,pipeline,schema,inputs,area,inat}.py` | Inherited from SpeciesGuard; see lineage below. |

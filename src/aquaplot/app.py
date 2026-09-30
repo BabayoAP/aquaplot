@@ -851,15 +851,30 @@ def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "check.html")
 
 
-DOCS_HEAD = """<style>
-  .ap-bar { max-width: 1460px; margin: 0 auto; padding: 16px 20px 0; box-sizing: border-box;
-            font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; }
-  .ap-back { display: inline-block; background: #fff; color: #14202a; text-decoration: none; font-weight: 600;
-             padding: 7px 12px; border-radius: 8px; border: 1px solid #dde5e9; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
-  .ap-back:hover { color: #0f6b7a; border-color: #0f6b7a; }
+# Swagger UI has no dark theme, so dark mode shows it inverted, with images turned back.
+def _docs_dark(scope: str) -> str:
+    return f"""
+  {scope} {{ --accent: #56b6c2; color-scheme: dark; }}
+  {scope} body {{ background: #1f1f1f; }}
+  {scope} #swagger-ui {{ filter: invert(88%) hue-rotate(180deg); }}
+  {scope} #swagger-ui img {{ filter: invert(100%) hue-rotate(180deg); }}
+  {scope} .ap-back {{ background: #182126; color: #e6edf1; border-color: #26333a; }}"""
+
+
+DOCS_HEAD = f"""<script src="/static/theme.js"></script>
+<style>
+  :root {{ --accent: #0f6b7a; }}
+  .ap-bar {{ max-width: 1460px; margin: 0 auto; padding: 16px 20px 0; box-sizing: border-box; display: flex;
+            align-items: center; justify-content: space-between; gap: 12px;
+            font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; }}
+  .ap-back {{ background: #fff; color: #14202a; text-decoration: none; font-weight: 600; padding: 7px 12px;
+             border-radius: 8px; border: 1px solid #dde5e9; box-shadow: 0 1px 4px rgba(0,0,0,.15); }}
+  .ap-back:hover {{ color: var(--accent); border-color: var(--accent); }}
+  @media (prefers-color-scheme: dark) {{{_docs_dark(':root:not([data-theme="light"])')}
+  }}{_docs_dark(':root[data-theme="dark"]')}
 </style>
 """
-DOCS_BAR = """<div class="ap-bar"><a class="ap-back" id="ap-back" href="/about">← Back to AquaPlot</a></div>
+DOCS_BAR = """<div class="ap-bar"><a class="ap-back" id="ap-back" href="/about">← Back to AquaPlot</a><span data-theme-switch></span></div>
 <script>
   // Back to wherever in AquaPlot the reference was opened from; the about page otherwise.
   try {
@@ -872,7 +887,7 @@ DOCS_BAR = """<div class="ap-bar"><a class="ap-back" id="ap-back" href="/about">
 
 @app.get("/docs", include_in_schema=False)
 def api_docs() -> HTMLResponse:
-    """The interactive API reference: FastAPI's Swagger UI, with a way back to the app."""
+    """The interactive API reference: FastAPI's Swagger UI, with a way back to the app and the light/dark switch."""
     page = get_swagger_ui_html(openapi_url=app.openapi_url, title=f"{app.title} - Swagger UI").body.decode()
     page = page.replace("</head>", DOCS_HEAD + "</head>", 1).replace("<body>", "<body>\n" + DOCS_BAR, 1)
     return HTMLResponse(page)
