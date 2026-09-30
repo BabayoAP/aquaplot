@@ -9,7 +9,7 @@ import pytest
 from PIL import Image
 
 from aquaplot import allowance
-from aquaplot.app import RateLimiter, app
+from aquaplot.app import MAX_PHOTOS, RateLimiter, app
 from aquaplot.assess import StreamAssessor
 from aquaplot.observe import SampleReplay, StreamObservation
 from aquaplot.store import Store
@@ -149,3 +149,39 @@ def test_limits_are_read_from_the_environment():
 def test_the_check_page_says_how_many_readings_are_left(client):
     page = client.get("/").text
     assert 'api("/api/live-readings")' in page and "showLiveReadings();" in page
+
+
+def test_one_reading_cannot_send_more_photos_than_the_check_page_allows(paid):
+    """A reading is charged per check, and every photo in a check is a separate model call."""
+    client, fake = paid
+    files = [("photos", (f"p{i}.jpg", photo(i), "image/jpeg")) for i in range(MAX_PHOTOS + 1)]
+    res = client.post("/api/assess", files=files, data={"taxa": json.dumps(["Gammaridae"])},
+                      headers={"X-AquaPlot-Contributor": "tester-a"})
+    assert res.status_code == 422 and fake.calls == 0
+    assert client.get("/api/live-readings", headers={"X-AquaPlot-Contributor": "tester-a"}).json()["used"] == 0
+    res = client.post("/api/assess", files=files[:MAX_PHOTOS], data={"taxa": json.dumps(["Gammaridae"])},
+                      headers={"X-AquaPlot-Contributor": "tester-a"})
+    assert res.status_code == 200 and fake.calls == MAX_PHOTOS
+
+
+def test_the_paid_species_classifier_draws_on_the_same_readings(paid):
+    from aquaplot.pipeline import Pipeline
+    from test_pipeline import FakeIdentifier
+
+    client, _ = paid
+
+    class PaidIdentifier(FakeIdentifier):
+        name = "claude"
+
+    ident = PaidIdentifier()
+    saved = app.state.pipeline
+    app.state.pipeline = Pipeline(identifier=ident, status=None)
+    try:
+        post = lambda: client.post("/api/classify", data={"description": "a green frog"},  # noqa: E731
+                                   headers={"X-AquaPlot-Contributor": "tester-a"})
+        assert post().status_code == 200 and post().status_code == 200
+        refused = post()
+        assert refused.status_code == 429 and "still works by hand" in refused.json()["detail"]
+        assert len(ident.calls) == 2  # the refused request never reached the model
+    finally:
+        app.state.pipeline = saved
