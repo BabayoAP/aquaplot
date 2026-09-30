@@ -16,7 +16,7 @@ photo, a habitat answer, a species name or a description must be present.
 
 | Field | Type | Notes |
 |---|---|---|
-| `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each. Send the reach and the sample tray. |
+| `photos` | file, repeatable | JPEG, PNG or HEIC, up to 25 MB each, and at most 4 per check. Send the reach and the sample tray. |
 | `description` | string | Free text from the observer. |
 | `lat`, `lon` | float | Used only if no photo carries EXIF GPS. EXIF wins, because it records where the *photo* was taken. |
 | `site_name` | string | What people call the spot. |
@@ -144,6 +144,7 @@ anyone else can build against the same vocabulary.
 | `GET /api/samples` | The sample check: two openly licensed photos (URLs, credits, licences), where the sample is placed, and who recorded the model's reading of them. Posting these photos to `/api/assess` replays the recording instead of calling a model. |
 | `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
 | `GET /api/oah/sites` | The OneAquaHealth project's 106 research sites (code, name, city, coordinates), from a snapshot of its public API, and the radius within which a check is linked to one. |
+| `GET /api/live-readings` | How many live photo readings this tester has left when the paid model is on: `limited`, `per_tester`, `used`, `left` and, at zero, the `reason`. `{"limited": false}` otherwise. See `allowance.py`. |
 | `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |
 
 ## Inherited from SpeciesGuard
@@ -165,7 +166,7 @@ Still supported; see [CLASSIFIER.md](CLASSIFIER.md) and [AREA-VIEWER.md](AREA-VI
 | 400 | An image could not be decoded. |
 | 404 | No assessment or site with that id. |
 | 422 | A field is outside the accepted vocabulary; the message names it. |
-| 429 | Rate limited; `Retry-After` is set. |
+| 429 | Rate limited; `Retry-After` is set. Also from `/api/classify` once the tester's live readings are used up. (`/api/assess` never refuses for that: past the limit it runs without the model and says why.) |
 | 502 | An upstream source (iNaturalist) failed in a place the request could not degrade around. |
 
 Assessment endpoints keep working when something is missing: a model outage, an

@@ -26,3 +26,15 @@ services:
       # Assessments per client address per 10 minutes; protects the key.
       - key: AQUAPLOT_CLASSIFY_LIMIT
         value: "20"
+      # Live Claude photo readings for a public test (src/aquaplot/allowance.py): each tester
+      # (browser), each network per day, and the whole server per day. 0 turns one off. Past a
+      # limit the check still runs by hand. On the free plan the database starts empty after a
+      # restart, and a free instance restarts whenever it wakes from idling, so these counts reset
+      # with it: set a spending limit on the key in the Anthropic console as well, which is the one
+      # nothing can get round.
+      - key: AQUAPLOT_LIVE_PER_TESTER
+        value: "2"
+      - key: AQUAPLOT_LIVE_PER_NETWORK
+        value: "10"
+      - key: AQUAPLOT_LIVE_PER_DAY
+        value: "40"

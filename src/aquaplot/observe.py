@@ -157,6 +157,20 @@ class NullObserver:
         return StreamObservation(photo_kind="stream_scene", reasoning="no vision model configured; the form was filled in by hand")
 
 
+class WithheldObserver(NullObserver):
+    """A model is configured, but this check may not use it: the demo's live readings are spent.
+
+    Behaves like no model at all, and says why, so the result explains itself instead of
+    reading as though the server simply had no model.
+    """
+
+    def __init__(self, reason: str):
+        self.reason = reason
+
+    async def observe(self, image, description, region) -> StreamObservation:
+        return StreamObservation(photo_kind="stream_scene", reasoning=f"Nothing read this photo: {self.reason}.")
+
+
 class ClaudeObserver:
     name = "claude"
 
@@ -346,6 +360,11 @@ class SampleReplay:
     @property
     def name(self) -> str:
         return self.live.name
+
+    @property
+    def reason(self) -> str | None:
+        """Why the live observer is not reading photos, when it is a WithheldObserver."""
+        return getattr(self.live, "reason", None)
 
     @property
     def model(self) -> str | None:
