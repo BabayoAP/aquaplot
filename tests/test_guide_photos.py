@@ -25,9 +25,10 @@ def test_every_family_in_the_picker_has_a_photo_the_app_serves_itself(client):
     families = client.get("/api/guide").json()["families"]
     assert len(families) == len(CATALOGUE) and all(f["photo"] for f in families)
     for f in families:
-        assert f["photo"]["url"].startswith("/static/guide/")  # never hot-linked from iNaturalist
-        res = client.get(f["photo"]["url"])
-        assert res.status_code == 200 and res.headers["content-type"] == "image/webp"
+        for key in ("url", "large_url"):  # the picker's square, and the whole frame for the enlarged view
+            assert f["photo"][key].startswith("/static/guide/")  # never hot-linked from iNaturalist
+            res = client.get(f["photo"][key])
+            assert res.status_code == 200 and res.headers["content-type"] == "image/webp"
 
 
 def test_every_photo_names_its_photographer_its_licence_and_its_observation(client):
@@ -66,3 +67,16 @@ def test_photos_are_cut_to_a_small_square_webp():
     Image.new("RGB", (640, 360), (40, 110, 120)).save(buf, "JPEG")
     out = Image.open(io.BytesIO(_fetcher().thumbnail(buf.getvalue())))
     assert out.format == "WEBP" and out.size == (200, 200)
+
+
+def test_the_enlarged_photo_keeps_the_whole_frame_instead_of_cropping_it():
+    buf = io.BytesIO()
+    Image.new("RGB", (1024, 683), (40, 110, 120)).save(buf, "JPEG")
+    out = Image.open(io.BytesIO(_fetcher().enlarged(buf.getvalue())))
+    assert out.format == "WEBP" and out.size == (800, 534)
+
+
+def test_a_photo_opens_large_without_picking_the_animal(client):
+    page = client.get("/").text
+    assert '<dialog id="photoview"' in page
+    assert 'z.className = "zoom"' in page and "openPhoto(photo, label, look)" in page  # its own button
