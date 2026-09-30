@@ -62,6 +62,12 @@ tray who has never heard of the order: shapes, counts of tails, what the case is
 made of. If a vision model or a citizen is likely to type a genus or a vernacular
 name, add it to `ALIASES` in `bioindex.py` in lower case.
 
+Then give it a reference photo: `.venv/bin/python scripts/fetch_guide_photos.py --families <Family>`.
+Look at the result in `static/guide/`. It must show the stage found in a tray (a nymph or larva for
+mayflies, stoneflies, caddisflies, dragonflies and flies), and the whole animal. If it doesn't, run it
+again with `--skip <observation id>` to take the next photo. If you change the photo set, bump
+`PHOTOS` in `static/sw.js` so phones fetch the new ones.
+
 ### A habitat indicator
 
 `src/aquaplot/data/habitat_indicators.json`, **and nowhere else**. That one file
