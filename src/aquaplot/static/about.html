@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="/static/theme.js"></script>
 <script src="/static/guide.js"></script>
+<script>document.documentElement.classList.add("js");</script>
 <title>AquaPlot in two minutes</title>
 <meta name="description" content="Volunteers identify what lives in their stream, and an AI checks their answers without seeing them. Published indices and readable rules turn that into a health reading for the water, people and animals.">
 <link rel="icon" href="/icon.svg">
@@ -28,7 +29,9 @@
   :root[data-theme="dark"] { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
             --accent: #56b6c2; --soft: #1e2b31; --warn: #e3925f; color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+         overflow-x: clip; }
   header { background: var(--card); border-bottom: 1px solid var(--line); }
   .bar { max-width: 1500px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
@@ -47,56 +50,132 @@
     nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
     nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
   }
-  main { max-width: 880px; margin: 0 auto; padding: 0 16px 70px; }
+  /* On this page the header floats over the stream, and gains its background once the hero is behind
+     you. The small logo waits until then too: the big one is in the middle of the screen. */
+  .js header { position: fixed; inset: 0 0 auto 0; z-index: 20; background: transparent; border-bottom-color: transparent;
+               transition: background-color .5s ease, border-color .5s ease; }
+  .js header.scrolled { background: color-mix(in srgb, var(--card) 80%, transparent); border-bottom-color: var(--line);
+                        -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3); }
+  .js header .brand { transition: opacity .5s ease, visibility 0s linear .5s; }
+  .js header:not(.scrolled) .brand { opacity: 0; visibility: hidden; }
+  .js header.scrolled .brand { transition: opacity .5s ease, visibility 0s; }
+  /* On a phone the nav wraps under the logo. While the logo is hidden its row closes up, so the nav sits
+     at the top; it slides back down as the logo fades in. */
+  @media (max-width: 560px) {
+    .js header .bar { transition: padding .5s ease, row-gap .5s ease; }
+    .js header .brand { height: 27px; transition: opacity .5s ease, height .5s ease, visibility 0s linear .5s; }
+    .js header.scrolled .brand { transition: opacity .5s ease, height .5s ease, visibility 0s; }
+    .js header:not(.scrolled) .bar { padding-top: 9px; row-gap: 0; }  /* level with the menu button */
+    .js header:not(.scrolled) .brand { height: 0; }
+    .js header:not(.scrolled) nav { padding-right: 48px; }  /* clear of the menu button, which stays in the top row */
+  }
   a { color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---- the stream: a canvas fixed behind the whole page, and a gradient if it cannot draw */
+  .backdrop { position: fixed; inset: 0 0 auto 0; height: 100lvh; z-index: 0; pointer-events: none;
+              background: radial-gradient(120% 80% at 50% 62%, color-mix(in srgb, var(--accent) 28%, var(--bg)) 0%, var(--bg) 75%); }
+  .backdrop canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.4s ease; }
+  .backdrop canvas.ready { opacity: 1; }
+
+  /* ---- the first screen: the logo over the water */
+  .hero { position: relative; z-index: 1; min-height: 100svh; display: grid; place-items: center; text-align: center;
+          padding: 110px 20px 90px; }
+  .hero-inner { --p: var(--hero-p, 0); opacity: calc(1 - var(--p) * 1.6);
+                transform: translate3d(0, calc(var(--p) * -90px), 0) scale(calc(1 - var(--p) * .07));
+                filter: blur(calc(var(--p) * 10px)); }
+  .wordmark { margin: 0; font-size: clamp(64px, 15vw, 168px); font-weight: 800; letter-spacing: -.045em; line-height: .95;
+              color: var(--ink); text-shadow: 0 2px 44px color-mix(in srgb, var(--bg) 85%, transparent),
+                                              0 0 14px color-mix(in srgb, var(--bg) 55%, transparent); }
+  .wordmark span { color: var(--accent); }
   .kicker { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin: 0; }
-  h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 6px 0 12px; letter-spacing: -.02em; }
-  h2 { font-size: 20px; margin: 40px 0 10px; }
-  p.lede { font-size: 18px; color: var(--muted); max-width: 64ch; margin: 0; }
-  .problem { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--warn);
-             border-radius: 12px; padding: 16px 18px; margin-top: 22px; }
-  .problem p { margin: 0 0 8px; } .problem p:last-child { margin: 0; }
+  .hero .kicker { margin: 20px auto 0; max-width: 40ch; font-size: clamp(12px, 1.3vw, 15px); letter-spacing: .14em; line-height: 1.7;
+                  color: color-mix(in srgb, var(--ink) 88%, var(--accent));
+                  text-shadow: 0 0 18px var(--bg), 0 0 5px var(--bg); }
+  .js .wordmark, .js .hero .kicker { animation: rise 1.6s cubic-bezier(.16, .84, .26, 1) .15s both; }
+  .js .hero .kicker { animation-delay: .55s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(26px); filter: blur(12px); } }
+  .cue { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); color: var(--ink); text-decoration: none;
+         font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+         opacity: calc(.75 - var(--hero-p, 0) * 4); text-shadow: 0 0 12px var(--bg); }
+  .cue::after { content: ""; display: block; width: 1px; height: 40px; margin: 8px auto 0; transform-origin: top;
+                background: linear-gradient(var(--ink), transparent); animation: drip 2.4s ease-in-out infinite; }
+  @keyframes drip { 0% { transform: scaleY(0); opacity: 0; } 30% { opacity: 1; } 65% { transform: scaleY(1); }
+                    100% { transform: translateY(14px) scaleY(1); opacity: 0; } }
+
+  /* ---- everything else: related text in pairs, one either side of the stream, straight on the page.
+     Each row leaves a channel between its two columns (.ch); the scene measures the channels and draws
+     the river down them, bending from one to the next, so the stream weaves round the text. Rows shift
+     left and right a little (--shift), which is what makes it wind; the shifts stay small because the
+     river keeps one width all the way down, and that width has to fit beside every row. */
+  :root { --ch: clamp(260px, 30vw, 460px); --ch-n: clamp(76px, 22vw, 210px); }
+  main.flow { position: relative; z-index: 1; display: grid; row-gap: 56px; max-width: 1360px; margin: 0 auto;
+              padding: 14vh 28px 80px; }
+  #intro { scroll-margin-top: 90px; }
+  .row { display: grid; align-items: start;
+         grid-template-columns: minmax(0, calc(50% - var(--ch) / 2 + var(--shift, 0px))) var(--ch) minmax(0, 1fr); }
+  .row > .a { grid-column: 1; grid-row: 1; padding-right: 6px; }
+  .row > .ch { grid-column: 2; grid-row: 1; align-self: stretch; }
+  .row > .b { grid-column: 3; grid-row: 1; padding-left: 6px; }
+  .row > .b.under { padding-top: 42px; }  /* level with the first line under the heading across the stream */
+  .flow h2 { font-size: 22px; line-height: 1.25; margin: 0 0 10px; letter-spacing: -.01em; }
+  .flow h2.statement { font-size: clamp(28px, 2.6vw, 40px); line-height: 1.15; letter-spacing: -.02em; margin: 0 0 14px; }
+  .flow h3 { font-size: 16px; margin: 20px 0 4px; }
+  .flow h2 + h3, .col > h3:first-child { margin-top: 0; }
+  .flow ul { margin: 4px 0 0; padding-left: 18px; }
+  .flow li { margin: 3px 0; }
+  p.lede { font-size: 18px; color: var(--muted); max-width: 60ch; margin: 0; }
+  .row > .problem { border-left: 3px solid var(--warn); padding-left: 16px; }
+  .problem p { margin: 0 0 10px; } .problem p:last-child { margin: 0; }
   .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+  .col > .cta:first-child { margin-top: 0; }
   .btn { display: inline-block; text-decoration: none; border-radius: 10px; padding: 13px 20px; font-weight: 700; }
   .btn.primary { background: var(--accent); color: #fff; }
-  .btn.ghost { border: 1px solid var(--line); color: var(--accent); background: var(--card); }
+  .btn.ghost { border: 1px solid var(--line); color: var(--accent); background: transparent; }
   .cta small { color: var(--muted); }
-  ol.moment { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px;
-              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); counter-reset: m; }
-  ol.moment li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; counter-increment: m; }
-  ol.moment li::before { content: counter(m); display: inline-grid; place-items: center; width: 26px; height: 26px;
-                         border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 700; margin-bottom: 6px; }
-  ol.moment b { display: block; }
-  ol.moment span { color: var(--muted); font-size: 14px; }
-  .quote { font-style: italic; background: var(--soft); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
-  .grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-  .card h3 { margin: 0 0 6px; font-size: 16px; }
-  .card ul { margin: 6px 0 0; padding-left: 18px; }
-  .card li { margin: 3px 0; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
-  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-  .stat .n { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; counter-reset: m; }
+  .steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 12px; margin: 0; counter-increment: m; }
+  .steps li::before { content: counter(m); grid-row: 1 / span 2; width: 26px; height: 26px; border-radius: 50%; display: grid;
+                      place-items: center; background: var(--soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+  .steps b { display: block; }
+  .steps span { color: var(--muted); font-size: 14px; }
+  .quote { font-style: italic; border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 0 0 12px; }
+  .said p:last-child { margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+  .stat .n { font-size: 32px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
   .stat .l { color: var(--muted); font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line);
-          border-radius: 12px; overflow: hidden; font-size: 14px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; font-size: 13px; }
   tr:last-child td { border-bottom: 0; }
-  .foot { color: var(--muted); font-size: 13px; margin-top: 40px; }
-  /* The water scene: a canvas behind the heading that fades into the page at its bottom edge. */
-  :root { --scene-h: clamp(240px, 42vh, 420px); }
-  .hero { position: relative; }
-  .scene { position: absolute; inset: 0 0 auto 0; height: var(--scene-h); overflow: hidden;
-           background: radial-gradient(130% 110% at 50% 0%, color-mix(in srgb, var(--accent) 30%, var(--bg)) 0%, var(--bg) 80%); }
-  .scene canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
-  .scene canvas.ready { opacity: 1; }
-  .scene::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-                  background: linear-gradient(to bottom, var(--bg) 0%, transparent 16%, transparent 42%,
-                    color-mix(in srgb, var(--bg) 62%, transparent) 70%, var(--bg) 97%); }
-  .hero-text { position: relative; max-width: 880px; margin: 0 auto; padding: calc(var(--scene-h) - 104px) 16px 0; }
-  .hero-text .kicker, .hero-text h1 { text-shadow: 0 0 22px var(--bg), 0 0 6px var(--bg); }
-  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .foot { color: var(--muted); font-size: 13px; margin: 0; }
+
+  /* Each block drifts in, towards the stream, the first time it scrolls into view. */
+  .js .reveal { opacity: 0; transform: translate3d(var(--from, 0px), 32px, 0); filter: blur(6px);
+                transition: opacity 1.1s ease, transform 1.3s cubic-bezier(.16, .84, .26, 1), filter 1.1s ease;
+                transition-delay: var(--delay, 0s); }
+  .js .row > .a.reveal { --from: -24px; }
+  .js .row > .b.reveal { --from: 24px; --delay: .1s; }
+  .js .reveal.in { opacity: 1; transform: none; filter: none; }
+
+  /* Narrower windows: one column of text, and the stream as a creek down the right-hand edge, wider or
+     narrower from one group to the next (--shift-n) so it still winds. */
+  @media (max-width: 999px) {
+    main.flow { row-gap: 44px; padding: 12vh 0 64px 16px; }
+    .row { grid-template-columns: minmax(0, 1fr) calc(var(--ch-n) + var(--shift-n, 0px)); row-gap: 18px; }
+    .row > .a { grid-column: 1; grid-row: 1; padding-right: 4px; }
+    .row > .b { grid-column: 1; grid-row: 2; padding-left: 0; }
+    .row > .b.under { padding-top: 0; }
+    .row > .problem { padding-left: 14px; }
+    .row > .ch { grid-column: 2; grid-row: 1 / span 2; }
+    .js .row > .b.reveal { --from: -24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal { transform: none; filter: none; transition: opacity .6s ease; }
+    .js .wordmark, .js .hero .kicker, .cue::after { animation: none; }
+    .js header .bar, .js header .brand, .js header.scrolled .brand { transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -116,21 +195,33 @@
     </div>
   </details>
 </div></header>
-<section class="hero">
-  <div class="scene" id="scene" aria-hidden="true"><canvas id="water"></canvas></div>
-  <div class="hero-text">
+<div class="backdrop" id="scene" aria-hidden="true"><canvas id="water"></canvas></div>
+
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <h1 class="wordmark">AquaPlot<span>.</span></h1>
     <p class="kicker">IEEE OneAquaHealth Global Hackathon 2026 · Track 3, AI-Supported Assessment</p>
-    <h1>You name what lives in your stream. An AI checks your answer without seeing it.</h1>
-    <p class="lede">AquaPlot helps a volunteer at an urban stream work out how healthy the water is, and what that
+  </div>
+  <a class="cue" href="#intro">Scroll</a>
+</section>
+
+<main class="flow" id="intro">
+  <section class="row" style="--shift: -2.5vw">
+    <div class="col a reveal">
+      <h2 class="statement">You name what lives in your stream. An AI checks your answer without seeing it.</h2>
+      <p class="lede">AquaPlot helps a volunteer at an urban stream work out how healthy the water is, and what that
       means for the people and animals nearby. You identify the animals. An AI looks at the same photo without seeing
       your answers and asks about anything it sees differently. The score comes from published indices and rules
       anyone can read.</p>
-  </div>
-</section>
-<main>
-
-  <div class="problem" role="note">
-    <p><b>The problem.</b> The small animals living in a stream are the best sign of its health, but they are hard
+      <div class="cta">
+      <a class="btn primary" href="/try">Try it in 90 seconds</a>
+      <a class="btn ghost" href="/dashboard">See the dashboard</a>
+      <small>No account and no stream needed. Real photos are already loaded.</small>
+    </div>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b problem reveal" role="note">
+      <p><b>The problem.</b> The small animals living in a stream are the best sign of its health, but they are hard
       for a volunteer to name. To a beginner, a flat-headed mayfly and a stonefly look alike, and one wrong name can
       change a stream's reading. Track 3 says it plainly: <i>citizen observations can be inconsistent and
       error-prone.</i></p>
@@ -138,80 +229,105 @@
       the AI is wrong, and a machine's guess goes into a health record.</p>
     <p>A reading is also only useful if someone can act on it. OneAquaHealth's own Citizen Science App records the
       channel, banks and flow, but it doesn't ask what lives in the water.</p>
-  </div>
+    </div>
+  </section>
 
-  <div class="cta">
-    <a class="btn primary" href="/try">Try it in 90 seconds</a>
-    <a class="btn ghost" href="/dashboard">See the dashboard</a>
-    <small>No account and no stream needed. Real photos are already loaded.</small>
-  </div>
+  <section class="row" style="--shift: 3vw; --shift-n: 2vw">
+    <div class="col a reveal">
+      <h2>What you'll see when you try it</h2>
+      <ol class="steps">
+        <li><b>Two photos are already loaded.</b><span>One shows a stretch of stream, the other a tray with a single insect larva (a nymph). The check is placed at OneAquaHealth research site C3 in Coimbra.</span></li>
+        <li><b>You name the animal.</b><span>Search "two tails" and pick a stonefly. Your answer is the one that gets scored.</span></li>
+        <li><b>The AI asks you to look again.</b><span>It saw the tray but not your answer. Where it sees something different, it asks a question. It can't overrule you.</span></li>
+      </ol>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b under said reveal">
+      <p class="quote">"You marked some kind of stonefly. The model thinks this may be Mayfly (flat-headed). Which is it?"
+      <br>How to tell: "Count the tails and look at the sides of the body. Mayfly nymphs usually have three tails and
+      feathery or plate-like gills along the sides of the abdomen; stonefly nymphs have two tails and no gills on the abdomen."</p>
+    <p>You decide. The model never saw your answer, so when it agrees with you, that counts as a genuine second check.
+      If you switch to its answer, AquaPlot records that you adopted it, not that you both agreed. Questions whose
+      answer could change the stream's reading come first.</p>
+    </div>
+  </section>
 
-  <h2>What you'll see when you try it</h2>
-  <ol class="moment">
-    <li><b>Two photos are already loaded.</b><span>One shows a stretch of stream, the other a tray with a single insect larva (a nymph). The check is placed at OneAquaHealth research site C3 in Coimbra.</span></li>
-    <li><b>You name the animal.</b><span>Search "two tails" and pick a stonefly. Your answer is the one that gets scored.</span></li>
-    <li><b>The AI asks you to look again.</b><span>It saw the tray but not your answer. Where it sees something different, it asks a question. It can't overrule you.</span></li>
-  </ol>
-  <p class="quote">"You marked some kind of stonefly. The model thinks this may be Mayfly (flat-headed). Which is it?"
-    <br>How to tell: "Count the tails and look at the sides of the body. Mayfly nymphs usually have three tails and
-    feathery or plate-like gills along the sides of the abdomen; stonefly nymphs have two tails and no gills on the abdomen."</p>
-  <p>You decide. The model never saw your answer, so when it agrees with you, that counts as a genuine second check.
-    If you switch to its answer, AquaPlot records that you adopted it, not that you both agreed. Questions whose
-    answer could change the stream's reading come first.</p>
-
-  <h2>What you get at the end</h2>
-  <div class="grid2">
-    <div class="card"><h3>A health reading, with reasons</h3>
+  <section class="row" style="--shift: -3vw; --shift-n: -1vw">
+    <div class="col a reveal">
+      <h2>What you get at the end</h2>
+      <h3>A health reading, with reasons</h3>
       <ul><li>A screening band on the EU Water Framework Directive scale. It comes from a published index: BMWP, or its Iberian version, IBMWP, in Portugal and Spain. The coordinates decide which one applies.</li>
-        <li>Findings for the stream, for people and for animals. Each one names the rule behind it, the evidence and what to do next.</li>
-        <li>Health alerts are held back until a person confirms the observation they rest on.</li></ul></div>
-    <div class="card"><h3>Something you can send</h3>
+      <li>Findings for the stream, for people and for animals. Each one names the rule behind it, the evidence and what to do next.</li>
+      <li>Health alerts are held back until a person confirms the observation they rest on.</li></ul>
+      <h3>Something you can send</h3>
       <ul><li>A dated incident report for the water authority.</li>
-        <li>A FHIR R4 Bundle, the format health systems use, that conforms to the OneAquaHealth implementation guide (<code>hl7-eu/oah</code>). The HL7 validator reports 0 errors and 0 warnings.</li>
-        <li>A submission for the OneAquaHealth Citizen Science App, in that app's own answer codes.</li></ul></div>
-    <div class="card"><h3>Warnings about what's coming</h3>
+      <li>A FHIR R4 Bundle, the format health systems use, that conforms to the OneAquaHealth implementation guide (<code>hl7-eu/oah</code>). The HL7 validator reports 0 errors and 0 warnings.</li>
+      <li>A submission for the OneAquaHealth Citizen Science App, in that app's own answer codes.</li></ul>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b under reveal">
+      <h3>Warnings about what's coming</h3>
       <ul><li>The weather before and after a visit helps tell whether sewage came from a storm overflow or a misconnected drain.</li>
-        <li>The dashboard re-checks each site's latest reading against the 48-hour forecast. It flags heavy rain where sewage was seen, and heat on open, slow-moving water.</li></ul></div>
-    <div class="card"><h3>Made for use at the stream</h3>
+      <li>The dashboard re-checks each site's latest reading against the 48-hour forecast. It flags heavy rain where sewage was seen, and heat on open, slow-moving water.</li></ul>
+      <h3>Made for use at the stream</h3>
       <ul><li>Works without signal. The check is saved on the phone and sent once you're back in coverage.</li>
-        <li>You identify animals by their shape, in plain language. There's a printable field guide, and the app works with a keyboard or a screen reader.</li>
-        <li>Works without the AI too. You fill in the form yourself, and the reading is calculated the same way.</li></ul></div>
-  </div>
+      <li>You identify animals by their shape, in plain language. There's a printable field guide, and the app works with a keyboard or a screen reader.</li>
+      <li>Works without the AI too. You fill in the form yourself, and the reading is calculated the same way.</li></ul>
+    </div>
+  </section>
 
-  <h2>Live numbers from this server</h2>
-  <div class="stats" id="stats"><div class="stat"><div class="n">…</div><div class="l">loading</div></div></div>
-
-  <h2>What works and what doesn't yet</h2>
-  <div class="grid2">
-    <div class="card"><h3>Working now</h3>
+  <section class="row" style="--shift: 2.5vw; --shift-n: 1.5vw">
+    <div class="col a reveal">
+      <h2>What works and what doesn't yet</h2>
+      <h3>Working now</h3>
       <ul><li>The guided check, the AI's blind second opinion, reviewing its questions, and the result.</li>
-        <li>Both indices, fifteen One Health rules, the weather and the 48-hour outlook.</li>
-        <li>Reports, CSV, GeoJSON, FHIR and the OneAquaHealth app export.</li>
-        <li>Offline recording, trends for each site, and the dashboard. There are 305 automated tests, and none of them need the network.</li></ul></div>
-    <div class="card"><h3>Not proven yet</h3>
+      <li>Both indices, fifteen One Health rules, the weather and the 48-hour outlook.</li>
+      <li>Reports, CSV, GeoJSON, FHIR and the OneAquaHealth app export.</li>
+      <li>Offline recording, trends for each site, and the dashboard. There are 305 automated tests, and none of them need the network.</li></ul>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b under reveal">
+      <h3>Not proven yet</h3>
       <ul><li><b>Nobody has measured the second opinion on real trays yet.</b> The setup for measuring it is built (<a href="https://github.com/BabayoAP/aquaplot/blob/main/docs/EVALUATION.md">EVALUATION.md</a>). Until it has run, catching mistakes is what the AI is designed to do, and not yet a measured result.</li>
-        <li>The AI reading for the sample photos is a recording, and it's labelled as one. Any other photo is read live when a model is set up.</li>
-        <li>The band is a screening estimate, never an official WFD classification, and every screen says so.</li>
-        <li>Demo sites are marked "(demo data)". None of them is a real observation.</li></ul></div>
-  </div>
+      <li>The AI reading for the sample photos is a recording, and it's labelled as one. Any other photo is read live when a model is set up.</li>
+      <li>The band is a screening estimate, never an official WFD classification, and every screen says so.</li>
+      <li>Demo sites are marked "(demo data)". None of them is a real observation.</li></ul>
+    </div>
+  </section>
 
-  <h2>How it fits the hackathon tracks</h2>
-  <table>
-    <tr><th>Track</th><th>What AquaPlot does for it</th></tr>
-    <tr><td>3 · AI-Supported Assessment (main track)</td><td>The AI gives a blind second opinion. It only describes what it sees, and readable rules make the decisions. Alerts wait for a person. The AI's instructions are generated from the field form, and there's a harness to measure how well it does.</td></tr>
-    <tr><td>1 · Citizen Science UX</td><td>Five steps, identifying by shape, a "why" on every question, works offline, accessible.</td></tr>
-    <tr><td>2 · Data-to-Insight</td><td>Dashboard, map, trends for each site, an alert feed, CSV and GeoJSON.</td></tr>
-    <tr><td>6 · Resilience Informatics</td><td>The 48-hour outlook, findings that take the weather into account, and drought and heat warnings.</td></tr>
-    <tr><td>7 · Digital Health Standards</td><td>FHIR R4 that conforms to the OneAquaHealth guide and passes validation, using the project's own site codes and app format.</td></tr>
-  </table>
+  <section class="row" style="--shift: -3vw; --shift-n: -1vw">
+    <div class="col a reveal">
+      <h2>Live numbers from this server</h2>
+      <div class="stats" id="stats"><div class="stat"><div class="n">…</div><div class="l">loading</div></div></div>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b reveal">
+      <h2>How it fits the hackathon tracks</h2>
+      <table>
+      <tr><th>Track</th><th>What AquaPlot does for it</th></tr>
+      <tr><td>3 · AI-Supported Assessment (main track)</td><td>The AI gives a blind second opinion. It only describes what it sees, and readable rules make the decisions. Alerts wait for a person. The AI's instructions are generated from the field form, and there's a harness to measure how well it does.</td></tr>
+      <tr><td>1 · Citizen Science UX</td><td>Five steps, identifying by shape, a "why" on every question, works offline, accessible.</td></tr>
+      <tr><td>2 · Data-to-Insight</td><td>Dashboard, map, trends for each site, an alert feed, CSV and GeoJSON.</td></tr>
+      <tr><td>6 · Resilience Informatics</td><td>The 48-hour outlook, findings that take the weather into account, and drought and heat warnings.</td></tr>
+      <tr><td>7 · Digital Health Standards</td><td>FHIR R4 that conforms to the OneAquaHealth guide and passes validation, using the project's own site codes and app format.</td></tr>
+    </table>
+    </div>
+  </section>
 
-  <div class="cta">
-    <a class="btn primary" href="/try">Try the check</a>
-    <a class="btn ghost" href="https://github.com/BabayoAP/aquaplot">Source and documentation</a>
-  </div>
-  <p class="foot">AquaPlot is a citizen-science screening tool, not a medical, water-quality or regulatory
-    determination. Sample photographs: John Rostron (geograph.org.uk, CC BY-SA 2.0) and Johan Kjær Prehn (iNaturalist,
-    CC BY 4.0). Weather: Open-Meteo, CC BY 4.0.</p>
+  <section class="row" style="--shift: 1.5vw; --shift-n: 1vw">
+    <div class="col a reveal">
+      <div class="cta">
+      <a class="btn primary" href="/try">Try the check</a>
+      <a class="btn ghost" href="https://github.com/BabayoAP/aquaplot">Source and documentation</a>
+    </div>
+    </div>
+    <div class="ch" aria-hidden="true"></div>
+    <div class="col b reveal">
+      <p class="foot">AquaPlot is a citizen-science screening tool, not a medical, water-quality or regulatory
+      determination. Sample photographs: John Rostron (geograph.org.uk, CC BY-SA 2.0) and Johan Kjær Prehn (iNaturalist,
+      CC BY 4.0). Weather: Open-Meteo, CC BY 4.0.</p>
+    </div>
+  </section>
 </main>
 <script>
 Promise.all([fetch("/api/insights").then((r) => r.json()), fetch("/api/health").then((r) => r.json())])
@@ -228,30 +344,125 @@ Promise.all([fetch("/api/insights").then((r) => r.json()), fetch("/api/health").
       return `<div class="stat"><div class="n">${d.innerHTML}</div><div class="l">${e.innerHTML}</div></div>`;
     }).join("");
   }).catch(() => { document.getElementById("stats").innerHTML = ""; });
+
+// The page around the stream: the hero fades as you leave it, the header gains its background once
+// you have, and each block drifts in the first time it scrolls into view. None of this needs three.js.
+(() => {
+  const hero = document.getElementById("top"), header = document.querySelector("header");
+  let queued = false;
+  const onScroll = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      const p = Math.min(1, Math.max(0, scrollY / hero.offsetHeight));
+      hero.style.setProperty("--hero-p", p.toFixed(4));
+      header.classList.toggle("scrolled", p > 0.6);
+    });
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll);
+  onScroll();
+
+  const blocks = document.querySelectorAll(".reveal");
+  if (!("IntersectionObserver" in window)) { blocks.forEach((b) => b.classList.add("in")); return; }
+  const seen = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); seen.unobserve(e.target); }
+  }, { rootMargin: "0px 0px -10% 0px", threshold: 0.12 });
+  blocks.forEach((b) => seen.observe(b));
+})();
 </script>
 <script type="module">
-// The water scene at the top of the page. Purely decorative: if three.js cannot load, WebGL is
-// missing or the visitor has asked to save data, the CSS gradient behind the canvas stays.
+// The stream. Purely decorative: if three.js cannot load, WebGL is missing or the visitor has asked
+// to save data, the CSS gradient behind the canvas stays and the page reads the same.
+//
+// It is one small world, drawn by shaders with no images: a channel deeper and faster in the middle,
+// with pebbles and caustics on the bed, boulders the current foams around, grass and reeds on the
+// banks, and leaves riding the surface. The page scroll flies the camera: a low view up the stream
+// on the first screen, rising to look straight down on it. From above, the river runs down the
+// channels the text leaves free (.row > .ch), bending from one to the next, and its banks fade into
+// the page just where the text begins. Below the first screen it scrolls exactly with the page, so
+// the bends stay beside the words they go round.
 const host = document.getElementById("scene"), canvas = document.getElementById("water");
+const hero = document.getElementById("top"), flow = document.getElementById("intro");
 if (!(navigator.connection && navigator.connection.saveData)) start().catch(() => {});
 
 async function start() {
   const THREE = await import("three");
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "low-power" });
+    // Multisampling costs a full-screen clear and resolve every frame; on a high-density screen the
+    // pixel ratio already smooths the edges, so only 1x screens get it.
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: devicePixelRatio < 1.5 });
   } catch (e) { return; }
-  const small = innerWidth < 640;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
+  const small = matchMedia("(max-width: 700px)").matches;
+  let ratio = Math.min(devicePixelRatio, 1.25);  // a soft background; the text over it is HTML, so stays sharp
+  renderer.setPixelRatio(ratio);
 
-  // Waves travel left to right. One table drives the shader and the leaves that ride on it.
-  const WAVES = [  // direction x, direction z, wavenumber, amplitude, speed
-    [1.0, 0.35, 0.8, 0.13, 1.1],
-    [1.0, -0.55, 1.5, 0.065, 1.7],
-    [0.6, 1.0, 2.4, 0.035, 2.3],
-    [1.0, 0.1, 3.9, 0.018, 3.0],
-  ].map(([x, z, k, a, s]) => { const l = Math.hypot(x, z); return [x / l, z / l, k, a, s]; });
+  const LEN = 140;               // length of the stretch of world kept around the camera
+  const TOP_FOV = 30, ROCKS = 9;
   const f = (v) => v.toFixed(5);
+  const clamp01 = (v) => Math.min(1, Math.max(0, v)), ease = (v) => v * v * (3 - 2 * v), mix = (a, b, k) => a + (b - a) * k;
+
+  // ---- the shape of the river. On the first screen, a gentle meander; below it, the path measured from
+  // the page, stored in a small texture every shader reads. uPathMix blends one into the other as the
+  // camera rises, so the stream winds itself round the text as you scroll.
+  const heroRiver = (z) => [0.35 * Math.sin(z * 0.11) + 0.2 * Math.sin(z * 0.23 + 1.3), 3.0 + 0.2 * Math.sin(z * 0.07 + 2.0)];
+  let path = { n: 0 }, pathMix = 0;
+  function river(z) {  // [centre, half-width] at z, exactly as the shaders see it
+    const [hx, hw] = heroRiver(z);
+    if (!path.n || pathMix <= 0) return [hx, hw];
+    const u = Math.min(path.n - 1, Math.max(0, (z - path.z0) / path.dz - 0.5));
+    const i = Math.min(Math.floor(u), path.n - 2), k = u - i;
+    return [mix(hx, mix(path.xs[i], path.xs[i + 1], k), pathMix), mix(hw, mix(path.ws[i], path.ws[i + 1], k), pathMix)];
+  }
+  const flowSpeed = (a) => 0.25 + 1.5 * Math.max(0, 1 - a * a);
+  const COMMON = `
+    uniform sampler2D uPath; uniform vec2 uPathRange; uniform float uPathMix;
+    float hash1(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+    vec2 hash2(vec2 p) { vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973)); q += dot(q, q.yzx + 33.33);
+                         return fract((q.xx + q.yz) * q.zy); }
+    float vnoise(vec2 p) {
+      vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash1(i), hash1(i + vec2(1.0, 0.0)), u.x), mix(hash1(i + vec2(0.0, 1.0)), hash1(i + vec2(1.0, 1.0)), u.x), u.y);
+    }
+    float fbm(vec2 p) {
+      float s = 0.0, a = 0.5;
+      for (int i = 0; i < 4; i++) { s += a * vnoise(p); p = p * 2.03 + vec2(17.1, 9.2); a *= 0.5; }
+      return s / 0.9375;
+    }
+    vec2 river(float z) {  // centre and half-width of the channel at z
+      vec2 hero = vec2(0.35 * sin(z * 0.11) + 0.2 * sin(z * 0.23 + 1.3), 3.0 + 0.2 * sin(z * 0.07 + 2.0));
+      if (uPathMix <= 0.0) return hero;
+      return mix(hero, texture2D(uPath, vec2((z - uPathRange.x) * uPathRange.y, 0.5)).rg, uPathMix);
+    }
+    float across(vec2 p) { vec2 r = river(p.y); return (p.x - r.x) / r.y; }   // 0 mid-channel, 1 at the edge
+    float ground(vec2 p) {   // the bed, deepest in the middle, rising into the banks
+      float d = abs(across(p));
+      float h = mix(-1.05 + 0.7 * d * d, 0.42, smoothstep(0.95, 1.4, d));
+      h += (vnoise(p * 0.45) - 0.5) * 0.5 * smoothstep(1.3, 2.2, d);
+      h += (vnoise(p * 2.3) - 0.5) * 0.07;
+      return h;
+    }
+    float flowSpeed(vec2 p) { float a = across(p); return 0.25 + 1.5 * max(0.0, 1.0 - a * a); }`;
+  // Fading into the page: by distance from the camera (the hero's haze), towards both ends of the
+  // world kept around the camera, and, from above, away from the river.
+  const FADE = `
+    uniform float uFogNear, uFogFar, uAnchor; uniform vec2 uEdge, uBank, uWin;
+    float fadeAt(vec3 w) {
+      float f = smoothstep(uFogNear, uFogFar, length(cameraPosition - w));
+      return max(f, smoothstep(uEdge.x, uEdge.y, abs(w.z - uAnchor)));
+    }
+    float bankFade(vec2 p) { return smoothstep(uBank.x, uBank.y, abs(across(p))); }
+    float wrapZ(float z) { return uAnchor + uWin.x + mod(z - uAnchor - uWin.x, uWin.y); }  // keep things near the camera`;
+
+  // Small waves running downstream (+z). One table drives the surface shader and the leaves.
+  const WAVES = [  // direction x, direction z, wavenumber, amplitude, speed
+    [0.15, 1.0, 1.1, 0.05, 1.2],
+    [-0.45, 1.0, 2.0, 0.028, 1.9],
+    [0.8, 0.6, 3.2, 0.014, 2.5],
+    [1.0, 0.15, 4.7, 0.007, 3.2],
+  ].map(([x, z, k, a, s]) => { const l = Math.hypot(x, z); return [x / l, z / l, k, a, s]; });
   const WAVE_GLSL = `vec3 waves(vec2 p, float t) {  // height, d/dx, d/dz
     vec3 r = vec3(0.0); float ph;
     ${WAVES.map(([x, z, k, a, s]) => `ph = dot(vec2(${f(x)}, ${f(z)}), p) * ${f(k)} - t * ${f(s)};
@@ -267,8 +478,6 @@ async function start() {
     return [h, dx, dz];
   }
   const VORONOI_GLSL = `
-    vec2 hash2(vec2 p) { p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
-    float hash1(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
     vec3 voronoi(vec2 x) {  // nearest distance, second-nearest distance, cell id
       vec2 n = floor(x), fr = fract(x); float d1 = 8.0, d2 = 8.0; vec2 cell = vec2(0.0);
       for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
@@ -292,84 +501,173 @@ async function start() {
     }`;
 
   const world = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+  const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 600);
+  const color = () => new THREE.Color();
+  const blankPath = new THREE.DataTexture(new Uint16Array(4), 2, 1, THREE.RGFormat, THREE.HalfFloatType);
+  blankPath.needsUpdate = true;
   const uniforms = {
-    uTime: { value: 0 }, uFogNear: { value: 8 }, uFogFar: { value: 26 },
-    uDeep: { value: new THREE.Color() }, uShallow: { value: new THREE.Color() }, uSky: { value: new THREE.Color() },
-    uSun: { value: new THREE.Color() }, uFog: { value: new THREE.Color() },
-    uBedA: { value: new THREE.Color() }, uBedB: { value: new THREE.Color() }, uGap: { value: new THREE.Color() },
-    uCaustic: { value: new THREE.Color() }, uReflect: { value: 0.85 },
-    uLight: { value: new THREE.Vector3(-0.3, 0.55, -1.0).normalize() },
+    uTime: { value: 0 }, uAnchor: { value: 0 }, uFogNear: { value: 8 }, uFogFar: { value: 26 },
+    uEdge: { value: new THREE.Vector2(38, 48) }, uBank: { value: new THREE.Vector2(3.5, 9) },
+    uWin: { value: new THREE.Vector2(-30, 48) },
+    uPath: { value: blankPath }, uPathRange: { value: new THREE.Vector2(0, 1) }, uPathMix: { value: 0 },
+    uPointK: { value: 7 }, uDpr: { value: ratio }, uReflect: { value: 0.8 }, uSpread: { value: 1 },
+    uDeep: { value: color() }, uShallow: { value: color() }, uSky: { value: color() }, uSun: { value: color() },
+    uFog: { value: color() }, uFoam: { value: color() }, uCaustic: { value: color() },
+    uBedA: { value: color() }, uBedB: { value: color() }, uGap: { value: color() },
+    uGrassA: { value: color() }, uGrassB: { value: color() }, uEarth: { value: color() }, uFlower: { value: color() },
+    uReedA: { value: color() }, uReedB: { value: color() }, uRock: { value: color() },
+    // A low sun upstream: its glitter lies on the far water, never in the reader's lap, and not at all from above.
+    uLight: { value: new THREE.Vector3(-0.3, 0.5, -1.0).normalize() },
+    uRocks: { value: Array.from({ length: ROCKS }, () => new THREE.Vector4()) },
   };
-  const FOG = `float fogAt(vec3 w) { return smoothstep(uFogNear, uFogFar, length(cameraPosition - w)); }`;
+  // A strip along z whose columns are offsets from the river's centre, packed towards it. The vertex
+  // shaders add the centre, so the fine detail follows the river wherever the page sends it.
+  const strip = (w, segX, segZ, curve) => {
+    const g = new THREE.PlaneGeometry(2, LEN, segX, segZ).rotateX(-Math.PI / 2);
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const u = pos.getX(i); pos.setX(i, Math.sign(u) * Math.pow(Math.abs(u), curve) * w); }
+    return g;
+  };
 
-  // The stream bed: pebbles with moving caustics, wobbled by the surface above them.
-  const bedGeo = new THREE.PlaneGeometry(70, 50, 1, 1).rotateX(-Math.PI / 2).translate(0, -1.0, -15);
-  const bed = new THREE.Mesh(bedGeo, new THREE.ShaderMaterial({
+  // ---- the ground: the bed under the water and the banks either side, one surface
+  const groundSeg = small ? [110, 220] : [170, 340];
+  const terrain = new THREE.Mesh(strip(30, ...groundSeg, 1.6), new THREE.ShaderMaterial({
     uniforms,
-    vertexShader: `varying vec3 vWorld;
-      void main() { vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `uniform float uTime, uFogNear, uFogFar; uniform vec3 uBedA, uBedB, uGap, uCaustic, uDeep, uFog;
-      varying vec3 vWorld;
-      ${VORONOI_GLSL} ${WAVE_GLSL} ${FOG} ${CAUSTIC_GLSL}
+    vertexShader: `uniform float uSpread; varying vec3 vWorld; varying vec3 vN;
+      ${COMMON}
       void main() {
-        vec2 p = vWorld.xz;
-        vec2 q = p + waves(p, uTime).yz * 0.35;
-        vec3 v = voronoi(q * 0.85);
-        float pebble = smoothstep(0.02, 0.2, v.y - v.x);
-        float dome = 1.0 - smoothstep(0.0, 0.8, v.x);
-        float grain = hash1(floor(q * 40.0)) * 0.08;
-        vec3 stone = mix(uBedA, uBedB, v.z) * (0.8 + 0.3 * dome);
-        vec3 col = mix(uGap + grain, stone, pebble * 0.85);
-        col = mix(col, uDeep, 0.5);
-        col += uCaustic * caustic(q * 0.16, uTime * 0.45) * 0.55;
-        gl_FragColor = vec4(mix(col, uFog, fogAt(vWorld)), 1.0);
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        w.x = river(w.z).x + position.x * uSpread;  // only as wide as the banks show; beyond is the clear colour
+        w.y = ground(w.xz);
+        float e = 0.15;
+        vN = normalize(vec3(ground(w.xz - vec2(e, 0.0)) - ground(w.xz + vec2(e, 0.0)), 2.0 * e,
+                            ground(w.xz - vec2(0.0, e)) - ground(w.xz + vec2(0.0, e))));
+        vWorld = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: `uniform float uTime; uniform vec3 uBedA, uBedB, uGap, uCaustic, uDeep, uFog, uGrassA, uGrassB, uEarth, uFlower, uLight;
+      varying vec3 vWorld; varying vec3 vN;
+      ${COMMON} ${FADE} ${VORONOI_GLSL} ${CAUSTIC_GLSL}
+      void main() {
+        vec2 p = vWorld.xz; float h = vWorld.y;
+        float fade = max(fadeAt(vWorld), bankFade(p));
+        if (fade > 0.995) {
+          gl_FragColor = vec4(uFog, 1.0);
+          #include <colorspace_fragment>
+          return;
+        }
+        float depth = max(-h, 0.0);
+        // Pebbles on the bed and along the waterline, wobbled by the moving surface above them.
+        vec3 stone = uBedA; float pebble = 0.0;
+        if (h < 0.25) {
+          vec2 q = p + vec2(sin(p.y * 1.7 + uTime * 1.3), cos(p.x * 1.9 + uTime * 1.1)) * 0.035 * smoothstep(0.0, 0.3, depth);
+          vec3 v = voronoi(q * 2.4);
+          pebble = smoothstep(0.02, 0.16, v.y - v.x);
+          stone = mix(uBedA, uBedB, v.z) * (0.8 + 0.28 * (1.0 - smoothstep(0.0, 0.8, v.x)));
+          stone *= 0.9 + 0.2 * vnoise(q * 11.0);  // gravel between the stones
+        }
+        // The gaps between stones soften with depth, so from above the bed reads as gravel, not a net.
+        // Each pixel shades only what it shows: the bed under the water, the banks above it.
+        vec3 bed = vec3(0.0), bank = vec3(0.0);
+        if (h < 0.03) {
+          bed = mix(mix(uGap, stone, 0.45), stone, pebble * mix(0.8, 0.35, smoothstep(0.1, 0.9, depth)));
+          bed = mix(bed, uDeep, smoothstep(0.0, 1.0, depth) * 0.6);
+          if (depth > 0.05) bed += uCaustic * caustic(p * 0.3 - vec2(0.0, uTime * 0.09), uTime * 0.45) * 0.32 * smoothstep(0.05, 0.4, depth);
+        }
+        if (h > -0.03) {  // wet earth and stones at the edge, then grass with the odd flower
+          float g = fbm(p * 0.8);
+          vec3 grass = mix(uGrassA, uGrassB, g) * (0.86 + 0.28 * vnoise(p * 7.0));
+          grass = mix(grass, uFlower, step(0.988, hash1(floor(p * 8.0))) * 0.8);
+          bank = mix(mix(uEarth, stone, pebble * 0.7), grass, smoothstep(0.1, 0.32, h + (g - 0.5) * 0.3));
+          bank *= mix(0.7, 1.0, smoothstep(0.0, 0.16, h));
+          bank *= 0.66 + 0.44 * max(dot(normalize(vN), uLight), 0.0);
+        }
+        vec3 col = mix(bed, bank, smoothstep(-0.03, 0.03, h));
+        gl_FragColor = vec4(mix(col, uFog, fade), 1.0);
         #include <colorspace_fragment>
       }`,
   }));
-  world.add(bed);
+  terrain.frustumCulled = false;
+  world.add(terrain);
 
-  // The surface: displaced by the wave table, with fine ripples, glints and a fresnel reflection.
-  const seg = small ? 110 : 180;
-  const waterGeo = new THREE.PlaneGeometry(70, 50, seg, Math.round(seg * 0.7)).rotateX(-Math.PI / 2).translate(0, 0, -15);
-  const water = new THREE.Mesh(waterGeo, new THREE.ShaderMaterial({
+  // ---- the surface: waves, ripples and foam carried by the current, a fresnel reflection and glints
+  const waterSeg = small ? [40, 260] : [64, 400];
+  const water = new THREE.Mesh(strip(1, ...waterSeg, 1.0), new THREE.ShaderMaterial({
     uniforms, transparent: true, depthWrite: false,
-    vertexShader: `uniform float uTime; varying vec3 vWorld; varying vec3 vNormal; varying float vH;
-      ${WAVE_GLSL}
+    vertexShader: `uniform float uTime; varying vec3 vWorld; varying vec3 vNormal;
+      ${COMMON} ${WAVE_GLSL}
       void main() {
         vec4 w = modelMatrix * vec4(position, 1.0);
-        vec3 h = waves(w.xz, uTime);
-        w.y += h.x; vH = h.x; vWorld = w.xyz;
+        vec2 r = river(w.z);
+        w.x = r.x + position.x * r.y * 1.45;  // just wider than the water, wherever the river is
+        vec3 h = waves(w.xz, uTime) * smoothstep(0.0, 0.45, -ground(w.xz));  // calmer in the shallows
+        w.y += h.x; vWorld = w.xyz;
         vNormal = normalize(vec3(-h.y, 1.0, -h.z));
         gl_Position = projectionMatrix * viewMatrix * w;
       }`,
-    fragmentShader: `uniform float uTime, uFogNear, uFogFar, uReflect; uniform vec3 uDeep, uShallow, uSky, uSun, uFog, uLight;
-      varying vec3 vWorld; varying vec3 vNormal; varying float vH;
-      ${FOG}
+    fragmentShader: `uniform float uTime, uReflect; uniform vec3 uDeep, uShallow, uSky, uSun, uFog, uLight, uFoam;
+      uniform vec4 uRocks[${ROCKS}];
+      varying vec3 vWorld; varying vec3 vNormal;
+      ${COMMON} ${FADE}
+      vec2 ripple(vec2 q) {  // slope of the small ripples, in the water's own moving frame
+        vec2 g = vec2(0.2, 1.0) * cos(dot(q, vec2(0.2, 1.0)) * 5.0) * 0.5
+               + vec2(-0.6, 0.8) * cos(dot(q, vec2(-0.6, 0.8)) * 8.3 + 1.7) * 0.3
+               + vec2(0.9, 0.45) * cos(dot(q, vec2(0.9, 0.45)) * 11.9 + 4.1) * 0.22;
+        float n0 = vnoise(q * 2.6);
+        return g + vec2(vnoise(q * 2.6 + vec2(0.08, 0.0)) - n0, vnoise(q * 2.6 + vec2(0.0, 0.08)) - n0) * 2.2;
+      }
+      float streaks(vec2 q) { return vnoise(vec2(q.x * 3.2, q.y * 0.7)) * 0.6 + vnoise(vec2(q.x * 7.0, q.y * 1.6)) * 0.4; }
+      float foamAt(vec2 p, float depth, float st) {
+        float f = (1.0 - smoothstep(0.0, 0.14, depth)) * 0.9;   // lace along the shallows
+        float wake = 0.0;
+        for (int i = 0; i < ${ROCKS}; i++) {                     // a collar round each rock, and its wake
+          vec4 r = uRocks[i];
+          vec2 d = p - r.xy;
+          f += (1.0 - smoothstep(0.0, 0.18 + r.z * 0.35, length(d) - r.z)) * r.w;
+          float down = max(d.y, 0.0);
+          wake += exp(-down * 1.1) * (1.0 - smoothstep(r.z * 0.1, r.z * 0.55 + down * 0.05, abs(d.x)))
+                * smoothstep(-0.2, 0.3, d.y) * r.w;
+        }
+        f = clamp(f, 0.0, 1.0);
+        float foam = f * smoothstep(0.25, 0.75, st * (0.6 + 0.6 * f));
+        float threads = vnoise(vec2(p.x * 9.0, p.y * 1.2 - uTime * 1.5));
+        return clamp(foam + min(wake, 1.0) * smoothstep(0.62, 0.92, threads) * 0.3, 0.0, 1.0);  // the wake only as thin threads
+      }
       void main() {
         vec2 p = vWorld.xz; float t = uTime;
-        vec2 r = vec2(sin(p.x * 7.0 - t * 4.0 + sin(p.y * 3.0)) * 0.5 + sin(p.x * 13.0 - p.y * 5.0 - t * 6.0) * 0.25,
-                      sin(p.y * 8.0 + t * 3.0 + sin(p.x * 2.0)) * 0.5 + sin(p.y * 15.0 + p.x * 4.0 - t * 5.0) * 0.25);
-        vec3 n = normalize(normalize(vNormal) + vec3(r.x, 0.0, r.y) * 0.07);
+        float depth = vWorld.y - ground(p);
+        if (depth < 0.0) discard;
+        // The current carries ripples and foam downstream, fastest mid-channel. Two copies half a
+        // cycle apart are blended, so the pattern keeps moving without ever smearing out.
+        float spd = flowSpeed(p), c1 = fract(t * 0.2), c2 = fract(t * 0.2 + 0.5), blend = abs(c1 * 2.0 - 1.0);
+        vec2 q1 = p - vec2(0.0, spd * c1 * 5.0), q2 = p - vec2(0.0, spd * c2 * 5.0) + vec2(0.31, 0.57);
+        vec2 slope = mix(ripple(q1), ripple(q2), blend);
+        float st = mix(streaks(q1), streaks(q2), blend);
+        vec3 n = normalize(normalize(vNormal) + vec3(slope.x, 0.0, slope.y) * 0.06);
         vec3 V = normalize(cameraPosition - vWorld);
-        float fres = mix(0.05, 1.0, pow(1.0 - max(dot(n, V), 0.0), 3.0));
+        float fres = mix(0.03, 1.0, pow(1.0 - max(dot(n, V), 0.0), 4.0));
         float nh = max(dot(n, normalize(uLight + V)), 0.0);
-        float spec = pow(nh, 420.0) * 2.2 + pow(nh, 40.0) * 0.08;
-        vec3 body = mix(uDeep, uShallow, clamp(vH * 2.8 + 0.5, 0.0, 1.0));
-        vec3 col = mix(body, uSky, fres * uReflect) + uSun * spec + smoothstep(0.09, 0.2, vH) * 0.08;
-        float fog = fogAt(vWorld);
-        gl_FragColor = vec4(mix(col, uFog, fog), mix(mix(0.5, 0.96, fres), 1.0, fog));
+        // Small, sharp sparkles, and only on the far water: the glitter path of a low sun.
+        float spec = (pow(nh, 900.0) * 2.2 + pow(nh, 90.0) * 0.04) * smoothstep(9.0, 17.0, length(cameraPosition - vWorld));
+        float deep = smoothstep(0.02, 0.95, depth);
+        float foam = foamAt(p, depth, st);
+        vec3 col = mix(mix(uShallow, uDeep, deep), uSky, fres * uReflect) + uSun * spec * (1.0 - foam);
+        col = mix(col, uFoam, foam);
+        float alpha = max(mix(0.28, 0.9, deep), max(fres * 0.9, foam));
+        float fade = fadeAt(vWorld);
+        gl_FragColor = vec4(mix(col, uFog, fade), mix(alpha, 1.0, fade));
         #include <colorspace_fragment>
       }`,
   }));
   water.renderOrder = 2;
+  water.frustumCulled = false;
   world.add(water);
 
-  // Specks drifting just under the surface.
-  const MOTES = small ? 120 : 220;
+  // ---- specks drifting just under the surface
+  const MOTES = small ? 160 : 280;
   const motePos = new Float32Array(MOTES * 3), moteSeed = new Float32Array(MOTES);
   for (let i = 0; i < MOTES; i++) {
-    motePos.set([Math.random() * 36 - 18, -0.15 - Math.random() * 0.8, Math.random() * 14 - 10], i * 3);
+    motePos.set([Math.random() * 2 - 1, -0.1 - Math.random() * 0.6, Math.random()], i * 3);
     moteSeed[i] = Math.random();
   }
   const moteGeo = new THREE.BufferGeometry();
@@ -377,93 +675,312 @@ async function start() {
   moteGeo.setAttribute("seed", new THREE.BufferAttribute(moteSeed, 1));
   const motes = new THREE.Points(moteGeo, new THREE.ShaderMaterial({
     uniforms, transparent: true, depthWrite: false,
-    vertexShader: `uniform float uTime, uFogNear, uFogFar; attribute float seed; varying float vAlpha;
-      ${FOG}
+    vertexShader: `uniform float uTime, uPointK, uDpr; attribute float seed; varying float vAlpha;
+      ${COMMON} ${FADE}
       void main() {
-        vec3 p = position;
-        p.x = mod(p.x + uTime * (0.3 + seed * 0.45) + 18.0, 36.0) - 18.0;
-        p.y += sin(uTime * (0.6 + seed) + seed * 40.0) * 0.06;
-        vec4 mv = viewMatrix * modelMatrix * vec4(p, 1.0);
-        gl_PointSize = (2.0 + seed * 3.5) * (7.0 / -mv.z) * ${f(Math.min(devicePixelRatio, 1.75))};
-        vAlpha = (0.25 + seed * 0.35) * (1.0 - fogAt((modelMatrix * vec4(p, 1.0)).xyz));
+        float z = wrapZ(position.z * uWin.y + uTime * (0.35 + seed * 0.5));
+        vec2 r = river(z);
+        vec3 w = vec3(r.x + position.x * r.y * 0.85, position.y + sin(uTime * (0.6 + seed) + seed * 40.0) * 0.05, z);
+        vec4 mv = viewMatrix * vec4(w, 1.0);
+        gl_PointSize = (2.0 + seed * 3.5) * (uPointK / -mv.z) * uDpr;
+        vAlpha = (0.25 + seed * 0.35) * (1.0 - fadeAt(w));
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `uniform vec3 uCaustic; varying float vAlpha;
       void main() {
-        float d = length(gl_PointCoord - 0.5);
-        gl_FragColor = vec4(uCaustic, vAlpha * smoothstep(0.5, 0.1, d));
+        gl_FragColor = vec4(uCaustic, vAlpha * smoothstep(0.5, 0.1, length(gl_PointCoord - 0.5)));
         #include <colorspace_fragment>
       }`,
   }));
   motes.renderOrder = 1;
+  motes.frustumCulled = false;
   world.add(motes);
 
-  // A few leaves riding the waves.
+  // ---- reeds and long grass along both banks, swaying
+  const blade = new THREE.BufferGeometry();
+  blade.setAttribute("position", new THREE.Float32BufferAttribute(
+    [-1, 0, 0, 1, 0, 0, -0.72, 0.33, 0, 0.72, 0.33, 0, -0.42, 0.66, 0, 0.42, 0.66, 0, 0, 1, 0], 3));
+  blade.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4, 4, 5, 6]);
+  const REEDS = small ? 700 : 1300;
+  const reedGeo = new THREE.InstancedBufferGeometry();
+  reedGeo.index = blade.index;
+  reedGeo.setAttribute("position", blade.getAttribute("position"));
+  const spot = new Float32Array(REEDS * 4), size = new Float32Array(REEDS * 2);
+  for (let i = 0; i < REEDS; i++) {
+    const out = Math.random() ** 2;  // most of them close to the water
+    spot.set([Math.random() < 0.5 ? -1 : 1, 1.12 + out * 0.6, Math.random(), Math.random()], i * 4);
+    size.set([0.03 + Math.random() * 0.03, (0.3 + Math.random() * 0.45) * (1.25 - out * 0.6)], i * 2);
+  }
+  reedGeo.setAttribute("aSpot", new THREE.InstancedBufferAttribute(spot, 4));
+  reedGeo.setAttribute("aSize", new THREE.InstancedBufferAttribute(size, 2));
+  reedGeo.instanceCount = REEDS;
+  const reeds = new THREE.Mesh(reedGeo, new THREE.ShaderMaterial({
+    uniforms, side: THREE.DoubleSide,
+    vertexShader: `uniform float uTime; attribute vec4 aSpot; attribute vec2 aSize; varying float vV, vFade, vShade;
+      ${COMMON} ${FADE}
+      void main() {
+        float z = wrapZ(aSpot.z * uWin.y);
+        vec2 r = river(z);
+        vec2 base = vec2(r.x + aSpot.x * aSpot.y * r.y, z);
+        float v = position.y, a = aSpot.w * 6.2831;
+        vec3 w = vec3(base.x, ground(base), base.y);
+        w.xz += vec2(cos(a), sin(a)) * position.x * aSize.x;
+        w.y += v * aSize.y;
+        w.xz += (vec2(aSpot.x * 0.12, 0.08) + vec2(0.0, sin(uTime * 1.7 + aSpot.w * 30.0) * 0.1)) * v * v * aSize.y * 2.0;
+        vV = v; vShade = 0.8 + 0.4 * fract(aSpot.w * 13.7);
+        vFade = max(fadeAt(w), bankFade(base));
+        gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
+      }`,
+    fragmentShader: `uniform vec3 uReedA, uReedB, uFog; varying float vV, vFade, vShade;
+      void main() {
+        gl_FragColor = vec4(mix(mix(uReedA, uReedB, vV) * vShade, uFog, vFade), 1.0);
+        #include <colorspace_fragment>
+      }`,
+  }));
+  reeds.frustumCulled = false;
+  world.add(reeds);
+
+  // ---- boulders: low-poly stones, wet below the waterline, the same ones on every visit
+  const rng = ((seed) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  })(20260930);
+  world.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.4));
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+  sunLight.position.copy(uniforms.uLight.value).multiplyScalar(10);
+  world.add(sunLight);
+  const rockMat = new THREE.ShaderMaterial({
+    uniforms, vertexColors: true,
+    vertexShader: `varying vec3 vWorld; varying vec3 vColor;
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vWorld = w.xyz; vColor = color;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: `uniform vec3 uRock, uDeep, uShallow, uFog, uLight; varying vec3 vWorld; varying vec3 vColor;
+      ${COMMON} ${FADE}
+      void main() {
+        vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));  // faceted, like cut stone
+        vec3 col = uRock * vColor * (0.45 + 0.75 * max(dot(n, uLight), 0.0) + 0.15 * max(n.y, 0.0));
+        // Below the surface the water takes over, so the submerged part sinks into the colour of the stream.
+        col = mix(col, mix(uShallow, uDeep, 0.6), smoothstep(0.0, 0.4, -vWorld.y) * 0.85);
+        gl_FragColor = vec4(mix(col, uFog, fadeAt(vWorld)), 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const v3 = new THREE.Vector3();
+  const rocks = Array.from({ length: ROCKS }, (_, i) => {
+    const sx = 0.35 + rng() * 0.6, sy = 0.3 + rng() * 0.3, sz = sx * (0.8 + rng() * 0.5);
+    const top = -0.12 + rng() * 0.42, yc = top - sy;
+    const geo = new THREE.IcosahedronGeometry(1, 2);
+    const pos = geo.attributes.position, colors = [];
+    const bumps = Array.from({ length: 4 }, () => [rng() * 6.28, rng() * 6.28, 1.5 + rng() * 2.5, 0.06 + rng() * 0.08]);
+    for (let k = 0; k < pos.count; k++) {
+      v3.fromBufferAttribute(pos, k).normalize();
+      let s = 1;
+      for (const [a, b, n, amp] of bumps) s += amp * Math.sin(n * v3.x + a) * Math.cos(n * v3.z + b);
+      v3.multiplyScalar(s);
+      if (v3.y < 0) v3.y *= 0.65;  // flatter underneath, so less of it shows through the water
+      pos.setXYZ(k, v3.x, v3.y, v3.z);
+      const wet = yc + v3.y * sy < 0.06, moss = v3.y > 0.6;
+      colors.push(wet ? 0.72 : moss ? 0.86 : 1, wet ? 0.75 : 1, wet ? 0.75 : moss ? 0.8 : 1);
+    }
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, rockMat);
+    mesh.rotation.y = rng() * Math.PI;
+    // Where the rock meets the surface, for the foam: a collar if it breaks the water, a boil if not.
+    const breaks = top > 0;
+    mesh.userData = { size: [sx, sy, sz], off: (rng() * 2 - 1) * 0.72, at: (i + rng() * 0.8) / ROCKS, yc,
+                      r: breaks ? sx * Math.sqrt(1 - (yc / sy) ** 2) : sx * 0.7, strength: breaks ? 1 : 0.35 };
+    world.add(mesh);
+    return mesh;
+  });
+
+  // ---- leaves riding the current
   const leafShape = new THREE.Shape();
   leafShape.moveTo(-0.32, 0);
   leafShape.bezierCurveTo(-0.18, 0.2, 0.14, 0.2, 0.34, 0);
   leafShape.bezierCurveTo(0.14, -0.2, -0.18, -0.2, -0.32, 0);
   const leafGeo = new THREE.ShapeGeometry(leafShape, 10).rotateX(-Math.PI / 2);
-  world.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.4));
-  const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
-  sunLight.position.set(-3, 6, -8);
-  world.add(sunLight);
-  const leaves = ["#6f8f3a", "#8a9a3c", "#b0892f", "#9c6b2c", "#5f7f36", "#a47a34", "#7d8f3e"].map((c, i) => {
+  const leaves = ["#6f8f3a", "#8a9a3c", "#b0892f", "#9c6b2c", "#5f7f36", "#a47a34", "#7d8f3e", "#8f7a33", "#6a8a40",
+                  "#a88a3a", "#7f6a2e", "#94a045"].map((c, i) => {
     const leaf = new THREE.Mesh(leafGeo, new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
-    leaf.userData = { x: -16 + i * 5.3 + Math.random() * 2, z: 0.5 - Math.random() * 9, speed: 0.45 + Math.random() * 0.3,
-                      yaw: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.25, scale: 1.0 + Math.random() * 0.6 };
-    leaf.scale.setScalar(leaf.userData.scale);
+    const off = (rng() * 2 - 1) * 0.8;
+    leaf.userData = { off, at: (i + rng() * 0.5) / 12, speed: flowSpeed(off) * (0.85 + rng() * 0.3),
+                      yaw: rng() * Math.PI * 2, spin: (rng() - 0.5) * 0.4, size: 0.9 + rng() * 0.6 };
     world.add(leaf);
     return leaf;
   });
   const up = new THREE.Vector3(0, 1, 0), normal = new THREE.Vector3(), tilt = new THREE.Quaternion(), yaw = new THREE.Quaternion();
 
-  // Colours come from the page's own palette, so the scene follows light and dark mode.
+  // ---- colours come from the page's own palette, so the scene follows light and dark mode
   const dark = matchMedia("(prefers-color-scheme: dark)");
   const isDark = () => (window.aquaplotTheme ? window.aquaplotTheme.current() === "dark" : dark.matches);
   function applyPalette() {
     const css = getComputedStyle(document.documentElement);
     const bg = new THREE.Color(css.getPropertyValue("--bg").trim());
     const accent = new THREE.Color(css.getPropertyValue("--accent").trim());
-    const u = uniforms, c = (hex) => new THREE.Color(hex);
+    const u = uniforms, c = (hex) => new THREE.Color(hex), set = (name, value) => u[name].value.copy(value);
     if (isDark()) {
-      u.uDeep.value.copy(c("#07262d")); u.uShallow.value.copy(accent).lerp(c("#0c3a42"), 0.55);
-      u.uSky.value.copy(bg).lerp(accent, 0.34); u.uSun.value.copy(c("#d9f6f8"));
-      u.uBedA.value.copy(c("#3a4a4c")); u.uBedB.value.copy(c("#5d5a4e")); u.uGap.value.copy(c("#1a2426"));
-      u.uCaustic.value.copy(c("#8fe3ea")); u.uReflect.value = 0.85;
+      set("uDeep", c("#06232a")); set("uShallow", accent.clone().lerp(c("#0c3a42"), 0.55));
+      set("uSky", bg.clone().lerp(accent, 0.3)); set("uSun", c("#d9f6f8").multiplyScalar(0.22));
+      set("uBedA", c("#3a4a4c")); set("uBedB", c("#5d5a4e")); set("uGap", c("#1a2426")); set("uCaustic", c("#8fe3ea"));
+      set("uFoam", c("#b9dfe3")); set("uGrassA", c("#1d2b22")); set("uGrassB", c("#2d3d2c")); set("uEarth", c("#2b2822"));
+      set("uFlower", c("#6d7a5a")); set("uReedA", c("#1b281f")); set("uReedB", c("#4a6743"));
+      set("uRock", c("#5b6466")); u.uReflect.value = 0.8;
     } else {
-      u.uDeep.value.copy(accent); u.uShallow.value.copy(accent).lerp(c("#39c0b6"), 0.7);
-      u.uSky.value.copy(bg).lerp(accent, 0.36); u.uSun.value.copy(c("#ffffff")).multiplyScalar(0.5);
-      u.uBedA.value.copy(c("#9a927c")); u.uBedB.value.copy(c("#7a7466")); u.uGap.value.copy(c("#5b5649"));
-      u.uCaustic.value.copy(c("#f4fffd")); u.uReflect.value = 0.55;
+      set("uDeep", accent); set("uShallow", accent.clone().lerp(c("#39c0b6"), 0.7));
+      set("uSky", bg.clone().lerp(accent, 0.3)); set("uSun", c("#ffffff").multiplyScalar(0.55));
+      set("uBedA", c("#9a927c")); set("uBedB", c("#7a7466")); set("uGap", c("#5b5649")); set("uCaustic", c("#f4fffd"));
+      set("uFoam", c("#ffffff")); set("uGrassA", c("#7fa36a")); set("uGrassB", c("#a3bd82")); set("uEarth", c("#9a8a6a"));
+      set("uFlower", c("#f4efd0")); set("uReedA", c("#5d7d45")); set("uReedB", c("#b5c98a"));
+      set("uRock", c("#9a958a")); u.uReflect.value = 0.5;
     }
-    u.uFog.value.copy(bg);
+    set("uFog", bg);
     world.fog = new THREE.Fog(bg, u.uFogNear.value, u.uFogFar.value);
     renderer.setClearColor(bg);
   }
   applyPalette();
 
-  // The camera leans a little towards the pointer.
-  const look = new THREE.Vector3(0, -0.8, -2), lean = { x: 0, y: 0, tx: 0, ty: 0 };
-  addEventListener("pointermove", (e) => {
-    lean.tx = (e.clientX / innerWidth - 0.5) * 1.6;
-    lean.ty = (e.clientY / innerHeight - 0.5) * 0.6;
-  }, { passive: true });
+  // ---- reading the page: where the text leaves room for the river
+  let wpp = 0.024, topH = 30, win = [-30, 48];
+  // The river's centre: alongside a row, the middle of the channel its columns leave free; between two
+  // rows, a smooth bend from one channel to the next, begun a little before the first row ends and
+  // finished a little after the next begins.
+  function centreAt(chans, y) {
+    for (let k = 0; k + 1 < chans.length; k++) {
+      const a = chans[k], b = chans[k + 1];
+      // Long enough to bend gently, never so long it runs into the next bend on a short row.
+      const reach = Math.max(16, Math.min(Math.max((b.top - a.bottom) * 1.6, Math.abs(b.c - a.c) * 1.5),
+                                          (a.bottom - a.top) / 2, (b.bottom - b.top) / 2));
+      const from = a.bottom - reach, to = b.top + reach;
+      if (y < from) break;
+      if (y > to) continue;
+      return mix(a.c, b.c, ease(clamp01((y - from) / (to - from))));
+    }
+    return (chans.find((q) => y <= q.bottom) || chans[chans.length - 1]).c;
+  }
+  let pathTex = null;
+  function measure() {
+    const W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return;
+    const chans = [...flow.querySelectorAll(".row > .ch")].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top + scrollY, bottom: r.bottom + scrollY, c: (r.left + r.right) / 2, h: r.width / 2 };
+    }).filter((q) => q.bottom > q.top && q.h > 4);
+    // From above, 5.6 world units either side of the middle fill a typical channel; everything else,
+    // rocks and ripples included, is sized in world units, so this sets the scale of the whole scene.
+    const typical = chans.length ? chans.map((q) => q.h * 2).sort((a, b) => a - b)[chans.length >> 1] : W * 0.3;
+    const across = Math.min(34, Math.max(14, (2 * 5.6 * W) / typical));
+    wpp = across / W;
+    topH = across / (2 * Math.tan(THREE.MathUtils.degToRad(TOP_FOV / 2)) * (W / H));
+    const reach = (across * H) / W / 2;  // world visible above and below the middle of the screen
+    win = [-Math.max(30, reach + 6), Math.max(30, reach + 6) + Math.max(10, reach + 6)];
+    uniforms.uWin.value.set(win[0], win[1]);
+    uniforms.uEdge.value.set(Math.max(30, reach + 5), Math.max(40, reach + 12));
+    if (!chans.length) { path = { n: 0 }; return; }
 
-  let t = 8, last = performance.now(), running = false, visible = true;
+    // Page y to world z: the middle of the screen, once the first screen has scrolled away, is z = 0.
+    const heroH = hero.offsetHeight, zOf = (y) => (y - heroH - H / 2) * wpp;
+    const y0 = chans[0].top - H, y1 = chans[chans.length - 1].bottom + H;
+    const n = Math.min(4096, Math.max(2, Math.ceil((y1 - y0) / 4))), step = (y1 - y0) / n;
+    // First the centre line, then one width for the whole river: as wide as its tightest place beside
+    // the text allows. A river that narrows and swells round every bend looks pinched.
+    const xs = new Float32Array(n), ws = new Float32Array(n), data = new Uint16Array(n * 2);
+    let room = Infinity;
+    for (let i = 0; i < n; i++) {
+      const y = y0 + (i + 0.5) * step, c = centreAt(chans, y);
+      xs[i] = (c - W / 2) * wpp;
+      for (const q of chans) if (y >= q.top && y <= q.bottom) room = Math.min(room, c - (q.c - q.h), q.c + q.h - c);
+    }
+    const width = Math.max(0.35, ((Math.min(room, typical / 2) - 8) * wpp) / 1.72);  // banks gone 8px before the text
+    for (let i = 0; i < n; i++) {
+      ws[i] = width;
+      data[i * 2] = THREE.DataUtils.toHalfFloat(xs[i]);
+      data[i * 2 + 1] = THREE.DataUtils.toHalfFloat(width);
+    }
+    if (pathTex) pathTex.dispose();
+    pathTex = new THREE.DataTexture(data, n, 1, THREE.RGFormat, THREE.HalfFloatType);
+    pathTex.magFilter = pathTex.minFilter = THREE.LinearFilter;
+    pathTex.needsUpdate = true;
+    path = { n, xs, ws, z0: zOf(y0), dz: step * wpp };
+    uniforms.uPath.value = pathTex;
+    uniforms.uPathRange.value.set(path.z0, 1 / (n * path.dz));
+  }
+
+  // ---- the camera: a low view up the stream on the first screen, straight down on it below
+  const lean = { x: 0, y: 0, tx: 0, ty: 0 };
+  addEventListener("pointermove", (e) => {
+    lean.tx = (e.clientX / innerWidth - 0.5) * 1.4;
+    lean.ty = (e.clientY / innerHeight - 0.5) * 0.5;
+  }, { passive: true });
+  const m4 = new THREE.Matrix4(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
+  const eye0 = new THREE.Vector3(), eye1 = new THREE.Vector3(), aim = new THREE.Vector3(), NORTH = new THREE.Vector3(0, 0, -1);
+  const snap = (z, step) => Math.round(z / step) * step;
+
+  let t = 8, last = performance.now(), running = false, eased = scrollY;
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
   function draw(dt) {
     t += dt;
-    uniforms.uTime.value = t;
+    eased = still.matches ? scrollY : eased + (scrollY - eased) * (1 - Math.exp(-dt * 8));
+    const heroH = Math.max(hero.offsetHeight, 1);
+    const p = clamp01(eased / heroH), e = ease(p), banks = ease(clamp01((p - 0.15) / 0.65));
+    pathMix = path.n ? ease(clamp01((p - 0.15) / 0.7)) : 0;
+    // Locked to the page, not eased: the bends have to stay beside the words they go round.
+    const zc = Math.max(0, scrollY - heroH) * wpp;
+    // Tall screens look further down, so the stream fills the launch screen rather than the haze above it.
+    const tall = camera.aspect < 1, heroFov = tall ? 55 : 44;
     lean.x += (lean.tx - lean.x) * Math.min(1, dt * 2.5);
     lean.y += (lean.ty - lean.y) * Math.min(1, dt * 2.5);
-    camera.position.set(lean.x, 4.6 - lean.y, 6.5);
-    camera.lookAt(look.x + lean.x * 0.4, look.y, look.z);
+
+    eye0.set(lean.x, 2.1 - lean.y, zc + 6.5);
+    m4.lookAt(eye0, aim.set(lean.x * 0.4, tall ? -2.6 : -1.3, zc - 4), up); q0.setFromRotationMatrix(m4);
+    eye1.set(0, topH, zc);
+    m4.lookAt(eye1, aim.set(0, 0, zc), NORTH); q1.setFromRotationMatrix(m4);
+    camera.position.lerpVectors(eye0, eye1, e);
+    camera.quaternion.slerpQuaternions(q0, q1, e);
+    camera.fov = mix(heroFov, TOP_FOV, e);
+    camera.updateProjectionMatrix();
+
+    const u = uniforms;
+    u.uTime.value = t; u.uAnchor.value = zc; u.uPathMix.value = pathMix;
+    u.uFogNear.value = mix(8, topH * 2.5, e); u.uFogFar.value = mix(26, topH * 5, e);
+    u.uBank.value.set(mix(3.5, 1.32, banks), mix(9, 1.72, banks));
+    // From above the banks have faded to the page's background a few units out, and the clear colour is
+    // that background: no need to shade the land beyond them.
+    u.uSpread.value = Math.min(1, (u.uBank.value.y * Math.max(3.2, path.n ? path.ws[0] : 0) * 1.15) / 30);
+    u.uPointK.value = mix(7, topH * 0.3, e);
+    world.fog.near = u.uFogNear.value; world.fog.far = u.uFogFar.value;
+    terrain.position.z = snap(zc, LEN / groundSeg[1]);
+    water.position.z = snap(zc, LEN / waterSeg[1]);
+
+    // Rocks and leaves live in a window round the camera, and scale with the river they sit in.
+    const lo = zc + win[0], hi = lo + win[1];
+    const wrap = (z) => lo + ((((z - lo) % win[1]) + win[1]) % win[1]);
+    rocks.forEach((rock, i) => {
+      const d = rock.userData;
+      if (d.z === undefined) {
+        d.z = lo + d.at * win[1];
+        if (d.z > zc && d.z < zc + 12) d.z -= 14;  // none right under the launch screen's camera, where one fills the view
+      }
+      d.z = wrap(d.z);
+      const [cx, w] = river(d.z), k = Math.min(1.1, w / 3);
+      const x = cx + d.off * w;
+      rock.scale.set(d.size[0] * k, d.size[1] * k, d.size[2] * k);
+      rock.position.set(x, d.yc * k, d.z);
+      u.uRocks.value[i].set(x, d.z, d.r * k, d.strength);
+    });
     for (const leaf of leaves) {
       const d = leaf.userData;
-      d.x += d.speed * dt; if (d.x > 18) d.x -= 36;
+      d.z = wrap((d.z === undefined ? lo + d.at * win[1] : d.z) + d.speed * dt);
       d.yaw += d.spin * dt;
-      const [h, dx, dz] = wavesAt(d.x, d.z, t);
-      leaf.position.set(d.x, h + 0.03, d.z);
+      const [cx, w] = river(d.z), x = cx + d.off * w;
+      const [h, dx, dz] = wavesAt(x, d.z, t);
+      leaf.scale.setScalar(d.size * Math.min(1.1, Math.max(0.45, w / 3)));
+      leaf.position.set(x, h + 0.05, d.z);
       tilt.setFromUnitVectors(up, normal.set(-dx, 1, -dz).normalize());
       yaw.setFromAxisAngle(up, d.yaw);
       leaf.quaternion.copy(tilt).multiply(yaw);
@@ -472,30 +989,49 @@ async function start() {
     canvas.classList.add("ready");
   }
 
-  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  // Drop the resolution if this device cannot keep up, rather than stutter under the reader. Only frames
+  // a little over budget count: a very long one is a hidden or throttled window, a tab switch or a busy
+  // moment, not a slow device, and counting those dropped the resolution for good on fast machines.
+  let slow = 0, frames = 0;
   function loop(now) {
     if (!running) return;
-    draw(Math.min((now - last) / 1000, 0.05));
+    const raw = (now - last) / 1000;
     last = now;
+    if (++frames > 90) {
+      slow = slow * 0.95 + (raw > 1 / 50 && raw < 0.1 ? 0.05 : 0);
+      if (slow > 0.5 && ratio > 0.75) {
+        ratio = Math.max(0.75, ratio * 0.8);
+        renderer.setPixelRatio(ratio);
+        renderer.setSize(host.clientWidth, host.clientHeight, false);
+        uniforms.uDpr.value = ratio;
+        slow = 0; frames = 0;
+      }
+    }
+    draw(Math.min(raw, 0.05));
     requestAnimationFrame(loop);
   }
   function update() {
-    const go = visible && !document.hidden && !still.matches;
-    if (go && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+    const go = !document.hidden && !still.matches;
+    if (go && !running) { running = true; last = performance.now(); frames = 0; slow = 0; requestAnimationFrame(loop); }
     if (!go) running = false;
-    if (still.matches) draw(0);  // one still frame instead of motion
+    if (still.matches) draw(0);  // still frames instead of motion
   }
+  let pending = false;
+  addEventListener("scroll", () => {  // with motion reduced, a still frame for each scroll position
+    if (!still.matches || pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; draw(0); });
+  }, { passive: true });
 
+  const relayout = () => { measure(); if (!running) draw(0); };
   new ResizeObserver(() => {
     const w = host.clientWidth, h = host.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 1.4 ? 50 : 42;  // a taller view on phones
-    camera.updateProjectionMatrix();
-    if (!running) draw(0);
+    relayout();
   }).observe(host);
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; update(); }).observe(host);
+  new ResizeObserver(relayout).observe(flow);  // the live numbers arriving, fonts, a wider window
   document.addEventListener("visibilitychange", update);
   still.addEventListener("change", update);
   addEventListener("aquaplot:theme", () => { applyPalette(); if (!running) draw(0); });
