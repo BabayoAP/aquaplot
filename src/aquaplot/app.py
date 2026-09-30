@@ -49,6 +49,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
+import anthropic
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
@@ -61,7 +62,7 @@ from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
-from .observe import SampleReplay, WithheldObserver, load_samples, select_observer
+from .observe import ClaudeObserver, SampleReplay, WithheldObserver, claude_client, load_samples, select_observer
 from .pipeline import PIPELINE_VERSION, Pipeline
 from .places import PlaceResolver, pilot_sites
 from .schema import Classification
@@ -174,6 +175,14 @@ app.state.assessor = StreamAssessor(
     places=PlaceResolver(app.state.area.inat),
     weather=None if os.environ.get("AQUAPLOT_WEATHER", "on").lower() == "off" else WeatherResolver(),
 )
+# For checks from a browser that brought its own Claude key (the Developers page). Tests
+# replace the client factory with a fake, so they never reach Anthropic.
+app.state.claude_client = claude_client
+app.state.claude_model = os.environ.get("CLAUDE_MODEL", "claude-opus-5")
+# The key check answers "does Anthropic accept this key?" for free, which would make the
+# server an anonymous key tester for anyone holding a list of leaked keys. A tester needs a
+# handful of tries, not hundreds.
+app.state.key_check_limiter = RateLimiter(limit=10)
 
 
 @app.get("/api/health", tags=["meta"])
@@ -288,6 +297,69 @@ def _reads_live(observer, image) -> bool:
     return not (isinstance(observer, SampleReplay) and observer.samples.match(image.image) is not None)
 
 
+def _reading_with(observer) -> StreamAssessor:
+    """The shared assessor with a different live observer. The sample photos still replay their recording."""
+    assessor = copy.copy(app.state.assessor)
+    current = assessor.observer
+    assessor.observer = SampleReplay(observer, current.samples) if isinstance(current, SampleReplay) else observer
+    return assessor
+
+
+async def _close(client) -> None:
+    """Release a per-request Anthropic client's connection pool, which nothing else will reuse."""
+    close = getattr(client, "close", None)
+    if close is not None:
+        await close()
+
+
+def own_claude_key(request: Request) -> str | None:
+    """A Claude API key this browser saved on the Developers page, if it sent one.
+
+    It is used for this one request and never stored, logged or returned. A value that
+    is not a working key fails at Anthropic like any other bad key, and the check then
+    runs without the model and says why, as it does when Claude is unreachable.
+    """
+    return (request.headers.get("x-aquaplot-claude-key") or "").strip() or None
+
+
+@app.post("/api/claude-key/check", tags=["meta"])
+async def check_claude_key(request: Request) -> dict[str, Any]:
+    """Can the Claude key this browser saved use the model this server asks for?
+
+    The key comes in the ``X-AquaPlot-Claude-Key`` header, as it does on a check. Looking
+    the model up costs nothing, so a tester can find a bad key before a check depends on it.
+    """
+    key = own_claude_key(request)
+    if key is None:
+        raise HTTPException(status_code=422, detail="send the key in the X-AquaPlot-Claude-Key header")
+    wait = app.state.key_check_limiter.retry_after(client_key(request))
+    if wait > 0:
+        raise HTTPException(
+            status_code=429,
+            detail=f"too many key checks from this address; try again in {max(1, round(wait / 60))} min",
+            headers={"Retry-After": str(int(wait) + 1)},
+        )
+    model = app.state.claude_model
+    client = app.state.claude_client(key)
+    try:
+        await client.models.retrieve(model)
+    except anthropic.AuthenticationError:
+        reason = "Anthropic did not accept this key. Check it was copied whole, and that it has not been revoked."
+    except anthropic.PermissionDeniedError:
+        reason = f"This key is not allowed to use {model}."
+    except anthropic.NotFoundError:
+        reason = f"This key cannot see the model {model}."
+    except anthropic.APIStatusError as exc:
+        reason = f"Anthropic answered with an error ({exc.status_code}). Try again in a minute."
+    except anthropic.APIConnectionError:
+        reason = "This server could not reach Anthropic. Try again in a minute."
+    else:
+        return {"ok": True, "model": model}
+    finally:
+        await _close(client)
+    return {"ok": False, "model": model, "reason": reason}
+
+
 @app.get("/api/live-readings", tags=["meta"])
 def live_readings(request: Request) -> dict[str, Any]:
     """How many live photo readings this tester has left, on a demo that pays for its model (see allowance.py)."""
@@ -381,30 +453,37 @@ async def assess(
         decoded.append(image)
         gps = gps or image.gps  # the first photo carrying GPS wins; it is the one taken at the water
 
-    # A paid model reads these photos only while this tester has live readings left. Past
-    # the limit the check still runs, without the model, and says why.
+    # A browser that brought its own Claude key has Claude read its photos on that key. It
+    # uses none of the server's live readings, since the server is not paying.
+    # Otherwise a paid model reads these photos only while this tester has live readings
+    # left. Past the limit the check still runs, without the model, and says why.
     assessor = app.state.assessor
-    if allowance.is_paid(assessor.observer) and any(_reads_live(assessor.observer, image) for image in decoded):
+    own_key = own_claude_key(request)
+    own_client = app.state.claude_client(own_key) if own_key else None
+    if own_client is not None:
+        assessor = _reading_with(ClaudeObserver(client=own_client, model=app.state.claude_model))
+    elif allowance.is_paid(assessor.observer) and any(_reads_live(assessor.observer, image) for image in decoded):
         granted, counts = claim_live_reading(request)
         if not granted:
-            withheld = WithheldObserver(allowance.status(counts, app.state.live_limits)["reason"])
-            assessor = copy.copy(assessor)
-            assessor.observer = (SampleReplay(withheld, assessor.observer.samples)
-                                 if isinstance(assessor.observer, SampleReplay) else withheld)
+            assessor = _reading_with(WithheldObserver(allowance.status(counts, app.state.live_limits)["reason"]))
 
-    result = await _upstream(
-        assessor.assess(
-            Submission(
-                photos=tuple(decoded),
-                description=(description or "").strip(),
-                region=resolve_region(gps, lat, lon),
-                answers=tuple(citizen_answers),
-                taxa=tuple(citizen_taxa),
-                site_name=(site_name or "").strip() or None,
-                index=index or None,
+    try:
+        result = await _upstream(
+            assessor.assess(
+                Submission(
+                    photos=tuple(decoded),
+                    description=(description or "").strip(),
+                    region=resolve_region(gps, lat, lon),
+                    answers=tuple(citizen_answers),
+                    taxa=tuple(citizen_taxa),
+                    site_name=(site_name or "").strip() or None,
+                    index=index or None,
+                )
             )
         )
-    )
+    finally:
+        if own_client is not None:
+            await _close(own_client)
     app.state.store.save(result, contributor_of(request))
     return result.as_dict()
 
@@ -971,6 +1050,12 @@ def api_docs() -> HTMLResponse:
 def about_page() -> FileResponse:
     """AquaPlot in two minutes: the problem, the moment worth seeing, and what is and is not claimed."""
     return FileResponse(STATIC_DIR / "about.html")
+
+
+@app.get("/developers", include_in_schema=False)
+def developers_page() -> FileResponse:
+    """Save a Claude API key in this browser so its checks get a live model reading."""
+    return FileResponse(STATIC_DIR / "developers.html")
 
 
 @app.get("/try", include_in_schema=False)

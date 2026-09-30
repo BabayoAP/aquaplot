@@ -204,6 +204,7 @@
       <a href="/map">Map</a>
       <a href="#" id="guidebtn">ID guide</a>
       <a href="/about">About</a>
+      <a href="/developers">Developers</a>
     </nav>
     <span data-theme-switch></span>
   </div>
@@ -389,7 +390,20 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const api = (path, opts) => fetch(path, { headers: { "X-AquaPlot-Contributor": who(), ...(opts||{}).headers }, ...opts });
+// Headers merge, not replace: spreading opts last used to drop the contributor id from any
+// call that set its own headers, so a reviewed check was saved as nobody's.
+const api = (path, opts = {}) => fetch(path, { ...opts, headers: { "X-AquaPlot-Contributor": who(), ...opts.headers } });
+
+// A Claude key saved on the Developers page. It goes only with this browser's own checks,
+// read at the moment each one is sent, so the outbox never stores it.
+// A value a header cannot carry is ignored rather than sent: fetch would throw, and the
+// outbox would take that for no signal and hold every check forever.
+function claudeKey() {
+  let key = "";
+  try { key = localStorage.getItem("aquaplot-claude-key") || ""; } catch (e) {}
+  return /^[\x21-\x7e]+$/.test(key) ? key : "";
+}
+const keyHeader = () => (claudeKey() ? { "X-AquaPlot-Claude-Key": claudeKey() } : {});
 
 function who() {
   let id = localStorage.getItem("aquaplot-contributor");
@@ -449,7 +463,10 @@ function setNotice(key, text) {
 }
 
 // ---- health banner
-api("/api/health").then((r) => r.json()).then((h) => {
+if (claudeKey()) {
+  setNotice("model", "Claude reads your photos on the API key saved in this browser, and each photo you check " +
+    "is billed to that key. You can change or forget it on the Developers page.");
+} else api("/api/health").then((r) => r.json()).then((h) => {
   if (h.observer === "none") {
     setNotice("model", "This server has no vision model set up, so nothing reads your photos and nothing " +
       "double-checks your identifications. Pick the animals in step 3 and answer the questions in step 4 yourself. " +
@@ -463,6 +480,7 @@ api("/api/health").then((r) => r.json()).then((h) => {
 // Say how many are left before anyone takes a photo, and what happens after the last one:
 // the check still works, by hand, and the sample photos never use one.
 function showLiveReadings() {
+  if (claudeKey()) return;  // this browser's checks bill its own key, not the server's readings
   api("/api/live-readings").then((r) => r.json()).then((s) => {
     if (!s.limited) return;
     const out = s.left === 0;
@@ -568,7 +586,7 @@ async function flushOutbox(manual) {
       (item.photos || []).forEach((f, i) => body.append("photos", f, f.name || `photo-${i}.jpg`));
       let res;
       try {
-        res = await api("/api/assess", { method: "POST", body });
+        res = await api("/api/assess", { method: "POST", body, headers: keyHeader() });
       } catch (e) {
         break;  // still offline; keep everything and try again later
       }
@@ -777,7 +795,7 @@ $("submit").addEventListener("click", async () => {
   state.files.forEach((f) => body.append("photos", f, f.name));
   let res;
   try {
-    res = await api("/api/assess", { method: "POST", body });
+    res = await api("/api/assess", { method: "POST", body, headers: keyHeader() });
   } catch (networkFailure) {
     // No connection. Keep the whole submission, photos included, and say so
     // plainly: the observation is not lost, it is waiting.

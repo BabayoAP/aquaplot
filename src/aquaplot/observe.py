@@ -207,6 +207,13 @@ class ClaudeObserver:
         return parsed
 
 
+def claude_client(api_key: str) -> Any:
+    """An Anthropic client on one given key: the key a browser saved on the Developers page."""
+    import anthropic
+
+    return anthropic.AsyncAnthropic(api_key=api_key)
+
+
 @dataclass
 class OllamaObserver:
     model: str
