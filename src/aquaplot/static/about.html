@@ -59,6 +59,16 @@
   .js header .brand { transition: opacity .5s ease, visibility 0s linear .5s; }
   .js header:not(.scrolled) .brand { opacity: 0; visibility: hidden; }
   .js header.scrolled .brand { transition: opacity .5s ease, visibility 0s; }
+  /* On a phone the nav wraps under the logo. While the logo is hidden its row closes up, so the nav sits
+     at the top; it slides back down as the logo fades in. */
+  @media (max-width: 560px) {
+    .js header .bar { transition: padding .5s ease, row-gap .5s ease; }
+    .js header .brand { height: 27px; transition: opacity .5s ease, height .5s ease, visibility 0s linear .5s; }
+    .js header.scrolled .brand { transition: opacity .5s ease, height .5s ease, visibility 0s; }
+    .js header:not(.scrolled) .bar { padding-top: 9px; row-gap: 0; }  /* level with the menu button */
+    .js header:not(.scrolled) .brand { height: 0; }
+    .js header:not(.scrolled) nav { padding-right: 48px; }  /* clear of the menu button, which stays in the top row */
+  }
   a { color: var(--accent); }
   :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
@@ -164,6 +174,7 @@
     html { scroll-behavior: auto; }
     .js .reveal { transform: none; filter: none; transition: opacity .6s ease; }
     .js .wordmark, .js .hero .kicker, .cue::after { animation: none; }
+    .js header .bar, .js header .brand, .js header.scrolled .brand { transition: none; }
   }
 </style>
 </head>
@@ -978,14 +989,16 @@ async function start() {
     canvas.classList.add("ready");
   }
 
-  // Drop the resolution if this device cannot keep up, rather than stutter under the reader.
+  // Drop the resolution if this device cannot keep up, rather than stutter under the reader. Only frames
+  // a little over budget count: a very long one is a hidden or throttled window, a tab switch or a busy
+  // moment, not a slow device, and counting those dropped the resolution for good on fast machines.
   let slow = 0, frames = 0;
   function loop(now) {
     if (!running) return;
     const raw = (now - last) / 1000;
     last = now;
     if (++frames > 90) {
-      slow = slow * 0.95 + (raw > 1 / 50 ? 0.05 : 0);
+      slow = slow * 0.95 + (raw > 1 / 50 && raw < 0.1 ? 0.05 : 0);
       if (slow > 0.5 && ratio > 0.75) {
         ratio = Math.max(0.75, ratio * 0.8);
         renderer.setPixelRatio(ratio);
@@ -999,7 +1012,7 @@ async function start() {
   }
   function update() {
     const go = !document.hidden && !still.matches;
-    if (go && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+    if (go && !running) { running = true; last = performance.now(); frames = 0; slow = 0; requestAnimationFrame(loop); }
     if (!go) running = false;
     if (still.matches) draw(0);  // still frames instead of motion
   }
