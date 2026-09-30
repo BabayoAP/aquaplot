@@ -225,13 +225,14 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 282 tests, no network, no model
+.venv/bin/python -m pytest                       # 296 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
 Open `/about` for the two-minute tour, `/try` for the sample check, `/` to check a stream,
 `/site/{key}` for one spot's history, `/dashboard` for the insights, `/map` for the map,
-`/field-guide` for the sampling protocol, and `/docs` for the interactive API reference.
+`/field-guide` for the sampling protocol, `/developers` to test with your own Claude key, and
+`/docs` for the interactive API reference.
 
 A fresh install has an empty dashboard, which is a poor first impression for a tool built on
 the idea that a *series* of readings is worth more than one. Start the server with
@@ -274,6 +275,12 @@ why; the check page shows each tester how many they have left. A local Ollama mo
 Set a spending limit on the key in the Anthropic console as well: it is the one limit nothing can
 get round.
 
+**Testing with your own key.** The Developers page (`/developers`) saves a Claude API key in that
+browser only. Checks from that browser send it in the `X-AquaPlot-Claude-Key` header, and Claude
+reads their photos on it, whatever backend the server has. The server uses the key for that one
+request and never stores, logs or returns it, and those checks use none of the server's live
+readings. The page can ask Anthropic whether the key works, which costs nothing.
+
 ## Where things live
 
 | Path | What |
@@ -305,6 +312,7 @@ get round.
 | `src/aquaplot/static/check.html` | The guided citizen workflow, including the animal picker and the second-opinion cards. |
 | `src/aquaplot/static/site.html` | One spot: its series, its chart, every visit's report. |
 | `src/aquaplot/static/dashboard.html` | The insights dashboard. |
+| `src/aquaplot/static/developers.html` | The Developers page, at `/developers`: saves a Claude API key in this browser so its checks get a live reading, and checks the key with Anthropic. |
 | `src/aquaplot/static/theme.js` | The light/dark switch shared by every page: applies a saved choice before first paint, draws the switch, and announces changes to pages that colour things in script. |
 | `src/aquaplot/static/sw.js` | Service worker: the app shell and the vocabularies, cached for the riverbank. |
 | `src/aquaplot/static/map.html` | Leaflet map: AquaPlot sites and the OneAquaHealth research sites over iNaturalist layers. No build step. |
@@ -334,7 +342,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 214 of the 282 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 228 of the 296 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at

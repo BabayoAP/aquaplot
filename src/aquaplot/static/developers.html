@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/static/theme.js"></script>
+<title>AquaPlot — developers</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f7f8; --card: #fff; --ink: #14202a; --muted: #5c6c78; --line: #dde5e9;
+    --accent: #0f6b7a; --soft: #e8f1f3; --ok: #1a7f5a; --alert: #a5342b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31; --ok: #56c596; --alert: #e8756a; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #101619; --card: #182126; --ink: #e6edf1; --muted: #93a3ad; --line: #26333a;
+            --accent: #56b6c2; --soft: #1e2b31; --ok: #56c596; --alert: #e8756a; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 860px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; } .brand span { color: var(--accent); }
+  nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .bar { position: relative; padding-right: 84px; }
+  .bar .theme-switch { position: absolute; top: 13px; right: 16px; }
+  nav a { background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px;
+          padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  nav a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 560px) {
+    .bar { padding-right: 16px; }
+    .bar .theme-switch { top: 10px; }
+    nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 5px; }
+    nav a { flex: none; white-space: nowrap; padding: 5px 9px; }
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 26px 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card h2 { margin-top: 0; }
+  label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6px; }
+  input[type=password] { width: 100%; max-width: 460px; border: 1px solid var(--line); border-radius: 9px; padding: 9px;
+                         background: transparent; color: inherit; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  button { border: 0; border-radius: 9px; padding: 10px 15px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button[hidden] { display: none; }
+  #status { margin: 0; }
+  .result { margin: 12px 0 0; font-size: 14px; min-height: 1.5em; }
+  .result.ok { color: var(--ok); font-weight: 600; }
+  .result.bad { color: var(--alert); font-weight: 600; }
+  ul { padding-left: 20px; margin: 0; }
+  li { margin: 4px 0; }
+  code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <a class="brand" href="/about">AquaPlot<span>.</span></a>
+  <nav><a href="/">Check a stream</a><a href="/dashboard">Dashboard</a><a href="/map">Map</a><a href="/field-guide">How to sample</a><a href="/about">About</a></nav><span data-theme-switch></span>
+</div></header>
+<main>
+  <h1>Developers</h1>
+  <p class="lead">Try a real Claude reading from this browser. Save a Claude API key here, and the checks you make
+    in this browser send your photos to Claude on that key.</p>
+
+  <div class="card">
+    <h2>Claude API key</h2>
+    <p id="status"></p>
+    <form id="keyform">
+      <label for="key">Paste a key</label>
+      <input type="password" id="key" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+      <div class="row">
+        <button type="submit" class="primary">Save in this browser</button>
+        <button type="button" class="ghost" id="check">Check the saved key</button>
+        <button type="button" class="ghost" id="forget">Forget the key</button>
+      </div>
+    </form>
+    <p class="result" id="result" aria-live="polite"></p>
+  </div>
+
+  <h2>How the key is used</h2>
+  <ul>
+    <li>It stays in this browser until you press "Forget the key". The server does not keep it.</li>
+    <li>It is sent only with checks you make from this browser, and used for that check alone. It is never saved
+      with the check, and never appears in a result, report or export.</li>
+    <li>Each photo you check is one Claude request, billed to the key's account. The sample photos replay a
+      recording and cost nothing, and a review never asks the model again.</li>
+    <li>Your checks don't use up this server's live readings, and nobody else's checks use your key.</li>
+  </ul>
+
+  <h2>Before you paste one</h2>
+  <ul>
+    <li>Make a separate key for AquaPlot in the Anthropic Console, and set a spending limit on it.</li>
+    <li>Anyone using this browser can make checks on the key. Don't save it on a shared computer.</li>
+    <li>To give every visitor live readings instead, set <code>ANTHROPIC_API_KEY</code> where the server runs
+      (see the README). The live-reading limits then protect that key.</li>
+  </ul>
+
+  <h2>API</h2>
+  <p>The <a href="/docs">API reference</a> lists every endpoint. A check sends the key in the
+    <code>X-AquaPlot-Claude-Key</code> header of <code>POST /api/assess</code>.</p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const STORE = "aquaplot-claude-key";  // check.html reads the same entry when it sends a check
+const saved = () => { try { return localStorage.getItem(STORE) || ""; } catch (e) { return ""; } };
+
+function describe() {
+  const key = saved();
+  $("status").textContent = key
+    ? `A key ending in …${key.slice(-4)} is saved in this browser. Checks you make here send your photos to Claude on it.`
+    : "No key is saved in this browser. Checks you make here use the model this server has, if it has one.";
+  $("check").hidden = $("forget").hidden = !key;
+}
+
+function say(text, ok) {
+  $("result").textContent = text;
+  $("result").className = "result" + (ok === true ? " ok" : ok === false ? " bad" : "");
+}
+
+async function checkKey() {
+  say("Asking Anthropic about the key…");
+  try {
+    const res = await fetch("/api/claude-key/check", { method: "POST", headers: { "X-AquaPlot-Claude-Key": saved() } });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || res.statusText);
+    say(body.ok ? `The key works. Checks from this browser will use ${body.model}.` : body.reason, body.ok);
+  } catch (e) {
+    say(`Could not check the key: ${e.message || e}`, false);
+  }
+}
+
+$("keyform").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const key = $("key").value.trim();
+  if (!/^sk-ant-\S{20,}$/.test(key)) return say("That doesn't look like a Claude API key. They start with sk-ant-.", false);
+  try { localStorage.setItem(STORE, key); } catch (e) { return say("This browser won't let AquaPlot save the key.", false); }
+  $("key").value = "";
+  describe();
+  checkKey();
+});
+$("check").addEventListener("click", checkKey);
+$("forget").addEventListener("click", () => {
+  try { localStorage.removeItem(STORE); } catch (e) {}
+  describe();
+  say("Key forgotten. Checks from this browser no longer send one.");
+});
+describe();
+</script>
+</body>
+</html>

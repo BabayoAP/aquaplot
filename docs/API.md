@@ -27,6 +27,12 @@ photo, a habitat answer, a species name or a description must be present.
 Send `X-AquaPlot-Contributor: <opaque id>` to have the assessment counted towards
 a contributor's record. Omit it and the assessment is still stored, anonymously.
 
+Send `X-AquaPlot-Claude-Key: <Claude API key>` to have Claude read the photos on that key,
+whatever model the server has (`CLAUDE_MODEL`, default `claude-opus-5`). This is what the
+Developers page does. The key is used for this request only and is never stored, logged or
+returned, and the check uses none of the server's live readings. If Anthropic rejects the key,
+the check still runs without the model and its penalties say why.
+
 Rate limited per client address (default 20 per 10 minutes, `AQUAPLOT_CLASSIFY_LIMIT`).
 
 ```sh
@@ -145,6 +151,7 @@ anyone else can build against the same vocabulary.
 | `GET /api/pilots` | The five OneAquaHealth research cities, with viewports. |
 | `GET /api/oah/sites` | The OneAquaHealth project's 106 research sites (code, name, city, coordinates), from a snapshot of its public API, and the radius within which a check is linked to one. |
 | `GET /api/live-readings` | How many live photo readings this tester has left when the paid model is on: `limited`, `per_tester`, `used`, `left` and, at zero, the `reason`. `{"limited": false}` otherwise. See `allowance.py`. |
+| `POST /api/claude-key/check` | Whether the key in `X-AquaPlot-Claude-Key` can use the server's Claude model: `{"ok": true, "model": ...}`, or `ok: false` with a plain-language `reason`. A model lookup, so it costs nothing. 422 without the header. |
 | `GET /api/health` | Liveness, plus every version that shapes a result: assessment, catalogue, form, seed, and which model backend is active. |
 
 ## Inherited from SpeciesGuard
