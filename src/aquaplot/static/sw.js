@@ -13,7 +13,9 @@
  * somebody walked to a stream to collect.
  */
 
-const VERSION = "aquaplot-v4";
+// Bump VERSION whenever a file in SHELL_URLS changes (theme.js above all): those are served
+// cache first, so a phone that already has the app keeps the old copy until this changes.
+const VERSION = "aquaplot-v5";
 const SHELL = `${VERSION}-shell`;
 const DATA = `${VERSION}-data`;
 // The ID photos have their own cache, named for the photo set rather than the app version, so an
@@ -22,7 +24,7 @@ const PHOTOS = "aquaplot-guide-photos-1";
 
 // Enough to complete a whole assessment offline: the page, and the vocabularies
 // the questions and the identification guide are rendered from.
-const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon.svg", "/static/theme.js"];
+const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon.svg", "/static/theme.js", "/static/guide.js"];
 const DATA_URLS = ["/api/form", "/api/guide", "/api/pilots"];
 
 self.addEventListener("install", (event) => {
