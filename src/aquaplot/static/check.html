@@ -457,6 +457,29 @@ api("/api/health").then((r) => r.json()).then((h) => {
   }
 }).catch(() => {});
 
+// ---- live photo readings
+//
+// A public test with a paid model gives each tester a few live readings (allowance.py).
+// Say how many are left before anyone takes a photo, and what happens after the last one:
+// the check still works, by hand, and the sample photos never use one.
+function showLiveReadings() {
+  api("/api/live-readings").then((r) => r.json()).then((s) => {
+    if (!s.limited) return;
+    const out = s.left === 0;
+    $("letmodel").hidden = out;  // there is no model to suggest anything
+    if (out) {
+      setNotice("live", `${s.reason[0].toUpperCase()}${s.reason.slice(1)}. You can still check a stream: nothing will read ` +
+        "your photos, so pick the animals in step 3 and answer the questions in step 4 yourself. The reading is " +
+        "calculated the same way, and the sample photos still work.");
+    } else {
+      const of = s.per_tester ? ` of ${s.per_tester}` : "";
+      setNotice("live", `Claude reads your photos in this test. You have ${s.left}${of} live photo reading` +
+        `${s.left === 1 ? "" : "s"} left; each check with your own photos uses one. The sample photos don't use any.`);
+    }
+  }).catch(() => {});
+}
+showLiveReadings();
+
 // ---- location
 $("locate").addEventListener("click", () => {
   if (!navigator.geolocation) return ($("locstatus").textContent = "This browser will not share a location.");
@@ -777,6 +800,7 @@ $("submit").addEventListener("click", async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.statusText);
     state.assessment = data;
+    showLiveReadings();
     data.needs_confirmation.length ? openReview() : render(data);
   } catch (e) {
     $("error").hidden = false; $("error").textContent = String(e.message || e);

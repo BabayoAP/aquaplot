@@ -35,6 +35,7 @@ and cheap for a script to hit; ``AQUAPLOT_CLASSIFY_LIMIT=0`` disables it.
 from __future__ import annotations
 
 import asyncio
+import copy
 import csv
 import io
 import json
@@ -55,12 +56,12 @@ from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field
 
-from . import bioindex, fhir, habitat, oah, onehealth, report
+from . import allowance, bioindex, fhir, habitat, oah, onehealth, report
 from .area import AreaError, AreaQuery, AreaService, BBox, Status
 from .assess import ASSESSMENT_VERSION, Assessment, Review, StreamAssessor, Submission, reassess
 from .identify import select_identifier
 from .inputs import InvalidImage, decode_image, resolve_region
-from .observe import load_samples, select_observer
+from .observe import SampleReplay, WithheldObserver, load_samples, select_observer
 from .pipeline import PIPELINE_VERSION, Pipeline
 from .places import PlaceResolver, pilot_sites
 from .schema import Classification
@@ -165,6 +166,7 @@ app.state.pipeline = Pipeline(
     places=PlaceResolver(app.state.area.inat),
 )
 app.state.limiter = RateLimiter()
+app.state.live_limits = allowance.LiveLimits.from_env()
 app.state.store = Store()
 app.state.assessor = StreamAssessor(
     observer=select_observer(),
@@ -187,6 +189,8 @@ def health() -> dict[str, Any]:
         "habitat_form": habitat.FORM_VERSION,
         "assessments_stored": app.state.store.summary()["assessments"],
         "classify_limit_per_10min": app.state.limiter.limit,
+        "live_readings": ({"per_tester": app.state.live_limits.per_tester, "per_network": app.state.live_limits.per_network,
+                           "per_day": app.state.live_limits.per_day} if allowance.is_paid(app.state.assessor.observer) else None),
     }
 
 
@@ -218,17 +222,28 @@ async def classify(
             detail=f"too many classifications from this address; try again in {max(1, round(wait / 60))} min",
             headers={"Retry-After": str(int(wait) + 1)},
         )
-
     if image_bytes:
         try:
             decoded = decode_image(image_bytes)
         except InvalidImage as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        _charge_classification(request)
         region = resolve_region(decoded.gps, lat, lon)
         return await _upstream(app.state.pipeline.classify(decoded, description, region))
 
+    _charge_classification(request)
     region = resolve_region(None, lat, lon)
     return await _upstream(app.state.pipeline.classify(None, description, region))
+
+
+def _charge_classification(request: Request) -> None:
+    """A classification with a paid model uses one of the tester's live readings, or is refused."""
+    if not allowance.is_paid(app.state.pipeline.identifier):
+        return
+    granted, counts = claim_live_reading(request)
+    if not granted:
+        why = allowance.status(counts, app.state.live_limits)["reason"]
+        raise HTTPException(status_code=429, detail=f"{why[0].upper()}{why[1:]}. The stream check still works by hand.")
 
 
 # ---- Stream assessment -------------------------------------------------------
@@ -255,6 +270,32 @@ def contributor_of(request: Request) -> str | None:
     """An opaque id the browser generates and keeps. No account, no way back to a person."""
     value = (request.headers.get("x-aquaplot-contributor") or "").strip()
     return value[:64] or None
+
+
+def tester_of(request: Request) -> tuple[str, str]:
+    """Who a live reading is counted against: the browser's own id, else its network, plus the network."""
+    network = client_key(request)
+    return contributor_of(request) or f"net:{network}", network
+
+
+def claim_live_reading(request: Request) -> tuple[bool, dict[str, int]]:
+    tester, network = tester_of(request)
+    return app.state.store.claim_live_reading(tester, network, allowance.today(), app.state.live_limits.as_counts())
+
+
+def _reads_live(observer, image) -> bool:
+    """Would this photo go to the model? Not when it is a sample photo answered from its recording."""
+    return not (isinstance(observer, SampleReplay) and observer.samples.match(image.image) is not None)
+
+
+@app.get("/api/live-readings", tags=["meta"])
+def live_readings(request: Request) -> dict[str, Any]:
+    """How many live photo readings this tester has left, on a demo that pays for its model (see allowance.py)."""
+    if not allowance.is_paid(app.state.assessor.observer):
+        return {"limited": False}
+    tester, network = tester_of(request)
+    counts = app.state.store.live_reading_counts(tester, network, allowance.today())
+    return allowance.status(counts, app.state.live_limits)
 
 
 def _readings(raw: str | None, source: str) -> list[habitat.Reading]:
@@ -332,8 +373,19 @@ async def assess(
         decoded.append(image)
         gps = gps or image.gps  # the first photo carrying GPS wins; it is the one taken at the water
 
+    # A paid model reads these photos only while this tester has live readings left. Past
+    # the limit the check still runs, without the model, and says why.
+    assessor = app.state.assessor
+    if allowance.is_paid(assessor.observer) and any(_reads_live(assessor.observer, image) for image in decoded):
+        granted, counts = claim_live_reading(request)
+        if not granted:
+            withheld = WithheldObserver(allowance.status(counts, app.state.live_limits)["reason"])
+            assessor = copy.copy(assessor)
+            assessor.observer = (SampleReplay(withheld, assessor.observer.samples)
+                                 if isinstance(assessor.observer, SampleReplay) else withheld)
+
     result = await _upstream(
-        app.state.assessor.assess(
+        assessor.assess(
             Submission(
                 photos=tuple(decoded),
                 description=(description or "").strip(),

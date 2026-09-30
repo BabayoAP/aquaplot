@@ -225,7 +225,7 @@ Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
 ```sh
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 271 tests, no network, no model
+.venv/bin/python -m pytest                       # 282 tests, no network, no model
 .venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
 ```
 
@@ -264,6 +264,16 @@ active. `AQUAPLOT_DB` sets the SQLite path (default `aquaplot.db`). `AQUAPLOT_CL
 caps assessments per client address per 10 minutes (default 20, `0` disables) so a public
 demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookups.
 
+**Testing with a real key in public.** With Claude as the backend, each tester gets a few *live
+photo readings*: one per check whose photos go to the model. `AQUAPLOT_LIVE_PER_TESTER` (default 2)
+counts per browser, `AQUAPLOT_LIVE_PER_NETWORK` (default 10) per network address per day, and
+`AQUAPLOT_LIVE_PER_DAY` (default 40) for the whole server per day; `0` turns one off. The counts
+live in the database, so a restart does not reset them (except on a host whose disk is wiped). The
+sample photos and reviews never use a reading. Past a limit the check still runs, by hand, and says
+why; the check page shows each tester how many they have left. A local Ollama model is not limited.
+Set a spending limit on the key in the Anthropic console as well: it is the one limit nothing can
+get round.
+
 ## Where things live
 
 | Path | What |
@@ -277,6 +287,7 @@ demo cannot drain an API key. `AQUAPLOT_WEATHER=off` stops the Open-Meteo lookup
 | `src/aquaplot/places.py` | Coordinates → administrative chain, anywhere; the OneAquaHealth research cities. |
 | `src/aquaplot/status.py` | Species + place → Native / Invasive / Naturalized, with the listing jurisdiction. |
 | `src/aquaplot/weather.py` | The 48 hours either side of a visit and the 48-hour outlook, from Open-Meteo. Injectable, stored with the check. |
+| `src/aquaplot/allowance.py` | Live Claude readings on a public test: a few per tester, a ceiling per network and per day, counted in the store. |
 | `src/aquaplot/demo.py` | The labelled demo dataset, seeded into an empty store at startup with `AQUAPLOT_SEED_DEMO=1`. |
 | `src/aquaplot/store.py` | SQLite: sites on a ~100 m grid, trends, the alert feed, badges. |
 | `src/aquaplot/fhir.py` | FHIR R4 Bundle export, conforming to the OneAquaHealth IG profiles, and the project CodeSystem. |
@@ -323,7 +334,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 203 of the 271 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 214 of the 282 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at

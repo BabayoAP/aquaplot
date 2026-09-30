@@ -92,6 +92,12 @@ CREATE TABLE IF NOT EXISTS site_names (
     name      TEXT NOT NULL,
     named_at  TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS live_readings (
+    at       TEXT NOT NULL,
+    day      TEXT NOT NULL,
+    tester   TEXT NOT NULL,
+    network  TEXT NOT NULL
+);
 """
 
 # Indexes are created after the migration, because one of them names a column an
@@ -101,6 +107,8 @@ CREATE INDEX IF NOT EXISTS ix_site ON assessments(site_key, created_at);
 CREATE INDEX IF NOT EXISTS ix_live ON assessments(superseded_by, created_at);
 CREATE INDEX IF NOT EXISTS ix_time ON assessments(created_at);
 CREATE INDEX IF NOT EXISTS ix_contributor ON assessments(contributor, created_at);
+CREATE INDEX IF NOT EXISTS ix_live_tester ON live_readings(tester);
+CREATE INDEX IF NOT EXISTS ix_live_day ON live_readings(day, network);
 """
 
 
@@ -404,6 +412,38 @@ class Store:
                 }
             )
         return out
+
+    # ---- live model readings on a demo that pays for them (allowance.py) ------
+
+    @staticmethod
+    def _live_counts(cursor: sqlite3.Cursor, tester: str, network: str, day: str) -> dict[str, int]:
+        row = cursor.execute(
+            """SELECT (SELECT COUNT(*) FROM live_readings WHERE tester = ?) AS tester,
+                      (SELECT COUNT(*) FROM live_readings WHERE network = ? AND day = ?) AS network,
+                      (SELECT COUNT(*) FROM live_readings WHERE day = ?) AS day""",
+            (tester, network, day, day),
+        ).fetchone()
+        return {"tester": row["tester"], "network": row["network"], "day": row["day"]}
+
+    def live_reading_counts(self, tester: str, network: str, day: str) -> dict[str, int]:
+        """Live readings this tester has had ever, and this network and the whole server today."""
+        with self._write() as c:
+            return self._live_counts(c, tester, network, day)
+
+    def claim_live_reading(self, tester: str, network: str, day: str, limits: dict[str, int]) -> tuple[bool, dict[str, int]]:
+        """Record one live reading if every limit still allows it; say whether it did.
+
+        The count and the record happen under one lock, so two checks arriving together
+        cannot both take the last reading. A limit of 0 is no limit.
+        """
+        with self._write() as c:
+            counts = self._live_counts(c, tester, network, day)
+            granted = all(limits.get(k, 0) <= 0 or counts[k] < limits[k] for k in counts)
+            if granted:
+                c.execute("INSERT INTO live_readings (at, day, tester, network) VALUES (?, ?, ?, ?)",
+                          (datetime.now(UTC).isoformat(), day, tester, network))
+                counts = {k: v + 1 for k, v in counts.items()}
+            return granted, counts
 
     def summary(self) -> dict[str, Any]:
         """The numbers the dashboard leads with (FR-11)."""

@@ -316,7 +316,8 @@ class StreamAssessor:
         replayed: bool = False,
     ) -> SecondOpinion:
         if self.observer.name == "none" and not replayed:
-            return secondopinion.unavailable("no vision model is configured, so nobody double-checked the identifications")
+            why = getattr(self.observer, "reason", None) or "no vision model is configured"
+            return secondopinion.unavailable(f"{why}, so nobody double-checked the identifications")
         if not SAMPLE_KINDS & set(photo_kinds):
             return secondopinion.unavailable(
                 "there was no photo of the sample tray, so the model had nothing to compare your identifications against",
