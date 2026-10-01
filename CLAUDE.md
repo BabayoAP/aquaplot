@@ -5,8 +5,11 @@ Build against [README.md](README.md), [docs/ASSESSMENT.md](docs/ASSESSMENT.md) a
 [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md). Cite the document a module implements in its
 docstring, and name tests after the behaviour they protect, not the function they call.
 
-- Python 3.12 in `.venv` (system python is 3.9). `uv venv --python 3.12 .venv`,
-  then `uv pip install --python .venv/bin/python -e ".[dev]"`.
+- `.venv` is Python 3.14, made with `python3.14 -m venv .venv` and filled with
+  `.venv/bin/pip install -e ".[dev]"`. Any 3.12+ works (the Dockerfile builds on 3.12, and the
+  tests pass on both). The Mac's built-in `python3` is 3.9, too old for AquaPlot, and its pip's
+  error doesn't say so: name the version. With uv: `uv venv --python 3.12 .venv`, then
+  `uv pip install -e ".[dev]"`.
 - Tests: `.venv/bin/python -m pytest`. Run: `.venv/bin/uvicorn aquaplot.app:app --reload`.
 - **The model observes, the rules decide.** `observe.py` may return only structured
   observations. Any determination about health belongs in `bioindex.py` or `onehealth.py`,
