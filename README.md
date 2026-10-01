@@ -220,33 +220,65 @@ same way. The model makes AquaPlot safer for a beginner, but AquaPlot works with
 
 ## Run
 
-Python 3.12 or newer. With [uv](https://docs.astral.sh/uv/):
+You need git and [uv](https://docs.astral.sh/uv/), which also fetches Python 3.12 if you don't
+have it. Install uv once, then open a new terminal so it is on your PATH:
 
 ```sh
-uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -e ".[dev]"
-.venv/bin/python -m pytest                       # 305 tests, no network, no model
-.venv/bin/uvicorn aquaplot.app:app --reload        # http://127.0.0.1:8000
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+The first is for macOS and Linux, the second for Windows. `brew install uv` or
+`winget install --id=astral-sh.uv -e` work too.
+
+On macOS or Linux:
+
+```sh
+git clone https://github.com/BabayoAP/aquaplot.git
+cd aquaplot
+uv venv --python 3.12 .venv
+uv pip install -e ".[dev]"
+.venv/bin/python -m pytest                       # 307 tests, no network, no model
+AQUAPLOT_SEED_DEMO=1 .venv/bin/uvicorn aquaplot.app:app --reload
+```
+
+On Windows, in PowerShell:
+
+```powershell
+git clone https://github.com/BabayoAP/aquaplot.git
+cd aquaplot
+uv venv --python 3.12 .venv
+uv pip install -e ".[dev]"
+.venv\Scripts\python -m pytest
+$env:AQUAPLOT_SEED_DEMO = "1"; .venv\Scripts\uvicorn aquaplot.app:app --reload
+```
+
+Then open **http://127.0.0.1:8000/about** in a browser: the two-minute tour, and the way into
+everything else.
 
 GitHub runs the same tests on every pull request and every push to `main`
 (`.github/workflows/tests.yml`), so a PR shows whether it breaks anything before it is merged.
 
-Open `/about` for the two-minute tour, `/try` for the sample check, `/` to check a stream,
-`/site/{key}` for one spot's history, `/dashboard` for the insights, `/map` for the map,
-`/field-guide` for the sampling protocol, `/developers` to test with your own Claude key, and
-`/docs` for the interactive API reference.
+From there: `/try` for the sample check, `/` to check a stream, `/site/{key}` for one spot's
+history, `/dashboard` for the insights, `/map` for the map, `/field-guide` for the sampling
+protocol, `/developers` to test with your own Claude key, and `/docs` for the interactive API
+reference.
 
-A fresh install has an empty dashboard, which is a poor first impression for a tool built on
-the idea that a *series* of readings is worth more than one. Start the server with
-`AQUAPLOT_SEED_DEMO=1` and an empty database is filled at startup with a small, clearly
-labelled demo dataset across the five research cities, dated over five months, with one site
-that declines and one that improves (`src/aquaplot/demo.py`). The Render blueprint sets this,
-because a free instance's disk is wiped on every restart. You can also post the same visits to
-a running server through the public API:
+The run command sets `AQUAPLOT_SEED_DEMO=1` because a fresh install has an empty dashboard,
+which is a poor first impression for a tool built on the idea that a *series* of readings is worth
+more than one. With it, an empty database is filled at startup with a small, clearly labelled demo
+dataset across the five research cities, dated over five months, with one site that declines and
+one that improves (`src/aquaplot/demo.py`). It only ever fills an empty database, so it never mixes
+with real checks; leave it out to start with nothing. The Render blueprint sets it too, because a
+free instance's disk is wiped on every restart. You can also post the same visits to a running
+server through the public API:
 
 ```sh
-.venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000
+.venv/bin/python scripts/seed_demo.py --url http://127.0.0.1:8000        # macOS and Linux
+.venv\Scripts\python scripts\seed_demo.py --url http://127.0.0.1:8000    # Windows
 ```
 
 ### Choosing a vision model
@@ -346,7 +378,7 @@ both biotic indices, the field form, the One Health rule engine, the assessment 
 its review loop, persistence and trends, the authority report, FHIR and tabular export, the
 evaluation harness, the generalised geography, the offline field app, and every page except
 the classifier. By `git diff --shortstat` against the imported commit, that is about 6,900
-lines of new Python and 2,100 of new interface, and 237 of the 305 tests. SpeciesGuard's code
+lines of new Python and 2,100 of new interface, and 239 of the 307 tests. SpeciesGuard's code
 was written on Sep 16–17, 2026, inside this hackathon's Sep 16–30 development window
 ([its commit history](https://github.com/BabayoAP/nativeview/commits)). The original project's
 PRD is kept at [docs/PRD-SPECIESGUARD.md](docs/PRD-SPECIESGUARD.md) and its submission notes at
