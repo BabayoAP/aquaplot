@@ -1,4 +1,5 @@
-# Render Blueprint: one-click deploy for the hackathon live link.
+# Render Blueprint: one-click deploy, for a hosted copy. The hackathon entry is run from the
+# repository instead (README, Run), but this shows it deploys on a free tier.
 # https://render.com/docs/blueprint-spec
 #
 # Free plan, so no persistent disk: the database lives in the container and is

@@ -1,0 +1,20 @@
+// GitHub Codespaces: AquaPlot running in the browser with nothing installed, for judges and
+// anyone else who wants to try it without setting up Python. The README's Run section links here.
+// https://containers.dev/implementors/json_reference/
+{
+  "name": "AquaPlot",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  // The same install as the README. It runs before VS Code connects (the default waitFor is
+  // updateContentCommand, which comes after this), so the server below never starts before it.
+  "onCreateCommand": "python -m venv .venv && .venv/bin/pip install -e '.[dev]'",
+
+  // Started each time someone opens the codespace, in a terminal they can see and stop.
+  // AQUAPLOT_SEED_DEMO fills the empty database with the labelled demo sites, as in the README.
+  "postAttachCommand": "AQUAPLOT_SEED_DEMO=1 .venv/bin/uvicorn aquaplot.app:app --host 0.0.0.0 --port 8000",
+
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": { "label": "AquaPlot", "onAutoForward": "openBrowser" }
+  }
+}
