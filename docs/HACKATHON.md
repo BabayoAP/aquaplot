@@ -118,7 +118,7 @@ Weights are from the Devpost rules; each criterion is scored 1–10.
 |---|---|
 | **Impact & alignment with the OneAquaHealth mission (30%)** | Benthic macroinvertebrates, the indicator group the project's protocols put first, scored with the index Iberian practice uses where the project's Coimbra pilot is. These are exactly what the project's own Citizen Science App does not ask about. Mosquito larvae and parasite-host snails are carried through to human and animal findings. Checks at the project's 106 research sites are linked to them by the project's site code, and every check can leave in the project's own formats: its app's submission and its FHIR IG. Every finding ends in an action split between the citizen, the community and the authority, and the authority's action arrives as a document the citizen can send. |
 | **Innovation & creativity (20%)** | The model as a *blind second opinion* on the volunteer rather than the identifier: questions ranked by whether the answer changes the band, with the feature that settles each. Plus an alert that waits for a human, a review that supersedes a visit instead of inventing one, and one rule applied to every hand-off: only what a person stands behind crosses into the project's formats. |
-| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 311 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The central claim is *measured*, not asserted: [EVALUATION.md](EVALUATION.md) sweeps observer quality against the review rules and shows an observer missing 40% of the animals still catches 68% of simulated volunteer mistakes, at 0.32 unnecessary questions per tray. That is the case for a model that is only allowed to raise questions. Missing inputs don't break it: no model, no place, no coordinates and no photo each lower a named certainty factor instead of causing an error. |
+| **Technical implementation (20%)** | One JSON file generates the prompt, the validator, the UI, the scoring and the FHIR CodeSystem. Every network call is injectable, so 313 tests run with no network and no model. The FHIR export is validated against the OneAquaHealth IG's profiles with the HL7 validator. The central claim is *measured*, not asserted: [EVALUATION.md](EVALUATION.md) sweeps observer quality against the review rules and shows an observer missing 40% of the animals still catches 68% of simulated volunteer mistakes, at 0.32 unnecessary questions per tray. That is the case for a model that is only allowed to raise questions. Missing inputs don't break it: no model, no place, no coordinates and no photo each lower a named certainty factor instead of causing an error. |
 | **Usability & UX (15%)** | Five steps, plain language throughout, identification by shape, a searchable ID guide, a printable field guide, keyboard and screen-reader support, and a result that opens with one sentence about people before any number. It works offline, because riverbanks often have no signal. |
 | **Feasibility & scalability (15%)** | Geography, including which biotic index applies, is resolved from coordinates rather than hard-coded. Free-tier deployable: SQLite, no build step, no services, and it degrades to a hand-filled form with no API key. Another national index is a score column and a few lines; another data source is one adapter. It connects through the project's own FHIR IG and app schema instead of inventing a new route. CSV, GeoJSON and FHIR mean the data outlives this deployment. |
 
@@ -140,7 +140,7 @@ here, in the README and in the first commit message.
 | Sep 28, 2026 | OneAquaHealth interoperability: the 106 research sites and the Citizen Science App's answer codes from the project's public API; a check as the app's submission; the FHIR export brought into conformance with the project's IG (`hl7-eu/oah`) and validated against its profiles; the research sites on the map. |
 
 By `git diff --shortstat` against the imported commit: about 6,900 lines of new Python and
-2,100 of new interface, and 243 of the 311 tests. `git log` separates the imported commit from
+2,100 of new interface, and 245 of the 313 tests. `git log` separates the imported commit from
 everything after it.
 
 ## Submission checklist
@@ -193,13 +193,11 @@ everything after it.
       only one team)"* and states no student requirement. The rules page normally governs, but
       a solo entry is the case the sidebar would exclude, so email the hackathon manager and get
       the answer in writing before the deadline rather than after it
-- [ ] **Confirm the sample recording names a real model.** `data/samples.json` records
-      `recorded_by: "claude-opus-5-5"` ("Claude Opus 5.5"), and that string reaches the result
-      page, the authority report and the FHIR Provenance as the observer. `render.yaml` sets
-      `CLAUDE_MODEL=claude-opus-5`. If 5.5 was not the model that actually answered, this is a
-      false provenance claim in the one place the project can least afford one, since holding
-      the line between a recorded reading and a live one is the argument. Fix it in
-      `samples.json` and in `tests/test_samples.py`, which asserts the string
+- [x] **The sample recording names a real model** (checked 2026-09-30): `data/samples.json`
+      records `claude-opus-5-5` (Claude Opus 5.5), and its `how` field says the photos were shown
+      to it in a Claude Code session with the observer's prompt, not through the app's API call.
+      The live default (`CLAUDE_MODEL` in the code, `render.yaml` and `.env.example`) is now the
+      same model, so a recorded reading and a live one name the same observer
 - [ ] Submitted on Devpost before Oct 4, 2026, 9:00 pm PDT
 
 ## Demo script (for the video)
@@ -239,7 +237,7 @@ thing a citizen actually sends the water authority.
 *The next 48 hours*: the same rules re-run with the forecast. Heavy rain at a site where sewage
 was seen means an overflow is likely.
 
-**3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 311
+**3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 313
 tests. What we have not claimed yet: that the second opinion catches real mistakes on real
 trays. The harness to measure it is built, and running it is the next step. That's AquaPlot:
 you name the animals, an AI checks you without seeing your answer, and the rules make the

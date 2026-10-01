@@ -126,7 +126,7 @@ class ClaudeIdentifier:
 
     name = "claude"
 
-    def __init__(self, client: Any = None, model: str = "claude-opus-5"):
+    def __init__(self, client: Any = None, model: str = "claude-opus-5-5"):
         if client is None:
             import anthropic
 
@@ -141,7 +141,7 @@ class ClaudeIdentifier:
             content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data}})
         content.append({"type": "text", "text": _user_text(description, region)})
         try:
-            # Opus 5 thinks by default and thinking counts against max_tokens, so
+            # Opus 5.5 always thinks, and thinking counts against max_tokens, so
             # the cap is well above what the JSON itself needs.
             response = await self.client.messages.parse(
                 model=self.model,
@@ -240,7 +240,7 @@ def select_identifier(env: dict[str, str] | None = None) -> Identifier:
     if forced == "none":
         return NullIdentifier()
     if forced == "claude" or (not forced and env.get("ANTHROPIC_API_KEY")):
-        return ClaudeIdentifier(model=env.get("CLAUDE_MODEL", "claude-opus-5"))
+        return ClaudeIdentifier(model=env.get("CLAUDE_MODEL", "claude-opus-5-5"))
     if forced == "ollama":
         return OllamaIdentifier(model=env.get("OLLAMA_MODEL") or detect_ollama_vision_model() or "qwen2.5vl:3b")
     model = detect_ollama_vision_model()

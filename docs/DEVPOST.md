@@ -87,7 +87,7 @@ overflow is most likely to run when heavy rain falls where sewage has been seen.
 - **The OneAquaHealth public API** (`api.enora-oah.eu`) for the 106 research sites and the
   app's answer codes, snapshotted so the app never depends on it at run time.
 - **Open-Meteo** for weather, **iNaturalist** for taxonomy and places, Leaflet for the map.
-- **311 automated tests**, none of which touch the network or a model: every network call goes
+- **313 automated tests**, none of which touch the network or a model: every network call goes
   through an injectable function.
 
 ## Challenges we ran into
@@ -134,7 +134,7 @@ is to run the official validator against it.
 ## Built with
 
 python · fastapi · sqlite · javascript · html · claude · anthropic · fhir · hl7 · leaflet ·
-inaturalist · open-meteo · playwright · pytest
+inaturalist · open-meteo · three.js · playwright · pytest
 
 ## Prior work (required disclosure)
 

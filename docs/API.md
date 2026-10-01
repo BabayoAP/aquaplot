@@ -28,7 +28,7 @@ Send `X-AquaPlot-Contributor: <opaque id>` to have the assessment counted toward
 a contributor's record. Omit it and the assessment is still stored, anonymously.
 
 Send `X-AquaPlot-Claude-Key: <Claude API key>` to have Claude read the photos on that key,
-whatever model the server has (`CLAUDE_MODEL`, default `claude-opus-5`). This is what the
+whatever model the server has (`CLAUDE_MODEL`, default `claude-opus-5-5`). This is what the
 Developers page does. The key is used for this request only and is never stored, logged or
 returned, and the check uses none of the server's live readings. If Anthropic rejects the key,
 the check still runs without the model and its penalties say why.

@@ -1,11 +1,13 @@
 """The assessment pipeline, the review loop, the store and the HTTP surface. No network, no model."""
 
+import csv
+import io
 import json
 
 import pytest
 from fastapi.testclient import TestClient
 
-from aquaplot.app import app
+from aquaplot.app import RateLimiter, app
 from aquaplot.assess import Review, StreamAssessor, Submission, reassess, warm_season
 from aquaplot.bioindex import TaxonObservation
 from aquaplot.habitat import Reading
@@ -466,3 +468,22 @@ async def test_a_model_that_declines_to_guess_turns_its_declines_into_questions(
     assert "not_a_real_key" not in asked
     declined = next(q for q in a.needs_confirmation if q["key"] == "substrate")
     assert declined["why_it_matters"].startswith("The model looked and could not tell")
+
+
+def test_a_site_name_cannot_run_as_a_formula_in_the_csv(api):
+    api.post("/api/assess", data={"taxa": '["Perlidae"]', "site_name": '=HYPERLINK("http://x.example","open")',
+                                  "lat": "40.2111", "lon": "-8.4291"})
+    rows = list(csv.DictReader(io.StringIO(api.get("/api/export.csv").text)))
+    assert rows[0]["site_name"].startswith("'=")  # shown as text, not evaluated
+    assert rows[0]["lon"] == "-8.4291"  # numbers keep their sign
+
+
+def test_reviews_share_the_checks_rate_limit(api):
+    app.state.limiter = RateLimiter(limit=2)
+    try:
+        created = api.post("/api/assess", data={"taxa": '["Perlidae"]'}).json()
+        assert api.post(f"/api/assess/{created['id']}/review", json={"confirmed_taxa": ["Perlidae"]}).status_code == 200
+        res = api.post(f"/api/assess/{created['id']}/review", json={"confirmed_taxa": ["Perlidae"]})
+        assert res.status_code == 429 and "Retry-After" in res.headers
+    finally:
+        app.state.limiter = RateLimiter()

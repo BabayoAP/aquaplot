@@ -178,7 +178,7 @@ app.state.assessor = StreamAssessor(
 # For checks from a browser that brought its own Claude key (the Developers page). Tests
 # replace the client factory with a fake, so they never reach Anthropic.
 app.state.claude_client = claude_client
-app.state.claude_model = os.environ.get("CLAUDE_MODEL", "claude-opus-5")
+app.state.claude_model = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 # The key check answers "does Anthropic accept this key?" for free, which would make the
 # server an anonymous key tester for anyone holding a list of leaked keys. A tester needs a
 # handful of tries, not hundreds.
@@ -507,6 +507,15 @@ async def review_assessment(assessment_id: str, body: ReviewBody, request: Reque
     previous = app.state.store.get(assessment_id)
     if previous is None:
         raise HTTPException(status_code=404, detail="no assessment with that id")
+    # Every review stores a new revision, so without a limit one address could fill the
+    # database. It shares the check's budget: a person reviews the checks they made.
+    wait = app.state.limiter.retry_after(client_key(request))
+    if wait > 0:
+        raise HTTPException(
+            status_code=429,
+            detail=f"too many reviews from this address; try again in {max(1, round(wait / 60))} min",
+            headers={"Retry-After": str(int(wait) + 1)},
+        )
     unknown = [k for k in body.answers if k not in habitat.BY_KEY]
     if unknown:
         raise HTTPException(status_code=422, detail=f"unknown habitat indicator(s): {', '.join(sorted(unknown))}")
@@ -751,6 +760,19 @@ def alerts(days: int = Query(default=30, ge=1, le=365)):
     return {"days": days, "alerts": app.state.store.alerts(days)}
 
 
+def _cell(value: Any) -> Any:
+    """A text cell a spreadsheet will show as text rather than run as a formula.
+
+    Site names are typed by anyone, and this file is made to be opened in Excel or
+    LibreOffice, where a cell starting with = + - @ is evaluated. A leading apostrophe
+    is the spreadsheet convention for "this is text" (OWASP, CSV injection). Numbers are
+    left alone, so a negative longitude stays a number.
+    """
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
 @app.get("/api/export.csv", tags=["insight", "interoperability"])
 def export_csv():
     """Every live assessment as CSV, for a spreadsheet or an R session.
@@ -768,7 +790,7 @@ def export_csv():
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore")
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows([{k: _cell(v) for k, v in row.items()} for row in rows])
     return Response(
         buffer.getvalue(),
         media_type="text/csv; charset=utf-8",

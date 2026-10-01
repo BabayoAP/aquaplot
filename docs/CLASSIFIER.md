@@ -29,7 +29,7 @@ The server picks one backend at startup and names it in every result
 
 | Backend | Chosen when | Notes |
 |---|---|---|
-| `claude` | `ANTHROPIC_API_KEY` is set | Claude (`claude-opus-5` by default, override with `CLAUDE_MODEL`) with structured output, so the reply is always a validated `Identification`; medium effort, 8192-token cap because the model thinks before answering. Best accuracy. The intended backend for the deployed live link. Two calls per photo when Stage 2 crops. |
+| `claude` | `ANTHROPIC_API_KEY` is set | Claude (`claude-opus-5-5` by default, override with `CLAUDE_MODEL`) with structured output, so the reply is always a validated `Identification`; medium effort, 8192-token cap because the model thinks before answering. Best accuracy. The intended backend for the deployed live link. Two calls per photo when Stage 2 crops. |
 | `ollama` | A running Ollama has a vision model pulled (`qwen2.5vl`, `llava`, `gemma3`, …), or `OLLAMA_MODEL` names one | Local, keyless, offline. Same prompt and same JSON schema as Claude, enforced by Ollama's `format`. Photos are sent at 512 px and output is capped, because vision tokens dominate the cost. Measured on an 8 GB Apple laptop with `qwen2.5vl:3b`: 90–150 s per photo, correct on California sagebrush, wrong species but right family on pampas grass. Treat it as a demo backend; see "Local model limits" below. |
 | `none` | Neither | The M0 placeholder: neutral label, 0 % certainty, and the evidence trail says no model is configured. |
 

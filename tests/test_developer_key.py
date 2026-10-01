@@ -22,7 +22,7 @@ HEADERS = {"X-AquaPlot-Claude-Key": KEY}
 
 
 def rejected(status: int, cls: type[anthropic.APIStatusError]) -> anthropic.APIStatusError:
-    request = httpx2.Request("GET", "https://api.anthropic.com/v1/models/claude-opus-5")
+    request = httpx2.Request("GET", "https://api.anthropic.com/v1/models/claude-opus-5-5")
     return cls("rejected", response=httpx2.Response(status, request=request), body=None)
 
 

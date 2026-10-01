@@ -174,7 +174,7 @@ class WithheldObserver(NullObserver):
 class ClaudeObserver:
     name = "claude"
 
-    def __init__(self, client: Any = None, model: str = "claude-opus-5"):
+    def __init__(self, client: Any = None, model: str = "claude-opus-5-5"):
         if client is None:
             import anthropic
 
@@ -252,7 +252,7 @@ def _live_observer(env) -> StreamObserver:
     if forced == "none":
         return NullObserver()
     if forced == "claude" or (not forced and env.get("ANTHROPIC_API_KEY")):
-        return ClaudeObserver(model=env.get("CLAUDE_MODEL", "claude-opus-5"))
+        return ClaudeObserver(model=env.get("CLAUDE_MODEL", "claude-opus-5-5"))
     if forced == "ollama":
         return OllamaObserver(model=env.get("OLLAMA_MODEL") or detect_ollama_vision_model() or "qwen2.5vl:3b")
     model = detect_ollama_vision_model()

@@ -21,7 +21,7 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: CLAUDE_MODEL
-        value: claude-opus-5
+        value: claude-opus-5-5
       - key: AQUAPLOT_SEED_DEMO
         value: "1"
       # Assessments per client address per 10 minutes; protects the key.
