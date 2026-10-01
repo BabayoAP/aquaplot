@@ -1,8 +1,8 @@
 # Devpost submission text
 
-Paste each section into the matching Devpost field. Replace `<live link>` once the Render
-deployment is up, and the bracketed note under *Inspiration* with your own words: judges can
-tell a real reason from a written one, and only you have it.
+Paste each section into the matching Devpost field. Replace the bracketed note under
+*Inspiration* with your own words: judges can tell a real reason from a written one, and only
+you have it.
 
 ---
 
@@ -16,8 +16,13 @@ Volunteers name what lives in their stream, an AI double-checks them without see
 (Data-to-Insight), Track 6 (Resilience Informatics) and Track 7 (Digital Health Standards).
 Detail: [docs/HACKATHON.md](HACKATHON.md#track-alignment).
 
-**Try it:** `<live link>/try` (90 seconds, real photos pre-loaded, no account) ·
-`<live link>/about` (the two-minute tour) · source: https://github.com/BabayoAP/aquaplot
+**Try it:** [open it in GitHub Codespaces](https://codespaces.new/BabayoAP/aquaplot?quickstart=1)
+to run it in your browser with nothing to install, or run it on your own machine
+([README, Run](https://github.com/BabayoAP/aquaplot#run)). Then open `/try` (90 seconds, real
+photos pre-loaded, no account) and `/about` (the two-minute tour). **No API key is needed:** the
+model's reading of the sample photos was recorded once and is replayed, labelled as a recording.
+To see live readings of your own photos, paste a Claude key on `/developers`: it is kept in your
+browser and sent only with your own checks. Source: https://github.com/BabayoAP/aquaplot
 
 ## Inspiration
 
@@ -129,7 +134,7 @@ is to run the official validator against it.
 ## Built with
 
 python · fastapi · sqlite · javascript · html · claude · anthropic · fhir · hl7 · leaflet ·
-inaturalist · open-meteo · playwright · pytest · render
+inaturalist · open-meteo · playwright · pytest
 
 ## Prior work (required disclosure)
 

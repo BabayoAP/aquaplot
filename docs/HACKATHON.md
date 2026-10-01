@@ -56,7 +56,7 @@ and covered by tests.
   wrong family, and never asks it about what a photo cannot show, such as smell. *(AI prompts.)*
 - **Something a judge can try without a stream.** *Use the sample photos* on the first step
   loads two openly licensed photographs whose model reading was recorded once and is replayed,
-  labelled as a recording, so the second opinion can be seen on a deployment with no model key.
+  labelled as a recording, so the second opinion can be seen with no model key.
 - **A way to know whether any of it works.** `scripts/evaluate_observer.py` measures, on
   labelled photos, what the model sees, how many simulated volunteer mistakes the second
   opinion catches, and how many questions a correct list still draws. See
@@ -147,7 +147,8 @@ everything after it.
 
 - [x] **Repository made public** (2026-09-28): <https://github.com/BabayoAP/aquaplot>
 - [x] Source and documentation ([API](API.md), [field guide](FIELD-GUIDE.md), [rules](ONE-HEALTH.md), [FHIR](FHIR.md), [evaluation](EVALUATION.md), [contributing](../CONTRIBUTING.md))
-- [x] Working prototype, runnable in three commands, with a test suite that needs no network
+- [x] Working prototype, runnable from the README on any machine with Python 3.12+, or in a GitHub
+      Codespace with nothing installed (`.devcontainer/`), with a test suite that needs no network
 - [x] Track alignment stated (above)
 - [x] Project description: [DEVPOST.md](DEVPOST.md) is written to paste into Devpost's fields
 - [x] Prior work disclosed
@@ -168,9 +169,13 @@ everything after it.
       eval/claude-results`). This is the one that speaks to the deployed model; the local
       backend's zeros say nothing about it. Do not quote the rule-layer table as evidence the
       model works
-- [ ] Before judging opens (Oct 1): open the live link so the free instance is awake, and try
-      *Use the sample photos* on it once
-- [ ] Live link deployed (`render.yaml` blueprint is in the repository: free plan, no disk, demo data seeded at startup). Put `<live link>/about` in the Devpost description and `<live link>/try` as the first link
+- [x] **No hosted link** (decided 2026-09-30): the Devpost rules ask for a public repository and
+      "a working prototype, mockup, or proof-of-concept", not a hosted one, so judges run it from
+      the repository, on their own machine or in a Codespace. The Devpost *Try it* line says how,
+      and that no API key is needed. `render.yaml` stays, as the evidence that it deploys on a
+      free tier
+- [ ] Before submitting: open the repository in a new Codespace and try *Use the sample photos*
+      once, so the path a judge takes is known to work
 - [ ] Demo video, 3–5 minutes (the sample check on step 1 makes it possible without a stream)
 - [ ] Eligibility confirmed: registered on Devpost. **The two Devpost pages contradict each
       other.** The overview sidebar says "Students only" and "Team required", while the rules
@@ -185,8 +190,8 @@ everything after it.
 Target **3 min 30 s**; the rules allow 3–5. Built around what judges say decides hackathons:
 lead with the problem, show one thing working within about 90 seconds, put the judge in the
 user's shoes, be direct about what works and what does not, and have the video finished before
-the deadline rather than on it. Record from the live link, at phone width, with the demo data
-seeded. Rehearse it out loud once and time it.
+the deadline rather than on it. Record from a local run (the README's run command, which seeds
+the demo data), at phone width. Rehearse it out loud once and time it.
 
 **0:00–0:20 · The problem.** *"The animals in a stream are the best evidence of its health, and
 the hardest thing for a volunteer to name. This is a flat-headed mayfly. To a beginner it looks
@@ -217,7 +222,7 @@ thing a citizen actually sends the water authority.
 *The next 48 hours*: the same rules re-run with the forecast. Heavy rain at a site where sewage
 was seen means an overflow is likely.
 
-**3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 255
+**3:20–3:30 · Honest close.** *"What works: all of this, offline, with or without an AI, in 307
 tests. What we have not claimed yet: that the second opinion catches real mistakes on real
 trays. The harness to measure it is built, and running it is the next step. That's AquaPlot:
 you name the animals, an AI checks you without seeing your answer, and the rules make the

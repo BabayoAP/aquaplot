@@ -12,7 +12,8 @@ nobody anything, hides the AI's mistakes, and puts a machine's guess into a heal
 Track 3 of the hackathon states the problem directly: *citizen observations can be inconsistent
 and error-prone.*
 
-**Try it in 90 seconds:** run it (see [Run](#run)) and open `/try`. Real photos are already
+**Try it in 90 seconds:** [open it in GitHub Codespaces](https://codespaces.new/BabayoAP/aquaplot?quickstart=1)
+with nothing to install, or run it yourself (see [Run](#run)), and open `/try`. Real photos are already
 loaded. You name the animal, and the AI, which never saw your answer, asks you to count its
 tails. `/about` is a two-minute version of this page.
 
@@ -220,8 +221,18 @@ same way. The model makes AquaPlot safer for a beginner, but AquaPlot works with
 
 ## Run
 
-You need git and [uv](https://docs.astral.sh/uv/), which also fetches Python 3.12 if you don't
-have it. Install uv once, then open a new terminal so it is on your PATH:
+**With nothing installed:**
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/BabayoAP/aquaplot?quickstart=1)
+
+GitHub builds AquaPlot on a cloud machine of your own (`.devcontainer/devcontainer.json`),
+starts it with the demo data, and opens it in a new browser tab. The first build takes a few
+minutes. It needs a GitHub account and comes out of a personal account's free monthly Codespaces
+hours. If no tab opens, go to the **Ports** tab and click the globe next to port 8000. Add
+`/about` or `/try` to the address. The codespace stops itself after 30 idle minutes, or stop it
+at <https://github.com/codespaces>.
+
+**On your own machine,** you need git and [uv](https://docs.astral.sh/uv/), which also fetches
+Python 3.12 if you don't have it. Install uv once, then open a new terminal so it is on your PATH:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -284,8 +295,8 @@ which is a poor first impression for a tool built on the idea that a *series* of
 more than one. With it, an empty database is filled at startup with a small, clearly labelled demo
 dataset across the five research cities, dated over five months, with one site that declines and
 one that improves (`src/aquaplot/demo.py`). It only ever fills an empty database, so it never mixes
-with real checks; leave it out to start with nothing. The Render blueprint sets it too, because a
-free instance's disk is wiped on every restart. You can also post the same visits to a running
+with real checks; leave it out to start with nothing. The codespace sets it too, and so does the
+Render blueprint, because a free instance's disk is wiped on every restart. You can also post the same visits to a running
 server through the public API:
 
 ```sh
