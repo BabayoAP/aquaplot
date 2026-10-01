@@ -256,8 +256,20 @@ uv pip install -e ".[dev]"
 $env:AQUAPLOT_SEED_DEMO = "1"; .venv\Scripts\uvicorn aquaplot.app:app --reload
 ```
 
-Then open **http://127.0.0.1:8000/about** in a browser: the two-minute tour, and the way into
-everything else.
+No uv? Any Python 3.12 or newer works with plain `venv` and `pip`. In place of the two `uv` lines:
+
+```sh
+python3.14 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
+```
+
+Name the version (`python3.14`, or whichever 3.12+ you have installed): plain `python3` on a Mac
+can be the built-in 3.9, which is too old for AquaPlot, and pip's error then doesn't say so. On
+Windows, `py -3.14 -m venv .venv` and then `.venv\Scripts\pip install -e ".[dev]"`.
+
+Then open **http://127.0.0.1:8000/about** in a browser: the two-minute tour, and the page to
+give judges, along with `/try`, which runs the sample check. http://127.0.0.1:8000 itself opens
+the stream check, the part a volunteer uses at the water. Stop the server with Ctrl+C.
 
 GitHub runs the same tests on every pull request and every push to `main`
 (`.github/workflows/tests.yml`), so a PR shows whether it breaks anything before it is merged.
