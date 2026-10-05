@@ -227,7 +227,8 @@ same way. The model makes AquaPlot safer for a beginner, but AquaPlot works with
 GitHub builds AquaPlot on a cloud machine of your own (`.devcontainer/devcontainer.json`),
 starts it with the demo data, and opens it in a new browser tab. The first build takes a few
 minutes. It needs a GitHub account and comes out of a personal account's free monthly Codespaces
-hours. If no tab opens, go to the **Ports** tab and click the globe next to port 8000. Add
+hours. If no tab opens, go to the **Ports** tab and click the globe next to port 8000. If the
+page says **502 Bad Gateway**, the server is still starting: wait a minute and reload. Add
 `/about` or `/try` to the address. The codespace stops itself after 30 idle minutes, or stop it
 at <https://github.com/codespaces>.
 
