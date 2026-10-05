@@ -77,6 +77,7 @@
   button { border: 0; border-radius: 9px; padding: 11px 16px; font: inherit; font-weight: 600; cursor: pointer; }
   button.primary { background: var(--accent); color: var(--accent-ink); }
   button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button.ghost[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   button.wide { flex: 1; min-width: 150px; }
   button:disabled { opacity: .5; cursor: default; }
   .thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
