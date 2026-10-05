@@ -386,7 +386,6 @@ readings. The page can ask Anthropic whether the key works, which costs nothing.
 - [docs/ONE-HEALTH.md](docs/ONE-HEALTH.md): every rule, its trigger, its evidence and its action.
 - [docs/FHIR.md](docs/FHIR.md): the resources, the codes, how to validate it yourself, and what would have to happen to make it standard.
 - [docs/HACKATHON.md](docs/HACKATHON.md): track alignment, the judging criteria, the build timeline and the timed demo script.
-- [docs/DEVPOST.md](docs/DEVPOST.md): the submission text, section by section.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to correct a rule, add a family, or swap in a country-specific index.
 - [docs/AREA-VIEWER.md](docs/AREA-VIEWER.md), [docs/CLASSIFIER.md](docs/CLASSIFIER.md): the inherited features.
 

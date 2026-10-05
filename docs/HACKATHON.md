@@ -150,7 +150,7 @@ everything after it.
 - [x] Working prototype, runnable from the README on any machine with Python 3.12+, or in a GitHub
       Codespace with nothing installed (`.devcontainer/`), with a test suite that needs no network
 - [x] Track alignment stated (above)
-- [x] Project description: [DEVPOST.md](DEVPOST.md) is written to paste into Devpost's fields
+- [x] Project description written for Devpost's fields
 - [x] Prior work disclosed
 - [x] **Rule-layer evaluation run and recorded** in [EVALUATION.md](EVALUATION.md) (2026-09-28):
       `scripts/evaluate_rules.py` sweeps a synthetic observer's error rate against
