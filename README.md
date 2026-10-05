@@ -232,6 +232,16 @@ page says **502 Bad Gateway**, the server is still starting: wait a minute and r
 `/about` or `/try` to the address. The codespace stops itself after 30 idle minutes, or stop it
 at <https://github.com/codespaces>.
 
+If it still says 502 after the build has finished, the server did not start. Start it yourself
+in the codespace's terminal (**Terminal → New Terminal**), then reload the page:
+
+```sh
+AQUAPLOT_SEED_DEMO=1 .venv/bin/uvicorn aquaplot.app:app --host 0.0.0.0 --port 8000
+```
+
+If that says `.venv/bin/uvicorn: No such file or directory`, the install did not run either:
+run `python -m venv .venv && .venv/bin/pip install -e '.[dev]'` first.
+
 **On your own machine,** you need git and [uv](https://docs.astral.sh/uv/), which also fetches
 Python 3.12 if you don't have it. Install uv once, then open a new terminal so it is on your PATH:
 
